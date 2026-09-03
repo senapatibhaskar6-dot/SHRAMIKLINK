@@ -1,0 +1,6 @@
+{
+  "name": "ShramikLink",
+  "description": "A specialized B2B SaaS platform (ShramikLink) designed for Indian manufacturing industries and labor contractors to manage CLRA compliant labor supply, biometric attendance, statutory verification, and compliance-locked billing.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
