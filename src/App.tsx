@@ -11,7 +11,9 @@ import {
   ShieldCheck, 
   Layers, 
   HelpCircle,
-  FileText
+  FileText,
+  Menu,
+  X
 } from 'lucide-react';
 import SaaSApp from './components/SaaSApp';
 import ArchitectureDocs from './components/ArchitectureDocs';
@@ -19,22 +21,44 @@ import RoadmapView from './components/RoadmapView';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'app' | 'architecture' | 'roadmap'>('app');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <div className="h-screen w-full bg-slate-100 text-slate-900 flex font-sans overflow-hidden">
+    <div className="h-screen w-full bg-slate-100 text-slate-900 flex font-sans overflow-hidden relative">
       
-      {/* Bento Sidebar Left Pane */}
-      <aside className="w-64 bg-slate-900 text-white flex flex-col shrink-0">
-        <div className="p-6 border-b border-slate-800">
-          <h1 className="text-xl font-bold tracking-tight text-emerald-400">SHRAMIKLINK</h1>
-          <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1 font-semibold">Labour Compliance OS</p>
+      {/* Mobile Menu Drawer Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity duration-300"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Bento Sidebar Left Pane (Mobile slide-over, Desktop static) */}
+      <aside className={`fixed md:static inset-y-0 left-0 w-64 bg-slate-900 text-white flex flex-col shrink-0 z-50 transform transition-transform duration-300 md:transform-none ${
+        isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+      }`}>
+        <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-emerald-400">SHRAMIKLINK</h1>
+            <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1 font-semibold">Labour Compliance OS</p>
+          </div>
+          <button 
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="p-1 text-slate-400 hover:text-white rounded-lg md:hidden"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Master Navigation Tabs */}
         <nav className="flex-1 p-4 space-y-2">
           <button
             id="tab-app-btn"
-            onClick={() => setActiveTab('app')}
+            onClick={() => {
+              setActiveTab('app');
+              setIsMobileMenuOpen(false);
+            }}
             className={`w-full flex items-center space-x-3 p-3 rounded-xl text-left transition-all ${
               activeTab === 'app'
                 ? 'bg-slate-800 text-emerald-400 font-bold shadow-xs border-l-2 border-emerald-400'
@@ -47,7 +71,10 @@ export default function App() {
 
           <button
             id="tab-arch-btn"
-            onClick={() => setActiveTab('architecture')}
+            onClick={() => {
+              setActiveTab('architecture');
+              setIsMobileMenuOpen(false);
+            }}
             className={`w-full flex items-center space-x-3 p-3 rounded-xl text-left transition-all ${
               activeTab === 'architecture'
                 ? 'bg-slate-800 text-emerald-400 font-bold shadow-xs border-l-2 border-emerald-400'
@@ -60,7 +87,10 @@ export default function App() {
 
           <button
             id="tab-roadmap-btn"
-            onClick={() => setActiveTab('roadmap')}
+            onClick={() => {
+              setActiveTab('roadmap');
+              setIsMobileMenuOpen(false);
+            }}
             className={`w-full flex items-center space-x-3 p-3 rounded-xl text-left transition-all ${
               activeTab === 'roadmap'
                 ? 'bg-slate-800 text-emerald-400 font-bold shadow-xs border-l-2 border-emerald-400'
@@ -86,22 +116,31 @@ export default function App() {
       <main className="flex-1 flex flex-col h-full overflow-hidden">
         
         {/* Top Header */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0 z-30 shadow-xs">
-          <div className="flex items-center space-x-8">
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 shrink-0 z-30 shadow-xs">
+          <div className="flex items-center space-x-3 md:space-x-8">
+            {/* Hamburger Button for Mobile */}
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="p-1.5 text-slate-600 hover:text-slate-900 md:hidden rounded-lg hover:bg-slate-100"
+              aria-label="Toggle menu"
+            >
+              <Menu className="h-6 w-6" />
+            </button>
+
             <div className="flex flex-col">
-              <span className="text-[10px] uppercase text-slate-400 font-bold tracking-wider">Organization</span>
-              <span className="text-sm font-bold text-slate-800">Dharma Manufacturing Hub</span>
+              <span className="text-[9px] md:text-[10px] uppercase text-slate-400 font-bold tracking-wider">Organization</span>
+              <span className="text-xs md:text-sm font-bold text-slate-800 line-clamp-1 max-w-[150px] sm:max-w-none">Dharma Manufacturing Hub</span>
             </div>
-            <div className="h-8 w-[1px] bg-slate-200"></div>
-            <div className="flex flex-col">
+            <div className="hidden sm:block h-8 w-[1px] bg-slate-200"></div>
+            <div className="hidden sm:flex flex-col">
               <span className="text-[10px] uppercase text-slate-400 font-bold tracking-wider">Status</span>
               <span className="text-sm font-bold text-emerald-600 flex items-center gap-1">
                 Compliance Locked 🔓
               </span>
             </div>
           </div>
-          <div className="flex items-center space-x-4">
-            <div className="bg-slate-100 px-3 py-1.5 rounded-full text-[12px] font-medium border border-slate-200 text-slate-700">
+          <div className="flex items-center space-x-2 md:space-x-4">
+            <div className="hidden sm:block bg-slate-100 px-3 py-1.5 rounded-full text-[12px] font-medium border border-slate-200 text-slate-700">
               ₹1/Worker/Day Micro-fee: Active
             </div>
             <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center text-white text-xs font-bold font-mono">
