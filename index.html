@@ -3,22 +3,45 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ShramikLink - B2B Contract Labour Compliance Platform</title>
-    <meta name="theme-color" content="#0f172a" />
+    <title>ShramikLink</title>
+    
+    <!-- App Description & Theme -->
+    <meta name="description" content="Manufacturing industry and labor contractor compliance and management platform." />
+    <meta name="theme-color" content="#0284c7" />
+    
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="ShramikLink" />
+
+    <!-- Web App Manifest Link -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- App Icon Links -->
+    <link rel="icon" type="image/png" href="/pwa-192x192.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="description" content="ShramikLink: A specialized B2B SaaS platform designed for Indian manufacturing industries and labor contractors to manage CLRA compliant labor supply, biometric attendance, and compliance-locked billing." />
-    <meta property="og:title" content="ShramikLink - B2B Contract Labour Compliance Platform" />
-    <meta property="og:description" content="ShramikLink: A specialized B2B SaaS platform designed for Indian manufacturing industries and labor contractors to manage CLRA compliant labor supply, biometric attendance, and compliance-locked billing." />
+    
+    <meta property="og:title" content="ShramikLink" />
+    <meta property="og:description" content="Manufacturing industry and labor contractor compliance and management platform." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((reg) => {
+              console.log('ShramikLink Service Worker registered successfully:', reg.scope);
+            })
+            .catch((err) => {
+              console.error('ShramikLink Service Worker registration failed:', err);
+            });
+        });
+      }
+    </script>
   </body>
 </html>
 

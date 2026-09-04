@@ -23,7 +23,10 @@ import {
   Search,
   IndianRupee,
   Database,
-  LogOut
+  LogOut,
+  Download,
+  Loader2,
+  Zap
 } from 'lucide-react';
 import { 
   Industry, 
@@ -82,6 +85,8 @@ export default function SaaSApp() {
     const saved = localStorage.getItem('s_current_role');
     return (saved as any) || 'industry_admin';
   });
+  const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
+  const [loginRoleInProgress, setLoginRoleInProgress] = useState<string | null>(null);
 
   // Load database tables from full-stack backend
   const refreshData = async (activeToken?: string) => {
@@ -136,6 +141,10 @@ export default function SaaSApp() {
 
   // Secure sign-in via Google OAuth and sync role with database
   const handleLogin = async (role: 'industry_admin' | 'contractor' | 'worker' | 'government_inspector') => {
+    if (isLoggingIn) return;
+    setIsLoggingIn(true);
+    setLoginRoleInProgress(role);
+
     try {
       const result = await signInWithPopup(auth, googleAuthProvider);
       const idToken = await result.user.getIdToken();
@@ -144,33 +153,65 @@ export default function SaaSApp() {
       localStorage.setItem('s_current_role', role);
 
       // Sync user profile role to database
-      await fetch('/api/users/sync', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`
-        },
-        body: JSON.stringify({ role })
-      });
+      try {
+        await fetch('/api/users/sync', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`
+          },
+          body: JSON.stringify({ role })
+        });
+      } catch (syncErr) {
+        console.warn('Profile sync notification:', syncErr);
+      }
 
       setIsLoggedIn(true);
       localStorage.setItem('s_is_logged_in', 'true');
       showNotice(`Secure login successful via Google: ${result.user.displayName || result.user.email}!`, 'success');
       refreshData(idToken);
     } catch (err: any) {
-      console.error('Google Sign-In Error:', err);
-      showNotice(`Secure login failed: ${err.message || err}`, 'error');
+      const errorCode = err?.code || '';
+      if (errorCode === 'auth/cancelled-popup-request') {
+        console.warn('Google Sign-In popup request was cancelled or superseded.');
+        showNotice('লগইন পপ-আপ বাতিল কৰা হৈছে। অনুগ্ৰহ কৰি আকৌ এবাৰ ক্লিক কৰক বা Quick Access বাছনি কৰক।', 'info');
+      } else if (errorCode === 'auth/popup-closed-by-user') {
+        console.warn('Google Sign-In popup was closed by user.');
+        showNotice('লগইন উইণ্ড’খন বন্ধ কৰা হ’ল। অনুগ্ৰহ কৰি পুনৰ চেষ্টা কৰক।', 'info');
+      } else if (errorCode === 'auth/popup-blocked') {
+        console.warn('Google Sign-In popup was blocked by browser.');
+        showNotice('ব্ৰাউজাৰে পপ-আপ উইণ্ড’খন বাধা দিছে। Quick Demo Access ব্যৱহাৰ কৰিব পাৰে।', 'error');
+      } else {
+        console.error('Google Sign-In Error:', err);
+        showNotice(`Secure login failed: ${err.message || err}`, 'error');
+      }
+    } finally {
+      setIsLoggingIn(false);
+      setLoginRoleInProgress(null);
     }
+  };
+
+  // Instant sandbox / demo login without requiring external popup window
+  const handleDemoLogin = (role: 'industry_admin' | 'contractor' | 'worker' | 'government_inspector') => {
+    setCurrentRole(role);
+    localStorage.setItem('s_current_role', role);
+    setIsLoggedIn(true);
+    localStorage.setItem('s_is_logged_in', 'true');
+    showNotice(`Sandbox Demo: Entered as ${role.replace('_', ' ').toUpperCase()}`, 'success');
+    refreshData(token || undefined);
   };
 
   const handleLogout = async () => {
     try {
       await signOut(auth);
+    } catch (err) {
+      console.warn('Logout notice:', err);
+    } finally {
+      setUser(null);
+      setToken(null);
       setIsLoggedIn(false);
       localStorage.setItem('s_is_logged_in', 'false');
       showNotice('Logged out of secure CLRA compliance session.', 'info');
-    } catch (err) {
-      console.error('Logout error:', err);
     }
   };
   
@@ -670,7 +711,7 @@ export default function SaaSApp() {
             </p>
           </div>
 
-          <div className="w-28 h-28 md:w-36 md:h-36 bg-transparent p-1.5 rounded-2xl relative z-10 shrink-0 flex items-center justify-center">
+          <div className="relative group w-28 h-28 md:w-36 md:h-36 bg-slate-950/20 backdrop-blur-xs p-2 rounded-2xl relative z-10 shrink-0 flex flex-col items-center justify-center border border-slate-800/50 hover:border-emerald-500/30 transition-all duration-300">
             <TransparentImage 
               src={logoUrl} 
               alt="ShramikLink Official Logo" 
@@ -697,12 +738,32 @@ export default function SaaSApp() {
                 উদ্যোগ প্ৰতিষ্ঠানৰ মালিকে ইয়াত লগইন কৰি দৈনিক আধাৰ বায়’মেট্ৰিক হাজিৰা (Biometric Attendance) চাব পাৰে, ঠিকাদাৰৰ বিলসমূহ আইনগতভাৱে সুৰক্ষিত কৰি পেমেন্ট কৰিব পাৰে।
               </p>
             </div>
-            <button 
-              onClick={() => handleLogin('industry_admin')}
-              className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-2xl text-xs font-bold tracking-wide transition-all shadow-xs hover:shadow-sm"
-            >
-              Industry Admin হিচাপে প্ৰৱেশ কৰক →
-            </button>
+            <div className="space-y-2">
+              <button 
+                type="button"
+                disabled={isLoggingIn}
+                onClick={() => handleLogin('industry_admin')}
+                className={`w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-2xl text-xs font-bold tracking-wide transition-all shadow-xs hover:shadow-sm flex items-center justify-center gap-2 cursor-pointer ${isLoggingIn ? 'opacity-80 cursor-not-allowed' : ''}`}
+              >
+                {isLoggingIn && loginRoleInProgress === 'industry_admin' ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Google-ত সংযোগ কৰা হৈছে...</span>
+                  </>
+                ) : (
+                  <span>Industry Admin হিচাপে প্ৰৱেশ কৰক →</span>
+                )}
+              </button>
+              <button
+                type="button"
+                disabled={isLoggingIn}
+                onClick={() => handleDemoLogin('industry_admin')}
+                className="w-full text-center text-[11px] font-semibold text-slate-500 hover:text-slate-800 transition-colors py-1 flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Zap className="w-3.5 h-3.5 text-amber-500" />
+                <span>বা Quick Sandbox Demo (পপ-আপ অবিহনে)</span>
+              </button>
+            </div>
           </div>
 
           {/* Card 2: Labor Contractor */}
@@ -719,12 +780,32 @@ export default function SaaSApp() {
                 ঠিকাদাৰে ইয়াত নতুন শ্ৰমিক পঞ্জীয়ন কৰিব পাৰে, চৰকাৰী ইপিএফ/ইএছআই (EPF/ESI) চালান জমা কৰিব পাৰে আৰু ডাবল-লকিং ছিষ্টেম ব্যৱহাৰ কৰি বিল উলিয়াব পাৰে।
               </p>
             </div>
-            <button 
-              onClick={() => handleLogin('contractor')}
-              className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 py-3 rounded-2xl text-xs font-bold tracking-wide transition-all shadow-xs hover:shadow-sm"
-            >
-              Labor Contractor হিচাপে প্ৰৱেশ কৰক →
-            </button>
+            <div className="space-y-2">
+              <button 
+                type="button"
+                disabled={isLoggingIn}
+                onClick={() => handleLogin('contractor')}
+                className={`w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 py-3 rounded-2xl text-xs font-bold tracking-wide transition-all shadow-xs hover:shadow-sm flex items-center justify-center gap-2 cursor-pointer ${isLoggingIn ? 'opacity-80 cursor-not-allowed' : ''}`}
+              >
+                {isLoggingIn && loginRoleInProgress === 'contractor' ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin text-slate-950" />
+                    <span>Google-ত সংযোগ কৰা হৈছে...</span>
+                  </>
+                ) : (
+                  <span>Labor Contractor হিচাপে প্ৰৱেশ কৰক →</span>
+                )}
+              </button>
+              <button
+                type="button"
+                disabled={isLoggingIn}
+                onClick={() => handleDemoLogin('contractor')}
+                className="w-full text-center text-[11px] font-semibold text-slate-500 hover:text-emerald-700 transition-colors py-1 flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Zap className="w-3.5 h-3.5 text-amber-500" />
+                <span>বা Quick Sandbox Demo (পপ-আপ অবিহনে)</span>
+              </button>
+            </div>
           </div>
 
           {/* Card 3: Contract Worker */}
@@ -741,12 +822,32 @@ export default function SaaSApp() {
                 শ্ৰমিকৰ আধাৰ বায়’মেট্ৰিক হাজিৰা (Aadhaar Attendance Gate), সুৰক্ষিত অ’টিপি (OTP Validation), আৰু নিজৰ দৈনিক হাজিৰাৰ স্থিতি চাব পাৰিব।
               </p>
             </div>
-            <button 
-              onClick={() => handleLogin('worker')}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-2xl text-xs font-bold tracking-wide transition-all shadow-xs hover:shadow-sm"
-            >
-              Contract Worker হিচাপে প্ৰৱেশ কৰক →
-            </button>
+            <div className="space-y-2">
+              <button 
+                type="button"
+                disabled={isLoggingIn}
+                onClick={() => handleLogin('worker')}
+                className={`w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-2xl text-xs font-bold tracking-wide transition-all shadow-xs hover:shadow-sm flex items-center justify-center gap-2 cursor-pointer ${isLoggingIn ? 'opacity-80 cursor-not-allowed' : ''}`}
+              >
+                {isLoggingIn && loginRoleInProgress === 'worker' ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Google-ত সংযোগ কৰা হৈছে...</span>
+                  </>
+                ) : (
+                  <span>Contract Worker হিচাপে প্ৰৱেশ কৰক →</span>
+                )}
+              </button>
+              <button
+                type="button"
+                disabled={isLoggingIn}
+                onClick={() => handleDemoLogin('worker')}
+                className="w-full text-center text-[11px] font-semibold text-slate-500 hover:text-indigo-700 transition-colors py-1 flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Zap className="w-3.5 h-3.5 text-amber-500" />
+                <span>বা Quick Sandbox Demo (পপ-আপ অবিহনে)</span>
+              </button>
+            </div>
           </div>
 
           {/* Card 4: Government Inspector */}
@@ -763,12 +864,32 @@ export default function SaaSApp() {
                 চৰকাৰী শ্ৰম পৰিদৰ্শকে ইয়াত বিধিগত নথিপত্ৰ পৰীক্ষা কৰিব পাৰিব, আইন সংগত মজুৰি সঠিককৈ দিয়া হৈছে নে নাই চাব পাৰিব আৰু কোনো অমিল দেখিলে জাননী দিব পাৰিব।
               </p>
             </div>
-            <button 
-              onClick={() => handleLogin('government_inspector')}
-              className="w-full bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-2xl text-xs font-bold tracking-wide transition-all shadow-xs hover:shadow-sm"
-            >
-              Labour Inspector হিচাপে প্ৰৱেশ কৰক →
-            </button>
+            <div className="space-y-2">
+              <button 
+                type="button"
+                disabled={isLoggingIn}
+                onClick={() => handleLogin('government_inspector')}
+                className={`w-full bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-2xl text-xs font-bold tracking-wide transition-all shadow-xs hover:shadow-sm flex items-center justify-center gap-2 cursor-pointer ${isLoggingIn ? 'opacity-80 cursor-not-allowed' : ''}`}
+              >
+                {isLoggingIn && loginRoleInProgress === 'government_inspector' ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Google-ত সংযোগ কৰা হৈছে...</span>
+                  </>
+                ) : (
+                  <span>Labour Inspector হিচাপে প্ৰৱেশ কৰক →</span>
+                )}
+              </button>
+              <button
+                type="button"
+                disabled={isLoggingIn}
+                onClick={() => handleDemoLogin('government_inspector')}
+                className="w-full text-center text-[11px] font-semibold text-slate-500 hover:text-rose-700 transition-colors py-1 flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Zap className="w-3.5 h-3.5 text-amber-500" />
+                <span>বা Quick Sandbox Demo (পপ-আপ অবিহনে)</span>
+              </button>
+            </div>
           </div>
 
         </div>
@@ -801,13 +922,23 @@ export default function SaaSApp() {
       {/* Role Gate Bar (Bento-style Header Card) */}
       <div className="bg-slate-900 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl shadow-sm border border-slate-800">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 bg-transparent p-0.5 rounded-xl text-slate-950 flex items-center justify-center shrink-0">
+          <div className="relative group w-11 h-11 bg-slate-950/20 p-0.5 rounded-xl text-slate-950 flex items-center justify-center shrink-0 border border-slate-800">
             <TransparentImage 
               src={logoUrl} 
               alt="ShramikLink Logo" 
               className="w-full h-full object-contain"
               threshold={195}
             />
+            {currentRole === 'industry_admin' && (
+              <a 
+                href={logoUrl} 
+                download="shramiklink_logo.png" 
+                className="absolute -bottom-1 -right-1 bg-slate-900 text-emerald-400 hover:text-emerald-300 p-0.5 rounded-md border border-slate-800 shadow-md cursor-pointer hover:scale-105 transition-all flex items-center justify-center"
+                title="Download Logo"
+              >
+                <Download className="w-2.5 h-2.5" />
+              </a>
+            )}
           </div>
           <div>
             <h3 className="font-bold text-white text-sm tracking-tight flex items-center gap-2">

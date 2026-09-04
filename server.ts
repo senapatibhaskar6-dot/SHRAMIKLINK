@@ -25,6 +25,21 @@ const PORT = 3000;
 
 app.use(express.json());
 
+// Enable CORS for PWA manifest and assets to allow PWABuilder to read them
+app.get(["/manifest.json", "/manifest.webmanifest"], (req: any, res: any) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.setHeader("Content-Type", "application/manifest+json");
+  res.sendFile(path.join(process.cwd(), "public", "manifest.json"));
+});
+
+app.get("/sw.js", (req: any, res: any) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.setHeader("Content-Type", "application/javascript");
+  res.sendFile(path.join(process.cwd(), "public", "sw.js"));
+});
+
 // Auth middleware to verify Firebase ID Token
 const requireAuth = async (req: any, res: any, next: any) => {
   const authHeader = req.headers.authorization;

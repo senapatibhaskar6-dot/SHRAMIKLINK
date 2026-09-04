@@ -3,6 +3,7 @@
   "appId": "1:356839376994:web:1b5c2f5d2380258940693b",
   "apiKey": "AIzaSyB0t_Wy_DZqN3cHnunRCJk5M9dBZycfHo0",
   "authDomain": "scientific-pad-rthv3.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-shramiklink-492b4f63-7132-4910-bfc6-051674158dea",
   "storageBucket": "scientific-pad-rthv3.firebasestorage.app",
   "messagingSenderId": "356839376994",
   "measurementId": "",
