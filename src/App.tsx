@@ -84,38 +84,6 @@ export default function App() {
           {activeTab === 'app' && (
             <div className="space-y-6">
               <SaaSApp />
-
-              {/* Dynamic Welcome Hero Panel */}
-              <div className="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-2xl p-6 shadow-sm space-y-4">
-                <div className="max-w-3xl space-y-2">
-                  <span className="text-xs font-bold tracking-wider text-emerald-400 uppercase block">Active Product Simulator</span>
-                  <h2 className="text-xl font-black tracking-tight leading-tight md:text-2xl">
-                    Indian Industrial Labor Compliance Ecosystem
-                  </h2>
-                  <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
-                    Welcome to the multi-vendor sandbox preview. Experience the entire compliance lifecycle: register workers under licensed contractors, deploy them dynamically to manufacturing factories, verify check-ins via biometrics, and review bills protected by statutory proof lockers.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2 text-xs font-mono">
-                  <div className="border border-slate-800 bg-slate-900/60 p-3 rounded-xl text-slate-200">
-                    <span className="text-emerald-400 block mb-0.5 text-[10px] font-bold">Statutory Standard</span>
-                    CLRA Act 1970 Sec 21
-                  </div>
-                  <div className="border border-slate-800 bg-slate-900/60 p-3 rounded-xl text-slate-200">
-                    <span className="text-emerald-400 block mb-0.5 text-[10px] font-bold">Biometric Gate</span>
-                    UIDAI Secure Match
-                  </div>
-                  <div className="border border-slate-800 bg-slate-900/60 p-3 rounded-xl text-slate-200">
-                    <span className="text-emerald-400 block mb-0.5 text-[10px] font-bold">Billing Policy</span>
-                    Double-Locked Challans
-                  </div>
-                  <div className="border border-slate-800 bg-slate-900/60 p-3 rounded-xl text-slate-200">
-                    <span className="text-emerald-400 block mb-0.5 text-[10px] font-bold">SaaS Pricing</span>
-                    ₹1 Worker/Day Micro-fee
-                  </div>
-                </div>
-              </div>
             </div>
           )}
 

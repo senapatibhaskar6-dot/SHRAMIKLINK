@@ -694,17 +694,17 @@ export default function SaaSApp() {
         </div>
 
         {/* Brand Banner */}
-        <div className="bg-slate-900 text-white rounded-3xl p-6 md:p-8 border border-slate-800 shadow-xl relative overflow-hidden space-y-6">
+        <div className="bg-slate-900 text-white rounded-2xl p-4 md:p-5 border border-slate-800 shadow-xl relative overflow-hidden space-y-4">
           {/* Subtle graphic elements */}
           <div className="absolute right-0 top-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
           <div className="absolute left-1/3 bottom-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
 
           {/* Top Row: Logo (Left), ShramikLink (Center), Pill (Right) */}
-          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-4 border-b border-slate-800/40 pb-6">
+          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-3 border-b border-slate-800/30 pb-4">
             
             {/* Logo (Left side) */}
             <div className="flex-1 flex justify-center md:justify-start w-full md:w-auto">
-              <div className="relative group w-16 h-16 md:w-20 md:h-20 bg-slate-950/40 p-1.5 rounded-2xl flex items-center justify-center border border-slate-800/60 shadow-md">
+              <div className="relative group w-11 h-11 md:w-13 md:h-13 bg-white p-1 rounded-xl flex items-center justify-center border border-white shadow-md hover:scale-105 transition-transform duration-300">
                 <TransparentImage 
                   src={logoUrl} 
                   alt="ShramikLink Official Logo" 
@@ -716,15 +716,15 @@ export default function SaaSApp() {
 
             {/* ShramikLink (Center) */}
             <div className="flex-1 flex justify-center text-center">
-              <h2 className="text-3xl md:text-4xl font-black tracking-tight text-white select-none">
+              <h2 className="text-xl md:text-2xl font-black tracking-tight text-white select-none">
                 <span className="text-orange-500">ShramikLink</span>
               </h2>
             </div>
 
             {/* Pill (Right side) */}
             <div className="flex-1 flex justify-center md:justify-end w-full md:w-auto">
-              <div className="inline-flex items-center gap-2 px-3.5 py-2 bg-emerald-500/10 text-emerald-400 rounded-full text-[11px] font-bold uppercase tracking-wider border border-emerald-500/20 whitespace-nowrap shadow-xs">
-                <ShieldCheck className="h-4 w-4 shrink-0" /> Multi-Role Secure Login Gateway
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 text-emerald-400 rounded-full text-[10px] font-bold uppercase tracking-wider border border-emerald-500/20 whitespace-nowrap shadow-xs">
+                <ShieldCheck className="h-3.5 w-3.5 shrink-0" /> Multi-Role Secure Login Gateway
               </div>
             </div>
 
@@ -732,7 +732,7 @@ export default function SaaSApp() {
 
           {/* Subtitle / Description (Centered underneath) */}
           <div className="relative z-10 text-center max-w-2xl mx-auto">
-            <p className="text-xs md:text-sm text-emerald-400 font-extrabold tracking-wide leading-relaxed">
+            <p className="text-[11px] md:text-xs text-emerald-400/95 font-bold tracking-wide leading-relaxed">
               Double-locking compliance system engineered for Indian Industrial Labor Laws and statutory worker benefits. Please choose your secure role below to login.
             </p>
           </div>
@@ -909,6 +909,38 @@ export default function SaaSApp() {
             </div>
           </div>
 
+        </div>
+
+        {/* Dynamic Welcome Hero Panel */}
+        <div className="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-2xl p-6 shadow-sm space-y-4">
+          <div className="max-w-3xl space-y-2">
+            <span className="text-xs font-bold tracking-wider text-emerald-400 uppercase block">Active Product Simulator</span>
+            <h2 className="text-xl font-black tracking-tight leading-tight md:text-2xl">
+              Indian Industrial Labor Compliance Ecosystem
+            </h2>
+            <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
+              Welcome to the multi-vendor sandbox preview. Experience the entire compliance lifecycle: register workers under licensed contractors, deploy them dynamically to manufacturing factories, verify check-ins via biometrics, and review bills protected by statutory proof lockers.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2 text-xs font-mono">
+            <div className="border border-slate-800 bg-slate-900/60 p-3 rounded-xl text-slate-200">
+              <span className="text-emerald-400 block mb-0.5 text-[10px] font-bold">Statutory Standard</span>
+              CLRA Act 1970 Sec 21
+            </div>
+            <div className="border border-slate-800 bg-slate-900/60 p-3 rounded-xl text-slate-200">
+              <span className="text-emerald-400 block mb-0.5 text-[10px] font-bold">Biometric Gate</span>
+              UIDAI Secure Match
+            </div>
+            <div className="border border-slate-800 bg-slate-900/60 p-3 rounded-xl text-slate-200">
+              <span className="text-emerald-400 block mb-0.5 text-[10px] font-bold">Billing Policy</span>
+              Double-Locked Challans
+            </div>
+            <div className="border border-slate-800 bg-slate-900/60 p-3 rounded-xl text-slate-200">
+              <span className="text-emerald-400 block mb-0.5 text-[10px] font-bold">SaaS Pricing</span>
+              ₹1 Worker/Day Micro-fee
+            </div>
+          </div>
         </div>
 
         {/* Demo Guidelines banner */}
