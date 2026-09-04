@@ -694,30 +694,47 @@ export default function SaaSApp() {
         </div>
 
         {/* Brand Banner */}
-        <div className="bg-slate-900 text-white rounded-3xl p-8 border border-slate-800 shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center gap-8">
+        <div className="bg-slate-900 text-white rounded-3xl p-6 md:p-8 border border-slate-800 shadow-xl relative overflow-hidden space-y-6">
           {/* Subtle graphic elements */}
           <div className="absolute right-0 top-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
           <div className="absolute left-1/3 bottom-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
 
-          <div className="max-w-2xl space-y-3 relative z-10 flex-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 text-emerald-400 rounded-full text-[11px] font-bold uppercase tracking-wider border border-emerald-500/20">
-              <ShieldCheck className="h-4 w-4" /> Multi-Role Secure Login Gateway
+          {/* Top Row: Logo (Left), ShramikLink (Center), Pill (Right) */}
+          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-4 border-b border-slate-800/40 pb-6">
+            
+            {/* Logo (Left side) */}
+            <div className="flex-1 flex justify-center md:justify-start w-full md:w-auto">
+              <div className="relative group w-16 h-16 md:w-20 md:h-20 bg-slate-950/40 p-1.5 rounded-2xl flex items-center justify-center border border-slate-800/60 shadow-md">
+                <TransparentImage 
+                  src={logoUrl} 
+                  alt="ShramikLink Official Logo" 
+                  className="w-full h-full object-contain"
+                  threshold={195}
+                />
+              </div>
             </div>
-            <h2 className="text-3xl font-black tracking-tight leading-tight md:text-4xl text-white">
-              ShramikLink <span className="text-emerald-400 font-medium">B2B Compliance OS</span>
-            </h2>
-            <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
-              ভাৰতীয় উদ্যোগিক আইন (CLRA Act 1970 Sec 21) আৰু শ্ৰমিক নিয়মসমূহৰ বাবে নিৰ্মিত প্ৰথমটো ডাবল-লকিং ছিষ্টেম। অনুগ্ৰহ কৰি আপোনাৰ সুৰক্ষিত ভূমিকা বাচনি কৰি লগইন কৰক।
-            </p>
+
+            {/* ShramikLink (Center) */}
+            <div className="flex-1 flex justify-center text-center">
+              <h2 className="text-3xl md:text-4xl font-black tracking-tight text-white select-none">
+                <span className="text-orange-500">ShramikLink</span>
+              </h2>
+            </div>
+
+            {/* Pill (Right side) */}
+            <div className="flex-1 flex justify-center md:justify-end w-full md:w-auto">
+              <div className="inline-flex items-center gap-2 px-3.5 py-2 bg-emerald-500/10 text-emerald-400 rounded-full text-[11px] font-bold uppercase tracking-wider border border-emerald-500/20 whitespace-nowrap shadow-xs">
+                <ShieldCheck className="h-4 w-4 shrink-0" /> Multi-Role Secure Login Gateway
+              </div>
+            </div>
+
           </div>
 
-          <div className="relative group w-28 h-28 md:w-36 md:h-36 bg-slate-950/20 backdrop-blur-xs p-2 rounded-2xl relative z-10 shrink-0 flex flex-col items-center justify-center border border-slate-800/50 hover:border-emerald-500/30 transition-all duration-300">
-            <TransparentImage 
-              src={logoUrl} 
-              alt="ShramikLink Official Logo" 
-              className="w-full h-full object-contain"
-              threshold={195}
-            />
+          {/* Subtitle / Description (Centered underneath) */}
+          <div className="relative z-10 text-center max-w-2xl mx-auto">
+            <p className="text-xs md:text-sm text-emerald-400 font-extrabold tracking-wide leading-relaxed">
+              Double-locking compliance system engineered for Indian Industrial Labor Laws and statutory worker benefits. Please choose your secure role below to login.
+            </p>
           </div>
         </div>
 
@@ -735,7 +752,7 @@ export default function SaaSApp() {
                 <p className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mt-0.5">Principal Employer Gateway</p>
               </div>
               <p className="text-slate-600 text-xs leading-relaxed">
-                উদ্যোগ প্ৰতিষ্ঠানৰ মালিকে ইয়াত লগইন কৰি দৈনিক আধাৰ বায়’মেট্ৰিক হাজিৰা (Biometric Attendance) চাব পাৰে, ঠিকাদাৰৰ বিলসমূহ আইনগতভাৱে সুৰক্ষিত কৰি পেমেন্ট কৰিব পাৰে।
+                Factory owners can view live daily biometric attendance logs, audit statutory records, and securely approve contractor bills with full legal lockouts.
               </p>
             </div>
             <div className="space-y-2">
@@ -748,10 +765,10 @@ export default function SaaSApp() {
                 {isLoggingIn && loginRoleInProgress === 'industry_admin' ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Google-ত সংযোগ কৰা হৈছে...</span>
+                    <span>Connecting with Google...</span>
                   </>
                 ) : (
-                  <span>Industry Admin হিচাপে প্ৰৱেশ কৰক →</span>
+                  <span>Log In as Industry Admin →</span>
                 )}
               </button>
               <button
@@ -761,7 +778,7 @@ export default function SaaSApp() {
                 className="w-full text-center text-[11px] font-semibold text-slate-500 hover:text-slate-800 transition-colors py-1 flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Zap className="w-3.5 h-3.5 text-amber-500" />
-                <span>বা Quick Sandbox Demo (পপ-আপ অবিহনে)</span>
+                <span>or Quick Sandbox Demo (without popups)</span>
               </button>
             </div>
           </div>
@@ -777,7 +794,7 @@ export default function SaaSApp() {
                 <p className="text-emerald-600 text-[10px] uppercase font-bold tracking-wider mt-0.5">Licensed Contractor Hub</p>
               </div>
               <p className="text-slate-600 text-xs leading-relaxed">
-                ঠিকাদাৰে ইয়াত নতুন শ্ৰমিক পঞ্জীয়ন কৰিব পাৰে, চৰকাৰী ইপিএফ/ইএছআই (EPF/ESI) চালান জমা কৰিব পাৰে আৰু ডাবল-লকিং ছিষ্টেম ব্যৱহাৰ কৰি বিল উলিয়াব পাৰে।
+                Contractors can onboard new workers, submit mandatory EPF/ESI challans, and generate double-locked bills with cryptographic legal compliance.
               </p>
             </div>
             <div className="space-y-2">
@@ -790,10 +807,10 @@ export default function SaaSApp() {
                 {isLoggingIn && loginRoleInProgress === 'contractor' ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin text-slate-950" />
-                    <span>Google-ত সংযোগ কৰা হৈছে...</span>
+                    <span>Connecting with Google...</span>
                   </>
                 ) : (
-                  <span>Labor Contractor হিচাপে প্ৰৱেশ কৰক →</span>
+                  <span>Log In as Labor Contractor →</span>
                 )}
               </button>
               <button
@@ -803,7 +820,7 @@ export default function SaaSApp() {
                 className="w-full text-center text-[11px] font-semibold text-slate-500 hover:text-emerald-700 transition-colors py-1 flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Zap className="w-3.5 h-3.5 text-amber-500" />
-                <span>বা Quick Sandbox Demo (পপ-আপ অবিহনে)</span>
+                <span>or Quick Sandbox Demo (without popups)</span>
               </button>
             </div>
           </div>
@@ -819,7 +836,7 @@ export default function SaaSApp() {
                 <p className="text-indigo-600 text-[10px] uppercase font-bold tracking-wider mt-0.5">Verified Labour Workspace</p>
               </div>
               <p className="text-slate-600 text-xs leading-relaxed">
-                শ্ৰমিকৰ আধাৰ বায়’মেট্ৰিক হাজিৰা (Aadhaar Attendance Gate), সুৰক্ষিত অ’টিপি (OTP Validation), আৰু নিজৰ দৈনিক হাজিৰাৰ স্থিতি চাব পাৰিব।
+                Workers can verify identity via Aadhaar biometric gate simulators, validate secure OTPs, and access personal daily attendance cards.
               </p>
             </div>
             <div className="space-y-2">
@@ -832,10 +849,10 @@ export default function SaaSApp() {
                 {isLoggingIn && loginRoleInProgress === 'worker' ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Google-ত সংযোগ কৰা হৈছে...</span>
+                    <span>Connecting with Google...</span>
                   </>
                 ) : (
-                  <span>Contract Worker হিচাপে প্ৰৱেশ কৰক →</span>
+                  <span>Log In as Contract Worker →</span>
                 )}
               </button>
               <button
@@ -845,7 +862,7 @@ export default function SaaSApp() {
                 className="w-full text-center text-[11px] font-semibold text-slate-500 hover:text-indigo-700 transition-colors py-1 flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Zap className="w-3.5 h-3.5 text-amber-500" />
-                <span>বা Quick Sandbox Demo (পপ-আপ অবিহনে)</span>
+                <span>or Quick Sandbox Demo (without popups)</span>
               </button>
             </div>
           </div>
@@ -861,7 +878,7 @@ export default function SaaSApp() {
                 <p className="text-rose-600 text-[10px] uppercase font-bold tracking-wider mt-0.5">Independent Regulatory Audit</p>
               </div>
               <p className="text-slate-600 text-xs leading-relaxed">
-                চৰকাৰী শ্ৰম পৰিদৰ্শকে ইয়াত বিধিগত নথিপত্ৰ পৰীক্ষা কৰিব পাৰিব, আইন সংগত মজুৰি সঠিককৈ দিয়া হৈছে নে নাই চাব পাৰিব আৰু কোনো অমিল দেখিলে জাননী দিব পাৰিব।
+                Labor inspectors can review mandatory CLRA forms, audit minimum wage payouts, verify statutory challans, and issue digital compliance warnings.
               </p>
             </div>
             <div className="space-y-2">
@@ -874,10 +891,10 @@ export default function SaaSApp() {
                 {isLoggingIn && loginRoleInProgress === 'government_inspector' ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Google-ত সংযোগ কৰা হৈছে...</span>
+                    <span>Connecting with Google...</span>
                   </>
                 ) : (
-                  <span>Labour Inspector হিচাপে প্ৰৱেশ কৰক →</span>
+                  <span>Log In as Labor Inspector →</span>
                 )}
               </button>
               <button
@@ -887,7 +904,7 @@ export default function SaaSApp() {
                 className="w-full text-center text-[11px] font-semibold text-slate-500 hover:text-rose-700 transition-colors py-1 flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Zap className="w-3.5 h-3.5 text-amber-500" />
-                <span>বা Quick Sandbox Demo (পপ-আপ অবিহনে)</span>
+                <span>or Quick Sandbox Demo (without popups)</span>
               </button>
             </div>
           </div>
@@ -918,6 +935,42 @@ export default function SaaSApp() {
 
   return (
     <div className="space-y-6">
+
+      {/* Dynamic Integrated Organization & Status Header */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 md:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm animate-fadeIn">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-indigo-50 rounded-xl text-indigo-600">
+            <Building2 className="h-6 w-6" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase text-slate-400 font-bold tracking-wider">Active Organization Tenant</span>
+              <span className="text-[10px] bg-emerald-500/10 text-emerald-600 px-2 py-0.5 rounded-full font-bold">
+                Compliance Locked 🔓
+              </span>
+            </div>
+            <h2 className="text-lg font-black text-slate-900 tracking-tight">Dharma Manufacturing Hub</h2>
+            <p className="text-xs text-slate-500">Standard registered principal employer factory under MH CLRA rules.</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0 border-slate-100">
+          <div className="bg-slate-50 border border-slate-200 rounded-full px-4 py-1.5 text-xs text-slate-600 font-medium flex items-center gap-2">
+            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+            ₹1/Worker/Day Micro-fee: Active
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <div className="text-right">
+              <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Active Operator</span>
+              <span className="text-xs font-bold text-slate-700">Administrator</span>
+            </div>
+            <div className="w-9 h-9 rounded-full bg-slate-900 flex items-center justify-center text-white text-sm font-black font-mono shadow-sm">
+              AD
+            </div>
+          </div>
+        </div>
+      </div>
       
       {/* Role Gate Bar (Bento-style Header Card) */}
       <div className="bg-slate-900 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl shadow-sm border border-slate-800">
