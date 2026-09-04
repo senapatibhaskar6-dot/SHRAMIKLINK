@@ -267,9 +267,9 @@ export default function SaaSApp() {
   const [activeDocUrl, setActiveDocUrl] = useState<string | null>(null);
 
   // Helper selectors
-  const activeIndustry = industries.find(i => i.id === selectedIndustryId) || industries[0];
-  const activeContractor = contractors.find(c => c.id === selectedContractorId) || contractors[0];
-  const activeWorker = workers.find(w => w.id === selectedWorkerId) || workers[0];
+  const activeIndustry = industries.find(i => i.id === selectedIndustryId) || industries[0] || { id: '', name: 'No active industry', location: '', regNo: 'N/A', lin: 'N/A', contactEmail: '' };
+  const activeContractor = contractors.find(c => c.id === selectedContractorId) || contractors[0] || { id: '', name: 'No active contractor', licenseNo: 'N/A', lin: 'N/A', pan: 'N/A', epfCode: 'N/A', esiCode: 'N/A', contactNo: '', rating: 5 };
+  const activeWorker = workers.find(w => w.id === selectedWorkerId) || workers[0] || { id: '', name: 'No active worker', aadhaarHash: 'N/A', phone: 'N/A', contractorId: '', skillType: 'Unskilled', dailyWageRate: 0, status: 'Available', onboardingVerified: false, onboardingDate: '' };
 
   // System auditing: check if contractor has July compliance verified
   const checkContractorCompliance = (contractorId: string, month: string) => {
@@ -1092,12 +1092,12 @@ export default function SaaSApp() {
             
             {/* Top Selector & Meta */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white border border-slate-200 p-6 rounded-2xl shadow-xs">
-              <div>
+              <div className="flex-1">
                 <label className="block text-xs font-bold text-slate-400 tracking-wider uppercase mb-1">Inspecting Industry Tenant</label>
                 <select 
                   value={selectedIndustryId} 
                   onChange={(e) => setSelectedIndustryId(e.target.value)}
-                  className="font-bold text-slate-800 text-base bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-emerald-500 transition-colors"
+                  className="font-bold text-slate-800 text-base bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-emerald-500 transition-colors w-full md:w-auto"
                 >
                   {industries.map(ind => (
                     <option key={ind.id} value={ind.id}>{ind.name} ({ind.location})</option>
@@ -1115,6 +1115,14 @@ export default function SaaSApp() {
                   <span className="font-mono font-bold text-slate-700">{activeIndustry.lin}</span>
                 </div>
               </div>
+
+              <button 
+                onClick={handleLogout}
+                className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/40 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all flex items-center gap-1.5 self-stretch md:self-auto justify-center shrink-0"
+              >
+                <LogOut className="h-4 w-4 shrink-0" />
+                লগ আউট কৰক (Log Out)
+              </button>
             </div>
 
             {/* Quick Metrics (Bento Grid) */}
@@ -1446,12 +1454,12 @@ export default function SaaSApp() {
             
             {/* Top Selector & Meta */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-50 border border-slate-200/60 p-5 rounded-lg">
-              <div>
+              <div className="flex-1">
                 <label className="block text-xs font-bold text-slate-400 tracking-wider uppercase mb-1">Contractor Business Account</label>
                 <select 
                   value={selectedContractorId} 
                   onChange={(e) => setSelectedContractorId(e.target.value)}
-                  className="font-bold text-slate-800 text-lg bg-white border border-slate-200 rounded px-3 py-1.5 outline-none focus:border-indigo-500"
+                  className="font-bold text-slate-800 text-lg bg-white border border-slate-200 rounded px-3 py-1.5 outline-none focus:border-indigo-500 w-full md:w-auto"
                 >
                   {contractors.map(con => (
                     <option key={con.id} value={con.id}>{con.name}</option>
@@ -1477,6 +1485,14 @@ export default function SaaSApp() {
                   <span className="font-semibold text-amber-600 flex items-center gap-1"><Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" /> {activeContractor.rating}</span>
                 </div>
               </div>
+
+              <button 
+                onClick={handleLogout}
+                className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/40 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all flex items-center gap-1.5 self-stretch md:self-auto justify-center shrink-0"
+              >
+                <LogOut className="h-4 w-4 shrink-0" />
+                লগ আউট কৰক (Log Out)
+              </button>
             </div>
 
             {/* CRUCIAL FEATURE: MULTI-INDUSTRY LIVE TRACKING & DEPLOYMENT MODULE */}
@@ -1920,6 +1936,18 @@ export default function SaaSApp() {
         {currentRole === 'worker' && (
           <div className="space-y-8 animate-fadeIn">
             
+            {/* Top Bar with Logout */}
+            <div className="flex justify-between items-center bg-white border border-slate-200 p-4 rounded-xl shadow-xs">
+              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Verified Worker Gateway</div>
+              <button 
+                onClick={handleLogout}
+                className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/40 px-3.5 py-1.5 rounded-lg text-xs font-bold tracking-wide transition-all flex items-center gap-1.5"
+              >
+                <LogOut className="h-3.5 w-3.5 shrink-0" />
+                লগ আউট কৰক (Log Out)
+              </button>
+            </div>
+
             {/* Top Selector & Privacy Warning */}
             <div className="bg-slate-900 rounded-xl p-6 text-white grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
               <div className="space-y-2">
@@ -2096,7 +2124,7 @@ export default function SaaSApp() {
                       <div className="space-y-1">
                         <span className="font-bold text-xs text-slate-800 block">{c.name}</span>
                         <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
-                          <span>LIC: {c.licenseNo.split('-')[1]}</span>
+                          <span>LIC: {c.licenseNo ? (c.licenseNo.includes('-') ? c.licenseNo.split('-')[1] : c.licenseNo) : 'N/A'}</span>
                           <span>•</span>
                           <span className="flex items-center gap-0.5 text-amber-600 font-bold"><Star className="h-3 w-3 fill-amber-500 text-amber-500" /> {c.rating}</span>
                         </div>
@@ -2226,7 +2254,7 @@ export default function SaaSApp() {
             
             {/* Top Stats */}
             <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 flex flex-wrap justify-between items-center gap-4">
-              <div className="space-y-1">
+              <div className="space-y-1 flex-1">
                 <h3 className="font-bold text-slate-900 text-lg flex items-center gap-2">
                   <ShieldCheck className="text-indigo-600 h-6 w-6" />
                   Labour Inspector & Statutory Auditor Portal
@@ -2236,12 +2264,21 @@ export default function SaaSApp() {
                 </p>
               </div>
 
-              <button 
-                onClick={() => setIsAuditModalOpen(true)}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded"
-              >
-                File Audit Certificate / Finding
-              </button>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto shrink-0">
+                <button 
+                  onClick={() => setIsAuditModalOpen(true)}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-colors"
+                >
+                  File Audit Certificate / Finding
+                </button>
+                <button 
+                  onClick={handleLogout}
+                  className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/40 px-4 py-2.5 rounded-lg text-xs font-bold tracking-wide transition-all flex items-center gap-1.5 justify-center"
+                >
+                  <LogOut className="h-4 w-4 shrink-0" />
+                  লগ আউট কৰক (Log Out)
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
