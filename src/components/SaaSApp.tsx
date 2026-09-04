@@ -88,6 +88,132 @@ export default function SaaSApp() {
   const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
   const [loginRoleInProgress, setLoginRoleInProgress] = useState<string | null>(null);
 
+  // Unified Credentials & Simulated OTP State
+  const [authTab, setAuthTab] = useState<'login' | 'register'>('login');
+  const [loginEmailOrPhone, setLoginEmailOrPhone] = useState<string>('');
+  const [loginPassword, setLoginPassword] = useState<string>('');
+  
+  const [registerName, setRegisterName] = useState<string>('');
+  const [registerEmailOrPhone, setRegisterEmailOrPhone] = useState<string>('');
+  const [registerPassword, setRegisterPassword] = useState<string>('');
+  const [registerRole, setRegisterRole] = useState<'industry_admin' | 'contractor' | 'worker' | 'government_inspector'>('industry_admin');
+  
+  const [otpStep, setOtpStep] = useState<boolean>(false);
+  const [simulatedOtpCode, setSimulatedOtpCode] = useState<string>('');
+  const [enteredOtpCode, setEnteredOtpCode] = useState<string>('');
+  const [showSimulatedSms, setShowSimulatedSms] = useState<string | null>(null);
+
+  interface CredentialUser {
+    name: string;
+    emailOrPhone: string;
+    passwordHash: string;
+    role: 'industry_admin' | 'contractor' | 'worker' | 'government_inspector';
+  }
+
+  const [credentialUsers, setCredentialUsers] = useState<CredentialUser[]>(() => {
+    const saved = localStorage.getItem('s_credential_users');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // Fallback
+      }
+    }
+    const defaults: CredentialUser[] = [
+      { name: 'Tata Motors HR (Industry)', emailOrPhone: 'admin@shramiklink.com', passwordHash: 'admin', role: 'industry_admin' },
+      { name: 'Apex Solutions (Contractor)', emailOrPhone: 'contractor@shramiklink.com', passwordHash: 'contractor', role: 'contractor' },
+      { name: 'Gopal Kumar (Worker)', emailOrPhone: 'worker@shramiklink.com', passwordHash: 'worker', role: 'worker' },
+      { name: 'Bhaskar Senapati (Government)', emailOrPhone: 'inspector@shramiklink.com', passwordHash: 'inspector', role: 'government_inspector' },
+      { name: 'Demo Admin Phone', emailOrPhone: '9876543210', passwordHash: 'admin', role: 'industry_admin' },
+      { name: 'Demo Contractor Phone', emailOrPhone: '9876543211', passwordHash: 'contractor', role: 'contractor' },
+      { name: 'Demo Worker Phone', emailOrPhone: '9876543212', passwordHash: 'worker', role: 'worker' },
+      { name: 'Demo Inspector Phone', emailOrPhone: '9876543213', passwordHash: 'inspector', role: 'government_inspector' },
+    ];
+    localStorage.setItem('s_credential_users', JSON.stringify(defaults));
+    return defaults;
+  });
+
+  const handleCredentialsLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loginEmailOrPhone || !loginPassword) {
+      showNotice('অনুগ্ৰহ কৰি মেইল/ফোন নম্বৰ আৰু পাছৱৰ্ড প্ৰবিষ্ট কৰক। (Please enter Email/Phone and Password)', 'error');
+      return;
+    }
+    const matched = credentialUsers.find(
+      u => u.emailOrPhone.trim().toLowerCase() === loginEmailOrPhone.trim().toLowerCase() && 
+           u.passwordHash === loginPassword
+    );
+    if (matched) {
+      setCurrentRole(matched.role);
+      localStorage.setItem('s_current_role', matched.role);
+      setIsLoggedIn(true);
+      localStorage.setItem('s_is_logged_in', 'true');
+      showNotice(`লগইন সফল হৈছে! স্বাগতম, ${matched.name}!`, 'success');
+      refreshData();
+    } else {
+      showNotice('ভুল মেইল/ফোন নম্বৰ বা পাছৱৰ্ড! (Invalid email/phone or password)', 'error');
+    }
+  };
+
+  const handleRequestOtp = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!registerName || !registerEmailOrPhone || !registerPassword) {
+      showNotice('অনুগ্ৰহ কৰি সকলো ফিল্ড পূৰণ কৰক। (Please fill in all fields)', 'error');
+      return;
+    }
+    const exists = credentialUsers.some(u => u.emailOrPhone.trim().toLowerCase() === registerEmailOrPhone.trim().toLowerCase());
+    if (exists) {
+      showNotice('এই মেইল/ফোন নম্বৰ ইতিমধ্যে পঞ্জীভুক্ত হৈ আছে! (User already registered)', 'error');
+      return;
+    }
+
+    const generated = Math.floor(100000 + Math.random() * 900000).toString();
+    setSimulatedOtpCode(generated);
+    setOtpStep(true);
+    
+    const isPhone = /^\d+$/.test(registerEmailOrPhone) || registerEmailOrPhone.length <= 11;
+    const msg = isPhone 
+      ? `SMS simulated to +91-${registerEmailOrPhone}: Your ShramikLink Verification OTP is ${generated}`
+      : `Email simulated to ${registerEmailOrPhone}: Your ShramikLink Verification OTP is ${generated}`;
+    
+    setShowSimulatedSms(msg);
+    showNotice('পঞ্জীয়ন OTP প্ৰেৰণ কৰা হৈছে! (OTP sent successfully!)', 'success');
+  };
+
+  const handleVerifyRegisterOtp = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (enteredOtpCode === simulatedOtpCode) {
+      const newUser: CredentialUser = {
+        name: registerName,
+        emailOrPhone: registerEmailOrPhone.trim().toLowerCase(),
+        passwordHash: registerPassword,
+        role: registerRole
+      };
+      
+      const updated = [...credentialUsers, newUser];
+      setCredentialUsers(updated);
+      localStorage.setItem('s_credential_users', JSON.stringify(updated));
+
+      setCurrentRole(registerRole);
+      localStorage.setItem('s_current_role', registerRole);
+      setIsLoggedIn(true);
+      localStorage.setItem('s_is_logged_in', 'true');
+      
+      setOtpStep(false);
+      setSimulatedOtpCode('');
+      setEnteredOtpCode('');
+      setShowSimulatedSms(null);
+      setRegisterName('');
+      setRegisterEmailOrPhone('');
+      setRegisterPassword('');
+      
+      showNotice(`পঞ্জীয়ন আৰু লগইন সফল হৈছে! স্বাগতম ${newUser.name}! (Registration & Login Successful!)`, 'success');
+      refreshData();
+    } else {
+      showNotice('ভুল OTP প্ৰবিষ্ট কৰা হৈছে! অনুগ্ৰহ কৰি আকৌ চেষ্টা কৰক। (Invalid OTP code)', 'error');
+    }
+  };
+
   // Load database tables from full-stack backend
   const refreshData = async (activeToken?: string) => {
     const currentToken = activeToken || token;
@@ -738,177 +864,283 @@ export default function SaaSApp() {
           </div>
         </div>
 
-        {/* 4 Portal Login Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* SMS / Email Simulated Banner */}
+        {showSimulatedSms && (
+          <div className="bg-slate-900 border-2 border-amber-500/80 text-amber-300 px-5 py-4 rounded-2xl text-xs font-mono font-bold flex flex-col md:flex-row justify-between items-start md:items-center gap-3 shadow-lg animate-pulse">
+            <div className="flex items-center gap-2.5">
+              <span className="text-lg">📱</span>
+              <div className="space-y-0.5">
+                <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">Simulated Carrier SMS Gateway</span>
+                <span>{showSimulatedSms}</span>
+              </div>
+            </div>
+            <button 
+              type="button"
+              onClick={() => {
+                const otpMatch = showSimulatedSms.match(/OTP is (\d+)/);
+                if (otpMatch && otpMatch[1]) {
+                  setEnteredOtpCode(otpMatch[1]);
+                  showNotice('OTP Auto-filled for quick testing!', 'success');
+                }
+              }}
+              className="bg-amber-500 hover:bg-amber-600 text-slate-950 px-3 py-1.5 rounded-lg text-[10px] font-sans font-bold tracking-wider uppercase transition-all shrink-0 cursor-pointer shadow-sm active:scale-95"
+            >
+              Auto-Fill OTP / অ’টিপি ভৰাওক
+            </button>
+          </div>
+        )}
+
+        {/* Double-Column Authentication Interface */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
           
-          {/* Card 1: Industry Admin */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-6">
-            <div className="space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-800">
-                <Building2 className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="font-extrabold text-slate-950 text-base">🏭 Industry Admin Portal</h3>
-                <p className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mt-0.5">Principal Employer Gateway</p>
-              </div>
-              <p className="text-slate-600 text-xs leading-relaxed">
-                Factory owners can view live daily biometric attendance logs, audit statutory records, and securely approve contractor bills with full legal lockouts.
+          {/* Left Column: Interactive Tabbed Form (3 Cols) */}
+          <div className="lg:col-span-3 bg-white border border-slate-200/80 rounded-2xl p-5 md:p-6 shadow-xs space-y-4 max-w-lg mx-auto w-full">
+            
+            {/* Header */}
+            <div className="space-y-1">
+              <span className="text-[10px] uppercase font-bold text-indigo-600 tracking-widest block">Unified Credentials Gateway</span>
+              <h3 className="text-base font-black text-slate-950 tracking-tight">🔒 সুৰক্ষিত লগইন আৰু পঞ্জীয়ন প্ৰণালী</h3>
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                Log in securely using registered credentials or create a new multi-tenant portal profile verified by a simulated SMS/Email OTP code.
               </p>
             </div>
-            <div className="space-y-2">
-              <button 
-                type="button"
-                disabled={isLoggingIn}
-                onClick={() => handleLogin('industry_admin')}
-                className={`w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-2xl text-xs font-bold tracking-wide transition-all shadow-xs hover:shadow-sm flex items-center justify-center gap-2 cursor-pointer ${isLoggingIn ? 'opacity-80 cursor-not-allowed' : ''}`}
-              >
-                {isLoggingIn && loginRoleInProgress === 'industry_admin' ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Connecting with Google...</span>
-                  </>
-                ) : (
-                  <span>Log In as Industry Admin →</span>
+
+            {/* OTP Verification Step */}
+            {otpStep ? (
+              <form onSubmit={handleVerifyRegisterOtp} className="space-y-4 bg-slate-50 border border-slate-100 p-5 rounded-xl">
+                <div className="text-center space-y-1.5">
+                  <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto text-base">
+                    🔑
+                  </div>
+                  <h4 className="font-bold text-slate-900 text-xs">সুৰক্ষা সত্যতা প্ৰমাণ (Verify Identity)</h4>
+                  <p className="text-[11px] text-slate-500">
+                    We sent a simulated 6-digit OTP to <strong className="text-indigo-600">{registerEmailOrPhone}</strong>. Check the carrier banner at the top of the screen!
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-[10px] font-bold text-slate-600 uppercase">৬-ডিজিটৰ OTP প্ৰবিষ্ট কৰক (Enter OTP Code)</label>
+                  <input 
+                    type="text"
+                    maxLength={6}
+                    required
+                    placeholder="E.g., 123456"
+                    value={enteredOtpCode}
+                    onChange={(e) => setEnteredOtpCode(e.target.value.replace(/\D/g, ''))}
+                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-center text-base font-mono font-bold tracking-widest text-slate-800 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOtpStep(false);
+                      setSimulatedOtpCode('');
+                      setEnteredOtpCode('');
+                      setShowSimulatedSms(null);
+                    }}
+                    className="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 py-2 rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer text-center"
+                  >
+                    ভুল শুধৰাওক (Cancel)
+                  </button>
+                  <button
+                    type="submit"
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer text-center shadow-sm"
+                  >
+                    প্ৰমাণ কৰক (Verify & Login)
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-4">
+                
+                {/* Tabs */}
+                <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-lg">
+                  <button
+                    type="button"
+                    onClick={() => setAuthTab('login')}
+                    className={`py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer ${authTab === 'login' ? 'bg-white text-slate-950 shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
+                  >
+                    লগইন কৰক (Log In)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAuthTab('register')}
+                    className={`py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer ${authTab === 'register' ? 'bg-white text-slate-950 shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
+                  >
+                    নতুন পঞ্জীয়ন কৰক (Register)
+                  </button>
+                </div>
+
+                {/* Form: LOGIN */}
+                {authTab === 'login' && (
+                  <form onSubmit={handleCredentialsLogin} className="space-y-3">
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase">মেইল ঠিকনা / ফোন নম্বৰ (Email or Mobile No)</label>
+                      <input 
+                        type="text"
+                        required
+                        placeholder="E.g., admin@shramiklink.com or 9876543210"
+                        value={loginEmailOrPhone}
+                        onChange={(e) => setLoginEmailOrPhone(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:bg-white focus:border-indigo-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-center">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase">পাছৱৰ্ড (Password)</label>
+                        <span className="text-[9px] text-slate-400">Default is the role name</span>
+                      </div>
+                      <input 
+                        type="password"
+                        required
+                        placeholder="••••••••"
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:bg-white focus:border-indigo-500"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all shadow-xs cursor-pointer text-center mt-1"
+                    >
+                      সুৰক্ষিতভাৱে প্ৰৱেশ কৰক (Enter Secure Session)
+                    </button>
+                  </form>
                 )}
-              </button>
-              <button
-                type="button"
-                disabled={isLoggingIn}
-                onClick={() => handleDemoLogin('industry_admin')}
-                className="w-full text-center text-[11px] font-semibold text-slate-500 hover:text-slate-800 transition-colors py-1 flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <Zap className="w-3.5 h-3.5 text-amber-500" />
-                <span>or Quick Sandbox Demo (without popups)</span>
-              </button>
-            </div>
+
+                {/* Form: REGISTER */}
+                {authTab === 'register' && (
+                  <form onSubmit={handleRequestOtp} className="space-y-3">
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase">পূৰ্ণ নাম (Full Name)</label>
+                      <input 
+                        type="text"
+                        required
+                        placeholder="E.g., Bhaskar Senapati"
+                        value={registerName}
+                        onChange={(e) => setRegisterName(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:bg-white focus:border-indigo-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase">মেইল আইডি / মোবাইল নম্বৰ (Email or 10-Digit Mobile)</label>
+                      <input 
+                        type="text"
+                        required
+                        placeholder="E.g., b_senapati@gmail.com or 8876543210"
+                        value={registerEmailOrPhone}
+                        onChange={(e) => setRegisterEmailOrPhone(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:bg-white focus:border-indigo-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase">পাছৱৰ্ড নিৰ্বাচন কৰক (Set Portal Password)</label>
+                      <input 
+                        type="password"
+                        required
+                        placeholder="Choose password"
+                        value={registerPassword}
+                        onChange={(e) => setRegisterPassword(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:bg-white focus:border-indigo-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase">প্ৰৱেশাধিকাৰ পদবী (Select System Role)</label>
+                      <select
+                        value={registerRole}
+                        onChange={(e: any) => setRegisterRole(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-500"
+                      >
+                        <option value="industry_admin">🏭 Industry Admin (ইণ্ডাষ্ট্ৰী এডমিন)</option>
+                        <option value="contractor">🏢 Labor Contractor (লেবাৰ কন্ট্ৰেক্টৰ)</option>
+                        <option value="worker">👷 Contract Worker (চুক্তিভিত্তিক শ্ৰমিক)</option>
+                        <option value="government_inspector">⚖️ Government Inspector (চৰকাৰী পৰিদৰ্শক)</option>
+                      </select>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all shadow-xs cursor-pointer text-center mt-1"
+                    >
+                      OTP অনুৰোধ কৰক (Request 6-Digit Verification OTP)
+                    </button>
+                  </form>
+                )}
+
+              </div>
+            )}
+
           </div>
 
-          {/* Card 2: Labor Contractor */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-6">
-            <div className="space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-                <Users className="h-6 w-6" />
+          {/* Right Column: Default Tester Accounts & Portals Guide (2 Cols) */}
+          <div className="lg:col-span-2 space-y-6">
+            
+            {/* Quick Demo Access Credentials Card */}
+            <div className="bg-slate-900 text-white border border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
+              <div className="space-y-1">
+                <span className="text-[9px] bg-indigo-500 text-white font-black px-2 py-0.5 rounded uppercase tracking-wider">
+                  Developer Cheat-sheet
+                </span>
+                <h4 className="font-extrabold text-white text-sm">⚡ Quick Access Autofill</h4>
+                <p className="text-[11px] text-slate-400">
+                  Click any verified credentials row below to instantly autofill the credentials form for rapid testing.
+                </p>
               </div>
-              <div>
-                <h3 className="font-extrabold text-slate-950 text-base">🏢 Labor Contractor Portal</h3>
-                <p className="text-emerald-600 text-[10px] uppercase font-bold tracking-wider mt-0.5">Licensed Contractor Hub</p>
-              </div>
-              <p className="text-slate-600 text-xs leading-relaxed">
-                Contractors can onboard new workers, submit mandatory EPF/ESI challans, and generate double-locked bills with cryptographic legal compliance.
-              </p>
-            </div>
-            <div className="space-y-2">
-              <button 
-                type="button"
-                disabled={isLoggingIn}
-                onClick={() => handleLogin('contractor')}
-                className={`w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 py-3 rounded-2xl text-xs font-bold tracking-wide transition-all shadow-xs hover:shadow-sm flex items-center justify-center gap-2 cursor-pointer ${isLoggingIn ? 'opacity-80 cursor-not-allowed' : ''}`}
-              >
-                {isLoggingIn && loginRoleInProgress === 'contractor' ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin text-slate-950" />
-                    <span>Connecting with Google...</span>
-                  </>
-                ) : (
-                  <span>Log In as Labor Contractor →</span>
-                )}
-              </button>
-              <button
-                type="button"
-                disabled={isLoggingIn}
-                onClick={() => handleDemoLogin('contractor')}
-                className="w-full text-center text-[11px] font-semibold text-slate-500 hover:text-emerald-700 transition-colors py-1 flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <Zap className="w-3.5 h-3.5 text-amber-500" />
-                <span>or Quick Sandbox Demo (without popups)</span>
-              </button>
-            </div>
-          </div>
 
-          {/* Card 3: Contract Worker */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-6">
-            <div className="space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-                <UserCheck className="h-6 w-6" />
+              <div className="space-y-2.5">
+                {[
+                  { label: '🏭 Industry Principal', email: 'admin@shramiklink.com', pass: 'admin', phone: '9876543210' },
+                  { label: '🏢 Licensed Contractor', email: 'contractor@shramiklink.com', pass: 'contractor', phone: '9876543211' },
+                  { label: '👷 Contract Worker', email: 'worker@shramiklink.com', pass: 'worker', phone: '9876543212' },
+                  { label: '⚖️ Government Inspector', email: 'inspector@shramiklink.com', pass: 'inspector', phone: '9876543213' }
+                ].map((cred, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setAuthTab('login');
+                      setLoginEmailOrPhone(cred.email);
+                      setLoginPassword(cred.pass);
+                      showNotice(`Autofilled ${cred.label} credentials! Click Login to enter.`, 'info');
+                    }}
+                    className="w-full text-left bg-slate-950/60 hover:bg-slate-950 border border-slate-800/80 p-3 rounded-2xl hover:border-slate-700/80 transition-all flex justify-between items-center group cursor-pointer"
+                  >
+                    <div className="space-y-1">
+                      <span className="text-[10px] text-indigo-400 font-bold block">{cred.label}</span>
+                      <div className="text-[11px] text-slate-300 font-mono flex flex-col">
+                        <span>Mail: {cred.email}</span>
+                        <span>Phone: {cred.phone}</span>
+                      </div>
+                    </div>
+                    <div className="text-right space-y-1.5 shrink-0">
+                      <span className="text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded font-mono block">Pass: {cred.pass}</span>
+                      <span className="text-[9px] text-slate-500 group-hover:text-indigo-400 transition-colors block">Use Mail/Phone →</span>
+                    </div>
+                  </button>
+                ))}
               </div>
-              <div>
-                <h3 className="font-extrabold text-slate-950 text-base">👷 Contract Worker Hub</h3>
-                <p className="text-indigo-600 text-[10px] uppercase font-bold tracking-wider mt-0.5">Verified Labour Workspace</p>
-              </div>
-              <p className="text-slate-600 text-xs leading-relaxed">
-                Workers can verify identity via Aadhaar biometric gate simulators, validate secure OTPs, and access personal daily attendance cards.
-              </p>
             </div>
-            <div className="space-y-2">
-              <button 
-                type="button"
-                disabled={isLoggingIn}
-                onClick={() => handleLogin('worker')}
-                className={`w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-2xl text-xs font-bold tracking-wide transition-all shadow-xs hover:shadow-sm flex items-center justify-center gap-2 cursor-pointer ${isLoggingIn ? 'opacity-80 cursor-not-allowed' : ''}`}
-              >
-                {isLoggingIn && loginRoleInProgress === 'worker' ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Connecting with Google...</span>
-                  </>
-                ) : (
-                  <span>Log In as Contract Worker →</span>
-                )}
-              </button>
-              <button
-                type="button"
-                disabled={isLoggingIn}
-                onClick={() => handleDemoLogin('worker')}
-                className="w-full text-center text-[11px] font-semibold text-slate-500 hover:text-indigo-700 transition-colors py-1 flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <Zap className="w-3.5 h-3.5 text-amber-500" />
-                <span>or Quick Sandbox Demo (without popups)</span>
-              </button>
-            </div>
-          </div>
 
-          {/* Card 4: Government Inspector */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-6">
-            <div className="space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center text-rose-600">
-                <Database className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="font-extrabold text-slate-950 text-base">⚖️ Government Labour Inspector</h3>
-                <p className="text-rose-600 text-[10px] uppercase font-bold tracking-wider mt-0.5">Independent Regulatory Audit</p>
-              </div>
-              <p className="text-slate-600 text-xs leading-relaxed">
-                Labor inspectors can review mandatory CLRA forms, audit minimum wage payouts, verify statutory challans, and issue digital compliance warnings.
-              </p>
+            {/* Platform Framework Core Specs */}
+            <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6 space-y-4">
+              <h4 className="font-extrabold text-slate-950 text-sm flex items-center gap-2">
+                <span>🛡️</span> Dual-Verification Framework
+              </h4>
+              <ul className="space-y-2 text-[11px] text-slate-600 list-disc list-inside">
+                <li><strong className="text-slate-800">Section 21 Compliance:</strong> Real-time audit on EPF code, ESI registry, and Minimum Wage margins.</li>
+                <li><strong className="text-slate-800">Double-Locking Bills:</strong> Prevents salary leakage. Bills must align mathematically with biometric attendance hours.</li>
+                <li><strong className="text-slate-800">Aadhaar Simulators:</strong> Allows contract workers to log shifts synchronously using Simulated One-Time Passwords.</li>
+              </ul>
             </div>
-            <div className="space-y-2">
-              <button 
-                type="button"
-                disabled={isLoggingIn}
-                onClick={() => handleLogin('government_inspector')}
-                className={`w-full bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-2xl text-xs font-bold tracking-wide transition-all shadow-xs hover:shadow-sm flex items-center justify-center gap-2 cursor-pointer ${isLoggingIn ? 'opacity-80 cursor-not-allowed' : ''}`}
-              >
-                {isLoggingIn && loginRoleInProgress === 'government_inspector' ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Connecting with Google...</span>
-                  </>
-                ) : (
-                  <span>Log In as Labor Inspector →</span>
-                )}
-              </button>
-              <button
-                type="button"
-                disabled={isLoggingIn}
-                onClick={() => handleDemoLogin('government_inspector')}
-                className="w-full text-center text-[11px] font-semibold text-slate-500 hover:text-rose-700 transition-colors py-1 flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <Zap className="w-3.5 h-3.5 text-amber-500" />
-                <span>or Quick Sandbox Demo (without popups)</span>
-              </button>
-            </div>
-          </div>
 
+          </div>
         </div>
 
         {/* Dynamic Welcome Hero Panel */}
