@@ -87,14 +87,13 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
         type="button"
         id="app-language-menu-btn"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 bg-slate-800/90 hover:bg-slate-800 text-slate-200 hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-700/80 transition-all cursor-pointer shadow-xs group"
+        className="flex items-center gap-1 sm:gap-2 bg-slate-800/90 hover:bg-slate-800 text-slate-200 hover:text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-bold border border-slate-700/80 transition-all cursor-pointer shadow-xs group"
         title="Change App Language / ভাষা বাছক"
       >
-        <Globe className="h-3.5 w-3.5 text-emerald-400 group-hover:rotate-45 transition-transform" />
-        <span className="text-sm">{currentLangObj.flag}</span>
-        <span className="font-bold text-white">{currentLangObj.nativeName}</span>
-        <span className="text-[10px] text-slate-400 hidden sm:inline">({currentLangObj.name})</span>
-        <ChevronDown className="h-3 w-3 text-slate-400 ml-0.5" />
+        <Globe className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-emerald-400 group-hover:rotate-45 transition-transform" />
+        <span className="text-xs sm:text-sm">{currentLangObj.flag}</span>
+        <span className="font-bold text-white text-[10px] sm:text-xs">{currentLangObj.nativeName}</span>
+        <ChevronDown className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-slate-400 ml-0.5" />
       </button>
 
       {isOpen && (
@@ -106,27 +105,28 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
           />
 
           {/* Modal / Menu */}
-          <div className="absolute right-0 mt-2 w-72 md:w-80 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl z-50 p-3 animate-fadeIn text-slate-100">
-            <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-800 px-2">
-              <div className="flex items-center gap-1.5">
-                <Globe className="h-4 w-4 text-indigo-400" />
-                <span className="text-xs font-bold text-white uppercase tracking-wider">
-                  Select Language / ভাষা নিৰ্বাচন
+          <div className="absolute right-0 mt-1 w-64 sm:w-80 bg-slate-900 border border-slate-700 rounded-xl sm:rounded-2xl shadow-2xl z-50 p-2 sm:p-3 animate-fadeIn text-slate-100 origin-top-right">
+            <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-800 px-1 sm:px-2">
+              <div className="flex items-center gap-1">
+                <Globe className="h-3 w-3 sm:h-4 sm:w-4 text-indigo-400" />
+                <span className="text-[9px] sm:text-xs font-bold text-white uppercase tracking-wider">
+                  Select Language / ভাষা
                 </span>
               </div>
               <button 
                 onClick={() => setIsOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-md"
+                className="text-slate-400 hover:text-white p-0.5 sm:p-1 rounded-md"
               >
-                <X className="h-3.5 w-3.5" />
+                <X className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
               </button>
             </div>
 
-            <div className="text-[10px] text-slate-400 px-2 pb-2 leading-relaxed">
-              Choose your language for all portal actions. As per CLRA & tax regulations, statutory PF/ESI/GST forms strictly generate in official English.
+            <div className="text-[9px] sm:text-[10px] text-slate-400 px-1 sm:px-2 pb-2 leading-relaxed">
+              Choose language for portal actions. Statutory forms generate in English.
             </div>
 
-            <div className="grid grid-cols-1 gap-1 max-h-72 overflow-y-auto pr-1">
+            {/* 2-column grid layout on mobile to fit perfectly on any screen */}
+            <div className="grid grid-cols-2 gap-1 max-h-52 sm:max-h-72 overflow-y-auto pr-1">
               {SUPPORTED_LANGUAGES.map((lang) => {
                 const isSelected = lang.code === currentLang;
                 return (
@@ -136,33 +136,34 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                       onLanguageChange(lang.code);
                       setIsOpen(false);
                     }}
-                    className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-all cursor-pointer ${
+                    className={`text-left px-2 py-1.5 rounded-lg text-[10px] sm:text-xs flex items-center justify-between transition-all cursor-pointer border ${
                       isSelected
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold'
-                        : 'hover:bg-slate-800 text-slate-300 hover:text-white'
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-bold'
+                        : 'hover:bg-slate-800 text-slate-300 hover:text-white border-transparent'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-base">{lang.flag}</span>
-                      <div>
-                        <div className="font-bold flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-xs sm:text-sm shrink-0">{lang.flag}</span>
+                      <div className="min-w-0 truncate">
+                        <div className="font-bold truncate text-[10px] sm:text-xs text-slate-100">
                           {lang.nativeName}
-                          <span className="text-[10px] text-slate-400 font-normal">({lang.name})</span>
                         </div>
-                        <div className="text-[9px] text-slate-400">{lang.region}</div>
+                        <div className="text-[8px] sm:text-[9px] text-slate-400 truncate">
+                          ({lang.name})
+                        </div>
                       </div>
                     </div>
                     {isSelected && (
-                      <Check className="h-4 w-4 text-emerald-400 shrink-0 stroke-[3]" />
+                      <Check className="h-3 w-3 text-emerald-400 shrink-0 stroke-[3]" />
                     )}
                   </button>
                 );
               })}
             </div>
 
-            <div className="mt-2 pt-2 border-t border-slate-800/80 px-2 flex items-center gap-1.5 text-[9px] text-emerald-400/90">
-              <ShieldCheck className="h-3 w-3 shrink-0" />
-              <span>{t.statutoryEnglishBadge}</span>
+            <div className="mt-1.5 pt-1.5 border-t border-slate-800/80 px-1 sm:px-2 flex items-center gap-1 text-[8px] sm:text-[9px] text-emerald-400/90">
+              <ShieldCheck className="h-2.5 w-2.5 sm:h-3 sm:w-3 shrink-0" />
+              <span className="truncate">{t.statutoryEnglishBadge}</span>
             </div>
           </div>
         </>
