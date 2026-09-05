@@ -1158,13 +1158,6 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
           <PWAInstallButton />
         </div>
 
-        {/* Pan-India Language Preference Selection Banner */}
-        <LanguageSelector 
-          currentLang={currentLang} 
-          onLanguageChange={handleLangChange} 
-          variant="banner" 
-        />
-
         {/* Brand Banner */}
         <div className="bg-slate-900 text-white rounded-2xl p-4 md:p-5 border border-slate-800 shadow-xl relative overflow-hidden space-y-4">
           {/* Subtle graphic elements */}
