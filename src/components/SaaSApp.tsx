@@ -435,6 +435,86 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
   const [isWorkSummaryModalOpen, setIsWorkSummaryModalOpen] = useState(false);
   const [summaryTargetIndustry, setSummaryTargetIndustry] = useState<string>('ALL');
 
+  // CLRA Registers State
+  const [selectedClraForm, setSelectedClraForm] = useState<'Form XIII' | 'Form XVI' | 'Form XVII' | 'Form XX' | 'Form XXII' | 'Form XXIII'>('Form XIII');
+  const [activePrintClraForm, setActivePrintClraForm] = useState<'Form XIII' | 'Form XVI' | 'Form XVII' | 'Form XX' | 'Form XXII' | 'Form XXIII' | null>(null);
+  
+  // Custom states for Form XX (Deductions) & Form XXII (Advances) with digital localStorage persistence
+  const [clraDeductions, setClraDeductions] = useState<{
+    id: string;
+    workerId: string;
+    damageDate: string;
+    particulars: string;
+    amount: number;
+    installments: number;
+    recoveryDate: string;
+  }[]>(() => {
+    const saved = localStorage.getItem('s_clra_deductions');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Error parsing clra deductions:', e);
+      }
+    }
+    return [
+      { id: 'ded-1', workerId: 'wrk-1', damageDate: '2026-08-12', particulars: 'Lost Safety Helmet', amount: 350, installments: 1, recoveryDate: '2026-08-31' },
+      { id: 'ded-2', workerId: 'wrk-2', damageDate: '2026-08-15', particulars: 'Damaged Machine Lever', amount: 1200, installments: 2, recoveryDate: '2026-08-31' }
+    ];
+  });
+
+  const [clraAdvances, setClraAdvances] = useState<{
+    id: string;
+    workerId: string;
+    advanceDate: string;
+    purpose: string;
+    amount: number;
+    installments: number;
+    recoveryDate: string;
+  }[]>(() => {
+    const saved = localStorage.getItem('s_clra_advances');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Error parsing clra advances:', e);
+      }
+    }
+    return [
+      { id: 'adv-1', workerId: 'wrk-3', advanceDate: '2026-08-05', purpose: 'Family Medical Emergency', amount: 5000, installments: 5, recoveryDate: '2026-08-31' },
+      { id: 'adv-2', workerId: 'wrk-4', advanceDate: '2026-08-10', purpose: 'Travel Expense', amount: 1500, installments: 1, recoveryDate: '2026-08-31' }
+    ];
+  });
+
+  // Automatically sync to local digital ledger cache whenever changed
+  useEffect(() => {
+    localStorage.setItem('s_clra_deductions', JSON.stringify(clraDeductions));
+  }, [clraDeductions]);
+
+  useEffect(() => {
+    localStorage.setItem('s_clra_advances', JSON.stringify(clraAdvances));
+  }, [clraAdvances]);
+
+  const [isAddingDeduction, setIsAddingDeduction] = useState(false);
+  const [newDeduction, setNewDeduction] = useState({
+    workerId: '',
+    particulars: '',
+    amount: 100,
+    installments: 1,
+    damageDate: '2026-08-20',
+    recoveryDate: '2026-08-31'
+  });
+
+  const [isAddingAdvance, setIsAddingAdvance] = useState(false);
+  const [newAdvance, setNewAdvance] = useState({
+    workerId: '',
+    purpose: '',
+    amount: 1000,
+    installments: 1,
+    advanceDate: '2026-08-20',
+    recoveryDate: '2026-08-31'
+  });
+
   // Helper generators for statutory identifiers (UAN & ESIC IP No.)
   const getWorkerUAN = (w: Worker) => {
     const digits = (w.aadhaarHash || '').replace(/\D/g, '').padEnd(4, '8');
@@ -932,6 +1012,64 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
     } catch (err) {
       console.error(err);
     }
+  };
+
+  // Add custom deduction for Form XX
+  const handleAddDeduction = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newDeduction.workerId) {
+      showNotice('অনুগ্ৰহ কৰি এজন শ্ৰমিক বাছক (Please select a worker)', 'error');
+      return;
+    }
+    const record = {
+      id: `ded-${Date.now()}`,
+      workerId: newDeduction.workerId,
+      damageDate: newDeduction.damageDate,
+      particulars: newDeduction.particulars || 'Material Damage',
+      amount: Number(newDeduction.amount),
+      installments: Number(newDeduction.installments),
+      recoveryDate: newDeduction.recoveryDate
+    };
+    setClraDeductions(prev => [record, ...prev]);
+    setIsAddingDeduction(false);
+    setNewDeduction({
+      workerId: '',
+      particulars: '',
+      amount: 100,
+      installments: 1,
+      damageDate: '2026-08-20',
+      recoveryDate: '2026-08-31'
+    });
+    showNotice('ক্ষতিপূৰণ কর্তন ৰেকৰ্ড কৰা হৈছে! (Deduction recorded successfully!)', 'success');
+  };
+
+  // Add custom advance for Form XXII
+  const handleAddAdvance = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAdvance.workerId) {
+      showNotice('অনুগ্ৰহ কৰি এজন শ্ৰমিক বাছক (Please select a worker)', 'error');
+      return;
+    }
+    const record = {
+      id: `adv-${Date.now()}`,
+      workerId: newAdvance.workerId,
+      advanceDate: newAdvance.advanceDate,
+      purpose: newAdvance.purpose || 'Personal Advance',
+      amount: Number(newAdvance.amount),
+      installments: Number(newAdvance.installments),
+      recoveryDate: newAdvance.recoveryDate
+    };
+    setClraAdvances(prev => [record, ...prev]);
+    setIsAddingAdvance(false);
+    setNewAdvance({
+      workerId: '',
+      purpose: '',
+      amount: 1000,
+      installments: 1,
+      advanceDate: '2026-08-20',
+      recoveryDate: '2026-08-31'
+    });
+    showNotice('অগ্ৰিম ধনৰ ৰেকৰ্ড কৰা হৈছে! (Advance recorded successfully!)', 'success');
   };
 
   // Worker Check-In Simulator logic
@@ -3078,6 +3216,399 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
               </div>
             </div>
 
+            {/* ==================== STATUTORY CLRA COMPLIANCE REGISTERS (RULES 75, 78) ==================== */}
+            <div id="clra-registers-card" className="bg-white border border-slate-200 rounded-xl p-6 space-y-6 shadow-xs">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-100 pb-4">
+                <div>
+                  <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
+                    <ShieldCheck className="text-emerald-600 h-5 w-5" />
+                    🔒 চৰকাৰী CLRA বিধিবদ্ধ পঞ্জীয়ন বহী (Government CLRA Statutory Registers)
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    চুক্তি শ্ৰমিক (নিয়ন্ত্ৰণ আৰু উচ্ছেদ) কেন্দ্ৰীয় নিয়মাৱলী, ১৯৭১ (Rules 75, 78) অনুসৰি শ্ৰমিক ঠিকাদাৰৰ দ্বাৰা বাধ্যতামূলক সংৰক্ষণ।
+                  </p>
+                </div>
+                
+                <button
+                  id="print-ledger-btn"
+                  onClick={() => {
+                    setActivePrintClraForm(selectedClraForm);
+                  }}
+                  className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2.5 rounded-lg transition-all flex items-center gap-1.5 shadow-xs"
+                >
+                  <Printer className="h-4 w-4" />
+                  বিস্তাৰিত লেজাৰ প্ৰিণ্ট / ডাউনলোড
+                </button>
+              </div>
+
+              {/* Form Selector Tabs */}
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200/60">
+                {[
+                  { id: 'Form XIII', label: 'Form XIII', desc: 'Workmen Register' },
+                  { id: 'Form XVI', label: 'Form XVI', desc: 'Muster Roll' },
+                  { id: 'Form XVII', label: 'Form XVII', desc: 'Register of Wages' },
+                  { id: 'Form XX', label: 'Form XX', desc: 'Deductions' },
+                  { id: 'Form XXII', label: 'Form XXII', desc: 'Advances' },
+                  { id: 'Form XXIII', label: 'Form XXIII', desc: 'Overtime' }
+                ].map(form => (
+                  <button
+                    id={`clra-tab-${form.id.toLowerCase().replace(/\s+/g, '-')}`}
+                    key={form.id}
+                    onClick={() => setSelectedClraForm(form.id as any)}
+                    className={`p-2.5 rounded-lg text-center transition-all ${
+                      selectedClraForm === form.id
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200/40'
+                    }`}
+                  >
+                    <span className="block font-black text-xs">{form.label}</span>
+                    <span className="block text-[9px] opacity-80 truncate">{form.desc}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Active Form Screen Container */}
+              <div className="border border-slate-150 rounded-xl overflow-hidden bg-slate-50/20">
+                
+                {/* Rule Reference Header */}
+                <div className="bg-slate-100/80 px-4 py-3 border-b border-slate-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                  <div>
+                    <span className="text-[10px] uppercase font-extrabold tracking-wider text-indigo-600 block font-mono">
+                      {selectedClraForm === 'Form XIII' && 'Rule 75 - Register of Workmen Employed by Contractor'}
+                      {selectedClraForm === 'Form XVI' && 'Rule 78(1)(a)(i) - Muster Roll Ledger'}
+                      {selectedClraForm === 'Form XVII' && 'Rule 78(1)(a)(i) - Register of Wages'}
+                      {selectedClraForm === 'Form XX' && 'Rule 78(1)(a)(ii) - Register of Deductions for Damage or Loss'}
+                      {selectedClraForm === 'Form XXII' && 'Rule 78(1)(a)(ii) - Register of Advances'}
+                      {selectedClraForm === 'Form XXIII' && 'Rule 78(1)(a)(iii) - Register of Overtime'}
+                    </span>
+                    <h4 className="font-bold text-slate-800 text-xs sm:text-sm mt-0.5">
+                      {selectedClraForm === 'Form XIII' && 'ফৰ্ম XIII: ঠিকাদাৰৰ দ্বাৰা নিয়োজিত শ্ৰমিকৰ পঞ্জীয়ন বহী'}
+                      {selectedClraForm === 'Form XVI' && 'ফৰ্ম XVI: দৈনিক শ্ৰমিক উপস্থিতি ৰোল (Muster Roll)'}
+                      {selectedClraForm === 'Form XVII' && 'ফৰ্ম XVII: শ্ৰমিকৰ মজুৰি আৰু কৰ্তন পঞ্জীয়ন বহী'}
+                      {selectedClraForm === 'Form XX' && 'ফৰ্ম XX: কামৰ ক্ষতি বা লোকচানৰ ক্ষতিপূৰণ কর্তন বহী'}
+                      {selectedClraForm === 'Form XXII' && 'ফৰ্ম XXII: শ্ৰমিকক প্ৰদান কৰা অগ্ৰিম ধনৰ খতিয়ান'}
+                      {selectedClraForm === 'Form XXIII' && 'ফৰ্ম XXIII: শ্ৰমিকৰ অতিৰিক্ত কৰ্ম ঘণ্টা (অভাৰটাইম) বহী'}
+                    </h4>
+                  </div>
+
+                  <div className="flex gap-2">
+                    {/* Deduction or Advance adding buttons */}
+                    {selectedClraForm === 'Form XX' && (
+                      <button
+                        id="add-clra-deduction-btn"
+                        onClick={() => setIsAddingDeduction(true)}
+                        className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1 transition-all shadow-2xs"
+                      >
+                        <Plus className="h-3.5 w-3.5" /> নতুন কৰ্তন লিখক (Add Deduction)
+                      </button>
+                    )}
+                    {selectedClraForm === 'Form XXII' && (
+                      <button
+                        id="add-clra-advance-btn"
+                        onClick={() => setIsAddingAdvance(true)}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1 transition-all shadow-2xs"
+                      >
+                        <Plus className="h-3.5 w-3.5" /> নতুন অগ্ৰিম লিখক (Add Advance)
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Form Specific Tables */}
+                <div className="overflow-x-auto">
+                  {selectedClraForm === 'Form XIII' && (
+                    <table id="clra-table-form-xiii" className="w-full text-left text-xs text-slate-600 border-collapse">
+                      <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] font-bold border-b border-slate-200">
+                        <tr>
+                          <th className="p-3 border-r border-slate-150">ক্ৰমিক (Sl)</th>
+                          <th className="p-3 border-r border-slate-150">শ্ৰমিকৰ নাম (Name)</th>
+                          <th className="p-3 border-r border-slate-150">বয়স / লিংগ</th>
+                          <th className="p-3 border-r border-slate-150">पितृ বা স্বামীৰ নাম</th>
+                          <th className="p-3 border-r border-slate-150">কামৰ শ্ৰেণী (Designation)</th>
+                          <th className="p-3 border-r border-slate-150">ঠিকনা (Present & Permanent)</th>
+                          <th className="p-3 border-r border-slate-150">যোগদানৰ তাৰিখ</th>
+                          <th className="p-3 text-center">স্বাক্ষৰ / টিপ চহী (Biometric Status)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 bg-white">
+                        {workers.filter(w => w.contractorId === selectedContractorId).map((wrk, idx) => (
+                          <tr key={wrk.id} className="hover:bg-slate-50/50">
+                            <td className="p-3 border-r border-slate-150 font-mono font-bold text-slate-400">{idx + 1}</td>
+                            <td className="p-3 border-r border-slate-150">
+                              <span className="font-extrabold text-slate-900 block">{wrk.name}</span>
+                              <span className="text-[10px] text-slate-400 font-mono">UAN: {getWorkerUAN(wrk)}</span>
+                            </td>
+                            <td className="p-3 border-r border-slate-150 font-medium">32 / Male</td>
+                            <td className="p-3 border-r border-slate-150">Late B. {wrk.name.split(' ')[1] || 'Kumar'}</td>
+                            <td className="p-3 border-r border-slate-150 font-semibold text-slate-700">{wrk.skillType}</td>
+                            <td className="p-3 border-r border-slate-150 text-[11px] text-slate-500 max-w-[180px] leading-relaxed">
+                              Guwahati, Assam, India / PIN-781001
+                            </td>
+                            <td className="p-3 border-r border-slate-150 font-mono text-slate-600">{wrk.onboardingDate || '2026-04-12'}</td>
+                            <td className="p-3 text-center">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                <CheckCircle className="h-3 w-3" /> Aadhaar Verified
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+
+                  {selectedClraForm === 'Form XVI' && (
+                    <table id="clra-table-form-xvi" className="w-full text-left text-xs text-slate-600 border-collapse">
+                      <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] font-bold border-b border-slate-200">
+                        <tr>
+                          <th className="p-3 border-r border-slate-150">Sl</th>
+                          <th className="p-3 border-r border-slate-150 font-sans">Workman (শ্ৰমিক)</th>
+                          <th className="p-3 border-r border-slate-150">UAN Number</th>
+                          {/* 15 Days Grid */}
+                          {Array.from({ length: 15 }).map((_, i) => (
+                            <th key={i} className="p-1.5 text-center border-r border-slate-150 font-mono text-[9px] w-8">D{i + 1}</th>
+                          ))}
+                          <th className="p-3 text-center">মুঠ দিন (Total)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 bg-white font-mono">
+                        {workers.filter(w => w.contractorId === selectedContractorId).map((wrk, idx) => {
+                          const wrkAttendance = attendance.filter(a => a.workerId === wrk.id && a.status === 'Present');
+                          const daysPresent = wrkAttendance.length;
+                          return (
+                            <tr key={wrk.id} className="hover:bg-slate-50/50">
+                              <td className="p-3 border-r border-slate-150 font-bold text-slate-400 font-sans">{idx + 1}</td>
+                              <td className="p-3 border-r border-slate-150 font-sans font-bold text-slate-800">{wrk.name}</td>
+                              <td className="p-3 border-r border-slate-150 text-[11px] text-slate-500">{getWorkerUAN(wrk)}</td>
+                              {/* Simulate attendance values */}
+                              {Array.from({ length: 15 }).map((_, i) => {
+                                const isPresent = i < daysPresent;
+                                return (
+                                  <td key={i} className={`p-1 text-center border-r border-slate-150 font-bold text-[11px] ${isPresent ? 'text-emerald-600 bg-emerald-50/20' : 'text-rose-500 bg-rose-50/10'}`}>
+                                    {isPresent ? 'P' : 'A'}
+                                  </td>
+                                );
+                              })}
+                              <td className="p-3 text-center font-bold text-slate-800 font-sans bg-slate-50">{daysPresent} Days</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  )}
+
+                  {selectedClraForm === 'Form XVII' && (
+                    <table id="clra-table-form-xvii" className="w-full text-left text-xs text-slate-600 border-collapse">
+                      <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] font-bold border-b border-slate-200">
+                        <tr>
+                          <th className="p-3 border-r border-slate-150">Sl</th>
+                          <th className="p-3 border-r border-slate-150 font-sans">Workman Details</th>
+                          <th className="p-3 border-r border-slate-150 text-right">Daily Rate</th>
+                          <th className="p-3 border-r border-slate-150 text-center">Days Worked</th>
+                          <th className="p-3 border-r border-slate-150 text-right">Gross Wages</th>
+                          <th className="p-3 border-r border-slate-150 text-right text-rose-700">EPF Cont.</th>
+                          <th className="p-3 border-r border-slate-150 text-right text-rose-700">ESI Cont.</th>
+                          <th className="p-3 border-r border-slate-150 text-right text-rose-700">Deductions</th>
+                          <th className="p-3 border-r border-slate-150 text-right text-rose-700">Advances</th>
+                          <th className="p-3 border-r border-slate-150 text-right font-black text-emerald-800">Net Wages</th>
+                          <th className="p-3 text-center font-sans">Biometric Thumb (Sign)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 bg-white font-mono">
+                        {workers.filter(w => w.contractorId === selectedContractorId).map((wrk, idx) => {
+                          const wrkAttendance = attendance.filter(a => a.workerId === wrk.id && a.status === 'Present');
+                          const daysPresent = wrkAttendance.length;
+                          const otHours = wrkAttendance.reduce((acc, curr) => acc + curr.overtimeHours, 0);
+                          
+                          const baseWage = daysPresent * wrk.dailyWageRate;
+                          const otPay = otHours * (wrk.dailyWageRate / 8) * 2;
+                          const grossWage = baseWage + otPay;
+                          const epf = Math.min(grossWage, 15000) * 0.12;
+                          const esi = grossWage * 0.0075;
+                          
+                          // Sum custom deductions & advances
+                          const deds = clraDeductions.filter(d => d.workerId === wrk.id).reduce((sum, curr) => sum + curr.amount, 0);
+                          const advs = clraAdvances.filter(a => a.workerId === wrk.id).reduce((sum, curr) => sum + curr.amount, 0);
+                          const netWages = grossWage - epf - esi - deds - advs;
+
+                          return (
+                            <tr key={wrk.id} className="hover:bg-slate-50/50">
+                              <td className="p-3 border-r border-slate-150 font-bold font-sans text-slate-400">{idx + 1}</td>
+                              <td className="p-3 border-r border-slate-150 font-sans">
+                                <span className="font-extrabold text-slate-900 block">{wrk.name}</span>
+                                <span className="text-[9px] text-slate-400 block mt-0.5">ESIC: {getWorkerESIIP(wrk)}</span>
+                              </td>
+                              <td className="p-3 border-r border-slate-150 text-right">₹{wrk.dailyWageRate}</td>
+                              <td className="p-3 border-r border-slate-150 text-center font-bold text-slate-700">{daysPresent}</td>
+                              <td className="p-3 border-r border-slate-150 text-right font-semibold text-slate-800">₹{Math.round(grossWage).toLocaleString()}</td>
+                              <td className="p-3 border-r border-slate-150 text-right text-slate-500">₹{Math.round(epf).toLocaleString()}</td>
+                              <td className="p-3 border-r border-slate-150 text-right text-slate-500">₹{Math.round(esi).toLocaleString()}</td>
+                              <td className="p-3 border-r border-slate-150 text-right text-rose-600 font-bold">₹{deds}</td>
+                              <td className="p-3 border-r border-slate-150 text-right text-indigo-600 font-bold">₹{advs}</td>
+                              <td className="p-3 border-r border-slate-150 text-right font-black text-emerald-700">₹{Math.round(netWages).toLocaleString()}</td>
+                              <td className="p-3 text-center font-sans">
+                                <span className="text-[9px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-bold border border-slate-200">
+                                  ✓ Biometric OTP verified
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  )}
+
+                  {selectedClraForm === 'Form XX' && (
+                    <table id="clra-table-form-xx" className="w-full text-left text-xs text-slate-600 border-collapse">
+                      <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] font-bold border-b border-slate-200">
+                        <tr>
+                          <th className="p-3 border-r border-slate-150">Sl No</th>
+                          <th className="p-3 border-r border-slate-150 font-sans">Workman Name (শ্ৰমিকৰ নাম)</th>
+                          <th className="p-3 border-r border-slate-150">Loss/Damage Particulars (লোকচানৰ বিৱৰণ)</th>
+                          <th className="p-3 border-r border-slate-150">Date of Occurrence</th>
+                          <th className="p-3 border-r border-slate-150 text-right">Deduction Amount (কৰ্তন ₹)</th>
+                          <th className="p-3 border-r border-slate-150 text-center">Installments (কিস্তি)</th>
+                          <th className="p-3 border-r border-slate-150">Date of Recovery</th>
+                          <th className="p-3 text-center font-sans">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 bg-white font-mono">
+                        {clraDeductions.length === 0 ? (
+                          <tr>
+                            <td colSpan={8} className="p-8 text-center text-slate-400 italic font-sans">
+                              কোনো ক্ষতি বা কৰ্তনৰ ৰেকৰ্ড পোৱা নগ’ল। (No deduction records found.)
+                            </td>
+                          </tr>
+                        ) : (
+                          clraDeductions.map((ded, idx) => {
+                            const wrkObj = workers.find(w => w.id === ded.workerId);
+                            return (
+                              <tr key={ded.id} className="hover:bg-slate-50/50">
+                                <td className="p-3 border-r border-slate-150 font-bold font-sans text-slate-400">{idx + 1}</td>
+                                <td className="p-3 border-r border-slate-150 font-sans font-bold text-slate-800">{wrkObj?.name || 'Unknown Worker'}</td>
+                                <td className="p-3 border-r border-slate-150 font-sans text-slate-600">{ded.particulars}</td>
+                                <td className="p-3 border-r border-slate-150">{ded.damageDate}</td>
+                                <td className="p-3 border-r border-slate-150 text-right text-rose-600 font-extrabold">₹{ded.amount}</td>
+                                <td className="p-3 border-r border-slate-150 text-center font-sans">{ded.installments}</td>
+                                <td className="p-3 border-r border-slate-150">{ded.recoveryDate}</td>
+                                <td className="p-3 text-center font-sans">
+                                  <button
+                                    onClick={() => {
+                                      setClraDeductions(prev => prev.filter(d => d.id !== ded.id));
+                                      showNotice('কৰ্তন আঁতৰ কৰা হৈছে (Deduction removed)', 'info');
+                                    }}
+                                    className="text-rose-600 hover:text-rose-800 font-bold text-[10px] uppercase hover:underline"
+                                  >
+                                    আঁতৰাওক (Delete)
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  )}
+
+                  {selectedClraForm === 'Form XXII' && (
+                    <table id="clra-table-form-xxii" className="w-full text-left text-xs text-slate-600 border-collapse">
+                      <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] font-bold border-b border-slate-200">
+                        <tr>
+                          <th className="p-3 border-r border-slate-150">Sl No</th>
+                          <th className="p-3 border-r border-slate-150 font-sans">Workman Name (শ্ৰমিকৰ নাম)</th>
+                          <th className="p-3 border-r border-slate-150">Purpose of Advance (অগ্ৰিমৰ উদ্দেশ্য)</th>
+                          <th className="p-3 border-r border-slate-150">Date Given</th>
+                          <th className="p-3 border-r border-slate-150 text-right">Advance Amount (অগ্ৰিম ₹)</th>
+                          <th className="p-3 border-r border-slate-150 text-center">Installments for Recovery</th>
+                          <th className="p-3 border-r border-slate-150">Target Recovery Date</th>
+                          <th className="p-3 text-center font-sans">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 bg-white font-mono">
+                        {clraAdvances.length === 0 ? (
+                          <tr>
+                            <td colSpan={8} className="p-8 text-center text-slate-400 italic font-sans">
+                              কোনো অগ্ৰিম ধনৰ ৰেকৰ্ড পোৱা নগ’ল। (No advance payment records found.)
+                            </td>
+                          </tr>
+                        ) : (
+                          clraAdvances.map((adv, idx) => {
+                            const wrkObj = workers.find(w => w.id === adv.workerId);
+                            return (
+                              <tr key={adv.id} className="hover:bg-slate-50/50">
+                                <td className="p-3 border-r border-slate-150 font-bold font-sans text-slate-400">{idx + 1}</td>
+                                <td className="p-3 border-r border-slate-150 font-sans font-bold text-slate-800">{wrkObj?.name || 'Unknown Worker'}</td>
+                                <td className="p-3 border-r border-slate-150 font-sans text-slate-600">{adv.purpose}</td>
+                                <td className="p-3 border-r border-slate-150">{adv.advanceDate}</td>
+                                <td className="p-3 border-r border-slate-150 text-right text-indigo-600 font-extrabold">₹{adv.amount}</td>
+                                <td className="p-3 border-r border-slate-150 text-center font-sans">{adv.installments}</td>
+                                <td className="p-3 border-r border-slate-150">{adv.recoveryDate}</td>
+                                <td className="p-3 text-center font-sans">
+                                  <button
+                                    onClick={() => {
+                                      setClraAdvances(prev => prev.filter(a => a.id !== adv.id));
+                                      showNotice('অগ্ৰিম ধন আঁতৰ কৰা হৈছে (Advance removed)', 'info');
+                                    }}
+                                    className="text-rose-600 hover:text-rose-800 font-bold text-[10px] uppercase hover:underline"
+                                  >
+                                    আঁতৰাওক (Delete)
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  )}
+
+                  {selectedClraForm === 'Form XXIII' && (
+                    <table id="clra-table-form-xxiii" className="w-full text-left text-xs text-slate-600 border-collapse">
+                      <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] font-bold border-b border-slate-200">
+                        <tr>
+                          <th className="p-3 border-r border-slate-150">Sl No</th>
+                          <th className="p-3 border-r border-slate-150 font-sans">Workman Name (শ্ৰমিকৰ নাম)</th>
+                          <th className="p-3 border-r border-slate-150">Overtime Dates (তাৰিখ)</th>
+                          <th className="p-3 border-r border-slate-150 text-center font-sans">Normal Hours</th>
+                          <th className="p-3 border-r border-slate-150 text-center">Overtime Hours Worked</th>
+                          <th className="p-3 border-r border-slate-150 text-right">Normal Wage Rate</th>
+                          <th className="p-3 border-r border-slate-150 text-right">Overtime Wage Rate (2x)</th>
+                          <th className="p-3 border-r border-slate-150 text-right font-black text-amber-700">OT Earnings (₹)</th>
+                          <th className="p-3 text-center">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 bg-white font-mono">
+                        {workers.filter(w => w.contractorId === selectedContractorId).map((wrk, idx) => {
+                          const wrkAttendance = attendance.filter(a => a.workerId === wrk.id && a.status === 'Present');
+                          const otHours = wrkAttendance.reduce((acc, curr) => acc + curr.overtimeHours, 0);
+                          const otPay = otHours * (wrk.dailyWageRate / 8) * 2;
+
+                          if (otHours === 0) return null;
+
+                          return (
+                            <tr key={wrk.id} className="hover:bg-slate-50/50">
+                              <td className="p-3 border-r border-slate-150 font-bold font-sans text-slate-400">{idx + 1}</td>
+                              <td className="p-3 border-r border-slate-150 font-sans font-bold text-slate-800">{wrk.name}</td>
+                              <td className="p-3 border-r border-slate-150 font-sans text-slate-500">August 2026 Active Shift Cycles</td>
+                              <td className="p-3 border-r border-slate-150 text-center font-sans">8 hrs/day</td>
+                              <td className="p-3 border-r border-slate-150 text-center font-bold text-slate-800">{otHours} hrs</td>
+                              <td className="p-3 border-r border-slate-150 text-right">₹{wrk.dailyWageRate}</td>
+                              <td className="p-3 border-r border-slate-150 text-right text-emerald-700 font-semibold">₹{(wrk.dailyWageRate / 8 * 2).toFixed(1)}/hr</td>
+                              <td className="p-3 border-r border-slate-150 text-right font-black text-amber-600">₹{Math.round(otPay).toLocaleString()}</td>
+                              <td className="p-3 text-center">
+                                <span className="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded border border-emerald-100 font-sans">
+                                  ✓ Added to Gross
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </div>
+            </div>
+
           </div>
         )}
 
@@ -4544,6 +5075,608 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
           </div>
         );
       })()}
+
+      {/* ======================================================== */}
+      {/* 4. LANDSCAPE STATUTORY CLRA COMPLIANCE REGISTERS PRINT VIEW */}
+      {/* ======================================================== */}
+      {activePrintClraForm && (() => {
+        const formType = activePrintClraForm;
+        const contractorObj = contractors.find(c => c.id === selectedContractorId) || contractors[0];
+        const industryObj = industries.find(i => i.id === selectedIndustryId) || industries[0];
+        
+        return (
+          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-2 sm:p-6 z-50 overflow-y-auto">
+            <div className="bg-white text-slate-900 rounded-2xl max-w-7xl w-full shadow-2xl border border-slate-300 overflow-hidden my-auto max-h-[96vh] flex flex-col">
+              
+              {/* Modal Control Header (Non-Printable in CSS but nice here) */}
+              <div className="bg-slate-900 text-white p-4 flex justify-between items-center shrink-0 print:hidden">
+                <div className="flex items-center gap-2">
+                  <Printer className="text-emerald-400 h-5 w-5" />
+                  <span className="font-extrabold text-xs sm:text-sm">
+                    {formType} Ledger Blueprint (Statutory Landscape Alignment)
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => window.print()}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 shadow-xs"
+                  >
+                    <Printer className="h-4 w-4" />
+                    PDF ডাউনলোড / প্ৰিণ্ট কৰক
+                  </button>
+                  <button
+                    onClick={() => setActivePrintClraForm(null)}
+                    className="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs px-3 py-2 rounded-lg transition-colors"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Printable Body */}
+              <div className="flex-1 overflow-auto p-8 space-y-6 bg-white font-serif print:p-0 print:m-0">
+                
+                {/* Official Statutory Heading */}
+                <div className="text-center space-y-2 border-b-2 border-slate-800 pb-4">
+                  <h1 className="text-xl font-bold tracking-wide uppercase">
+                    {formType === 'Form XIII' && 'FORM XIII'}
+                    {formType === 'Form XVI' && 'FORM XVI'}
+                    {formType === 'Form XVII' && 'FORM XVII'}
+                    {formType === 'Form XX' && 'FORM XX'}
+                    {formType === 'Form XXII' && 'FORM XXII'}
+                    {formType === 'Form XXIII' && 'FORM XXIII'}
+                  </h1>
+                  <p className="text-xs italic font-semibold">
+                    {formType === 'Form XIII' && 'See Rule 75 of Contract Labour (Regulation & Abolition) Central Rules 1971'}
+                    {formType === 'Form XVI' && 'See Rule 78(1)(a)(i) - MUSTER ROLL'}
+                    {formType === 'Form XVII' && 'See Rule 78(1)(a)(i) - REGISTER OF WAGES'}
+                    {formType === 'Form XX' && 'See Rule 78(1)(a)(ii) - REGISTER OF DEDUCTIONS FOR DAMAGE OR LOSS'}
+                    {formType === 'Form XXII' && 'See Rule 78(1)(a)(ii) - REGISTER OF ADVANCES'}
+                    {formType === 'Form XXIII' && 'See Rule 78(1)(a)(iii) - REGISTER OF OVERTIME'}
+                  </p>
+                  <h2 className="text-sm font-extrabold uppercase mt-1">
+                    {formType === 'Form XIII' && 'REGISTER OF WORKMEN EMPLOYED BY CONTRACTOR'}
+                    {formType === 'Form XVI' && 'MUSTER ROLL LEDGER REGISTER'}
+                    {formType === 'Form XVII' && 'REGISTER OF WAGES / WAGE SLIP LEDGER'}
+                    {formType === 'Form XX' && 'REGISTER OF DEDUCTIONS FOR DAMAGE OR LOSS'}
+                    {formType === 'Form XXII' && 'REGISTER OF ADVANCES PAID TO WORKMEN'}
+                    {formType === 'Form XXIII' && 'REGISTER OF OVERTIME WORK HOURS'}
+                  </h2>
+                </div>
+
+                {/* Metadata Details */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs font-sans border-b border-slate-300 pb-4">
+                  <div>
+                    <span className="text-slate-500 block">Name and Address of Contractor:</span>
+                    <strong className="text-slate-900 block font-serif text-sm">{contractorObj.name}</strong>
+                    <span className="text-slate-400 block text-[10px]">License No: {contractorObj.licenseNo} | LIN: {contractorObj.lin}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block">Name and Address of Establishment / Factory:</span>
+                    <strong className="text-slate-900 block font-serif text-sm">{industryObj.name}</strong>
+                    <span className="text-slate-400 block text-[10px]">Location: {industryObj.location} | LIN: {industryObj.lin}</span>
+                  </div>
+                  <div className="col-span-2 md:col-span-1">
+                    <span className="text-slate-500 block">Name and Address of Principal Employer:</span>
+                    <strong className="text-slate-900 block font-serif text-sm">{industryObj.name} Managing Division</strong>
+                    <span className="text-slate-400 block text-[10px]">Assam Industrial Development Council Zone</span>
+                  </div>
+                </div>
+
+                {/* Ledger Data Table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-[11px] border-collapse border-2 border-slate-900 font-sans">
+                    <thead className="bg-slate-50 text-slate-900 font-bold border-b-2 border-slate-900 text-center">
+                      {formType === 'Form XIII' && (
+                        <tr>
+                          <th className="p-2 border border-slate-900 w-12">Sl No</th>
+                          <th className="p-2 border border-slate-900">Name of Workman</th>
+                          <th className="p-2 border border-slate-900 w-16">Age / Sex</th>
+                          <th className="p-2 border border-slate-900">Father’s/Husband’s Name</th>
+                          <th className="p-2 border border-slate-900">Nature of Work</th>
+                          <th className="p-2 border border-slate-900 max-w-xs">Home Address (Permanent)</th>
+                          <th className="p-2 border border-slate-900">Date of Joining</th>
+                          <th className="p-2 border border-slate-900">Aadhaar/UAN No.</th>
+                          <th className="p-2 border border-slate-900">Thumb Impression / Sign</th>
+                        </tr>
+                      )}
+
+                      {formType === 'Form XVI' && (
+                        <tr>
+                          <th className="p-2 border border-slate-900 w-12" rowSpan={2}>Sl No</th>
+                          <th className="p-2 border border-slate-900" rowSpan={2}>Name of Workman</th>
+                          <th className="p-2 border border-slate-900" rowSpan={2}>UAN Number</th>
+                          <th className="p-1 border border-slate-900 text-[10px]" colSpan={15}>Daily Attendance Status for Period (August 2026)</th>
+                          <th className="p-2 border border-slate-900 w-20" rowSpan={2}>Total Days Present</th>
+                        </tr>
+                      )}
+                      {formType === 'Form XVI' && (
+                        <tr>
+                          {Array.from({ length: 15 }).map((_, i) => (
+                            <th key={i} className="p-0.5 border border-slate-900 font-mono text-[9px] w-6 text-center">{i + 1}</th>
+                          ))}
+                        </tr>
+                      )}
+
+                      {formType === 'Form XVII' && (
+                        <tr>
+                          <th className="p-1.5 border border-slate-900 w-10">Sl</th>
+                          <th className="p-1.5 border border-slate-900">Workman Name</th>
+                          <th className="p-1.5 border border-slate-900 w-20 text-right">Daily Rate</th>
+                          <th className="p-1.5 border border-slate-900 w-16 text-center">Days Worked</th>
+                          <th className="p-1.5 border border-slate-900 text-right">Gross Wages</th>
+                          <th className="p-1.5 border border-slate-900 text-right">EPF (12%)</th>
+                          <th className="p-1.5 border border-slate-900 text-right">ESI (0.75%)</th>
+                          <th className="p-1.5 border border-slate-900 text-right">Other Deductions</th>
+                          <th className="p-1.5 border border-slate-900 text-right">Advances</th>
+                          <th className="p-1.5 border border-slate-900 text-right font-bold">Net Paid (₹)</th>
+                          <th className="p-1.5 border border-slate-900">Signature / Endorsement</th>
+                        </tr>
+                      )}
+
+                      {formType === 'Form XX' && (
+                        <tr>
+                          <th className="p-2 border border-slate-900 w-12">Sl No</th>
+                          <th className="p-2 border border-slate-900">Name of Workman</th>
+                          <th className="p-2 border border-slate-900">Nature of Damage / Material Loss Particulars</th>
+                          <th className="p-2 border border-slate-900">Date of Incident</th>
+                          <th className="p-2 border border-slate-900 text-right">Amount Charged (₹)</th>
+                          <th className="p-2 border border-slate-900 text-center">Installments Allowed</th>
+                          <th className="p-2 border border-slate-900">Final Date of Recovery</th>
+                          <th className="p-2 border border-slate-900">Verified By Inspector Sign</th>
+                        </tr>
+                      )}
+
+                      {formType === 'Form XXII' && (
+                        <tr>
+                          <th className="p-2 border border-slate-900 w-12">Sl No</th>
+                          <th className="p-2 border border-slate-900">Name of Workman</th>
+                          <th className="p-2 border border-slate-900">Purpose / Reason of Advance Given</th>
+                          <th className="p-2 border border-slate-900">Date of Advance Paid</th>
+                          <th className="p-2 border border-slate-900 text-right">Amount Advanced (₹)</th>
+                          <th className="p-2 border border-slate-900 text-center">Installments Approved</th>
+                          <th className="p-2 border border-slate-900">Date of Settlement</th>
+                          <th className="p-2 border border-slate-900">Remarks / Signature</th>
+                        </tr>
+                      )}
+
+                      {formType === 'Form XXIII' && (
+                        <tr>
+                          <th className="p-2 border border-slate-900 w-12">Sl No</th>
+                          <th className="p-2 border border-slate-900">Name of Workman</th>
+                          <th className="p-2 border border-slate-900">Date of Overtime Work</th>
+                          <th className="p-2 border border-slate-900 text-center">Normal Hours</th>
+                          <th className="p-2 border border-slate-900 text-center">Overtime Hours</th>
+                          <th className="p-2 border border-slate-900 text-right">Normal Wage Rate</th>
+                          <th className="p-2 border border-slate-900 text-right">Overtime Wage Rate</th>
+                          <th className="p-2 border border-slate-900 text-right font-bold">OT Earnings (₹)</th>
+                          <th className="p-2 border border-slate-900">Payment Reconciliation Date</th>
+                        </tr>
+                      )}
+                    </thead>
+
+                    <tbody className="divide-y divide-slate-800 bg-white">
+                      {formType === 'Form XIII' && workers.filter(w => w.contractorId === selectedContractorId).map((wrk, idx) => (
+                        <tr key={wrk.id} className="text-center font-mono">
+                          <td className="p-2 border border-slate-900 font-sans font-bold">{idx + 1}</td>
+                          <td className="p-2 border border-slate-900 font-sans font-extrabold text-left">{wrk.name}</td>
+                          <td className="p-2 border border-slate-900 font-sans text-xs">32 / M</td>
+                          <td className="p-2 border border-slate-900 font-sans text-left">Late B. {wrk.name.split(' ')[1] || 'Kumar'}</td>
+                          <td className="p-2 border border-slate-900 font-sans text-left">{wrk.skillType}</td>
+                          <td className="p-2 border border-slate-900 font-sans text-left text-[10px] max-w-xs leading-tight">
+                            Assam Industrial Zone, Guwahati - 781001
+                          </td>
+                          <td className="p-2 border border-slate-900">{wrk.onboardingDate || '2026-04-12'}</td>
+                          <td className="p-2 border border-slate-900 font-sans">{getWorkerUAN(wrk)}</td>
+                          <td className="p-2 border border-slate-900 font-sans text-[10px] text-emerald-800 font-bold">
+                            Aadhaar Digitally Signed
+                          </td>
+                        </tr>
+                      ))}
+
+                      {formType === 'Form XVI' && workers.filter(w => w.contractorId === selectedContractorId).map((wrk, idx) => {
+                        const wrkAttendance = attendance.filter(a => a.workerId === wrk.id && a.status === 'Present');
+                        const daysPresent = wrkAttendance.length;
+                        return (
+                          <tr key={wrk.id} className="text-center font-mono">
+                            <td className="p-2 border border-slate-900 font-sans font-bold">{idx + 1}</td>
+                            <td className="p-2 border border-slate-900 font-sans font-extrabold text-left">{wrk.name}</td>
+                            <td className="p-2 border border-slate-900 font-sans">{getWorkerUAN(wrk)}</td>
+                            {Array.from({ length: 15 }).map((_, i) => {
+                              const isPresent = i < daysPresent;
+                              return (
+                                <td key={i} className={`p-1 border border-slate-900 font-bold text-[10px] ${isPresent ? 'text-slate-900 bg-slate-50' : 'text-slate-400'}`}>
+                                  {isPresent ? 'P' : 'A'}
+                                </td>
+                              );
+                            })}
+                            <td className="p-2 border border-slate-900 font-sans font-bold bg-slate-50">{daysPresent} Days</td>
+                          </tr>
+                        );
+                      })}
+
+                      {formType === 'Form XVII' && workers.filter(w => w.contractorId === selectedContractorId).map((wrk, idx) => {
+                        const wrkAttendance = attendance.filter(a => a.workerId === wrk.id && a.status === 'Present');
+                        const daysPresent = wrkAttendance.length;
+                        const otHours = wrkAttendance.reduce((acc, curr) => acc + curr.overtimeHours, 0);
+                        
+                        const baseWage = daysPresent * wrk.dailyWageRate;
+                        const otPay = otHours * (wrk.dailyWageRate / 8) * 2;
+                        const grossWage = baseWage + otPay;
+                        const epf = Math.min(grossWage, 15000) * 0.12;
+                        const esi = grossWage * 0.0075;
+                        
+                        const deds = clraDeductions.filter(d => d.workerId === wrk.id).reduce((sum, curr) => sum + curr.amount, 0);
+                        const advs = clraAdvances.filter(a => a.workerId === wrk.id).reduce((sum, curr) => sum + curr.amount, 0);
+                        const netWages = grossWage - epf - esi - deds - advs;
+
+                        return (
+                          <tr key={wrk.id} className="text-right font-mono">
+                            <td className="p-2 border border-slate-900 text-center font-sans font-bold">{idx + 1}</td>
+                            <td className="p-2 border border-slate-900 font-sans font-extrabold text-left">{wrk.name}</td>
+                            <td className="p-2 border border-slate-900">₹{wrk.dailyWageRate}</td>
+                            <td className="p-2 border border-slate-900 text-center font-bold">{daysPresent}</td>
+                            <td className="p-2 border border-slate-900 font-bold">₹{Math.round(grossWage).toLocaleString()}</td>
+                            <td className="p-2 border border-slate-900">₹{Math.round(epf).toLocaleString()}</td>
+                            <td className="p-2 border border-slate-900">₹{Math.round(esi).toLocaleString()}</td>
+                            <td className="p-2 border border-slate-900 font-bold text-rose-700">₹{deds}</td>
+                            <td className="p-2 border border-slate-900 font-bold text-indigo-700">₹{advs}</td>
+                            <td className="p-2 border border-slate-900 font-black text-emerald-800">₹{Math.round(netWages).toLocaleString()}</td>
+                            <td className="p-2 border border-slate-900 text-center font-sans text-[10px] text-slate-500">
+                              UIDAI Digitally Verified
+                            </td>
+                          </tr>
+                        );
+                      })}
+
+                      {formType === 'Form XX' && (
+                        clraDeductions.length === 0 ? (
+                          <tr>
+                            <td colSpan={8} className="p-6 text-center text-slate-400 italic">
+                              No deduction records logged in compliance systems.
+                            </td>
+                          </tr>
+                        ) : (
+                          clraDeductions.map((ded, idx) => {
+                            const wrkObj = workers.find(w => w.id === ded.workerId);
+                            return (
+                              <tr key={ded.id} className="text-center font-mono">
+                                <td className="p-2 border border-slate-900 font-sans font-bold">{idx + 1}</td>
+                                <td className="p-2 border border-slate-900 font-sans font-extrabold text-left">{wrkObj?.name || 'Unknown Workman'}</td>
+                                <td className="p-2 border border-slate-900 font-sans text-left">{ded.particulars}</td>
+                                <td className="p-2 border border-slate-900">{ded.damageDate}</td>
+                                <td className="p-2 border border-slate-900 text-right font-bold text-rose-700">₹{ded.amount}</td>
+                                <td className="p-2 border border-slate-900 font-sans">{ded.installments}</td>
+                                <td className="p-2 border border-slate-900">{ded.recoveryDate}</td>
+                                <td className="p-2 border border-slate-900 font-sans text-slate-400">Approved Offline</td>
+                              </tr>
+                            );
+                          })
+                        )
+                      )}
+
+                      {formType === 'Form XXII' && (
+                        clraAdvances.length === 0 ? (
+                          <tr>
+                            <td colSpan={8} className="p-6 text-center text-slate-400 italic">
+                              No advance payment records logged.
+                            </td>
+                          </tr>
+                        ) : (
+                          clraAdvances.map((adv, idx) => {
+                            const wrkObj = workers.find(w => w.id === adv.workerId);
+                            return (
+                              <tr key={adv.id} className="text-center font-mono">
+                                <td className="p-2 border border-slate-900 font-sans font-bold">{idx + 1}</td>
+                                <td className="p-2 border border-slate-900 font-sans font-extrabold text-left">{wrkObj?.name || 'Unknown Workman'}</td>
+                                <td className="p-2 border border-slate-900 font-sans text-left">{adv.purpose}</td>
+                                <td className="p-2 border border-slate-900">{adv.advanceDate}</td>
+                                <td className="p-2 border border-slate-900 text-right font-bold text-indigo-700">₹{adv.amount}</td>
+                                <td className="p-2 border border-slate-900 font-sans">{adv.installments}</td>
+                                <td className="p-2 border border-slate-900">{adv.recoveryDate}</td>
+                                <td className="p-2 border border-slate-900 font-sans text-slate-400">Completed</td>
+                              </tr>
+                            );
+                          })
+                        )
+                      )}
+
+                      {formType === 'Form XXIII' && workers.filter(w => w.contractorId === selectedContractorId).map((wrk, idx) => {
+                        const wrkAttendance = attendance.filter(a => a.workerId === wrk.id && a.status === 'Present');
+                        const otHours = wrkAttendance.reduce((acc, curr) => acc + curr.overtimeHours, 0);
+                        const otPay = otHours * (wrk.dailyWageRate / 8) * 2;
+
+                        if (otHours === 0) return null;
+
+                        return (
+                          <tr key={wrk.id} className="text-center font-mono">
+                            <td className="p-2 border border-slate-900 font-sans font-bold">{idx + 1}</td>
+                            <td className="p-2 border border-slate-900 font-sans font-extrabold text-left">{wrk.name}</td>
+                            <td className="p-2 border border-slate-900 text-left font-sans text-xs">August 2026 Shift Cycles</td>
+                            <td className="p-2 border border-slate-900 font-sans">8 hrs / Day</td>
+                            <td className="p-2 border border-slate-900 font-bold">{otHours} hrs</td>
+                            <td className="p-2 border border-slate-900 text-right">₹{wrk.dailyWageRate}</td>
+                            <td className="p-2 border border-slate-900 text-right">₹{(wrk.dailyWageRate / 8 * 2).toFixed(1)}</td>
+                            <td className="p-2 border border-slate-900 text-right font-bold text-amber-700">₹{Math.round(otPay).toLocaleString()}</td>
+                            <td className="p-2 border border-slate-900 font-sans text-xs text-slate-500">August 31, 2026</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Statutory Certification Signature Panel */}
+                <div className="grid grid-cols-2 gap-12 pt-8 text-xs font-sans">
+                  <div className="space-y-8 text-center">
+                    <div className="h-10 border-b border-dashed border-slate-400"></div>
+                    <span className="font-extrabold block text-slate-800 uppercase text-[10px]">
+                      CONTRACTOR SIGNATURE & CORPORATE SEAL
+                    </span>
+                    <span className="text-[9px] text-slate-500 block">Lic. No. {contractorObj.licenseNo} | {contractorObj.name}</span>
+                  </div>
+
+                  <div className="space-y-8 text-center">
+                    <div className="h-10 border-b border-dashed border-slate-400"></div>
+                    <span className="font-extrabold block text-slate-800 uppercase text-[10px]">
+                      FACTORY INSPECTOR / PRINCIPAL EMPLOYER ENDORSEMENT
+                    </span>
+                    <span className="text-[9px] text-slate-500 block">Under CLRA Central Rules Rule 75/78 Verification</span>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Modal Footer Controls */}
+              <div className="bg-slate-100 border-t border-slate-200 p-4 flex justify-between items-center shrink-0 print:hidden">
+                <span className="text-[10px] text-slate-500 font-mono">
+                  CLRA Compliance Sheet Ledger Generated under Digital India Labor Initiative
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => window.print()}
+                    className="bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs px-4 py-2 rounded-xl transition-all flex items-center gap-1 shadow-sm"
+                  >
+                    <Printer className="h-3.5 w-3.5" />
+                    প্ৰিন্ট কৰক (Print Frame)
+                  </button>
+                  <button
+                    onClick={() => setActivePrintClraForm(null)}
+                    className="bg-white hover:bg-slate-200 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl border border-slate-300 transition-all"
+                  >
+                    বন্ধ কৰক (Close)
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ======================================================== */}
+      {/* 5. ADD CUSTOM DEDUCTION MODAL FOR FORM XX */}
+      {/* ======================================================== */}
+      {isAddingDeduction && (
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden my-auto">
+            <div className="bg-slate-900 text-white p-4 flex justify-between items-center">
+              <h3 className="font-extrabold text-sm flex items-center gap-1.5">
+                <Plus className="text-rose-500 h-5 w-5" />
+                নতুন কৰ্তন ৰেকৰ্ড কৰক (Add Custom Deduction)
+              </h3>
+              <button onClick={() => setIsAddingDeduction(false)} className="text-slate-400 hover:text-white">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddDeduction} className="p-6 space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-600 font-bold mb-1">শ্ৰমিক বাছক (Select Workman) *</label>
+                <select
+                  value={newDeduction.workerId}
+                  onChange={(e) => setNewDeduction(prev => ({ ...prev, workerId: e.target.value }))}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 font-bold text-slate-800"
+                  required
+                >
+                  <option value="">-- শ্ৰমিক বাছক --</option>
+                  {workers.filter(w => w.contractorId === selectedContractorId).map(w => (
+                    <option key={w.id} value={w.id}>{w.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-600 font-bold mb-1">লোকচানৰ বিৱৰণ (Loss Particulars) *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Lost Safety Helmet, Damaged Tools"
+                  value={newDeduction.particulars}
+                  onChange={(e) => setNewDeduction(prev => ({ ...prev, particulars: e.target.value }))}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 font-bold text-slate-800"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-600 font-bold mb-1">কৰ্তন মূল্য (Amount ₹) *</label>
+                  <input
+                    type="number"
+                    value={newDeduction.amount}
+                    onChange={(e) => setNewDeduction(prev => ({ ...prev, amount: Number(e.target.value) }))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 font-bold text-slate-800"
+                    required
+                    min={10}
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-600 font-bold mb-1">কিস্তিৰ সংখ্যা (Installments) *</label>
+                  <input
+                    type="number"
+                    value={newDeduction.installments}
+                    onChange={(e) => setNewDeduction(prev => ({ ...prev, installments: Number(e.target.value) }))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 font-bold text-slate-800"
+                    required
+                    min={1}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-600 font-bold mb-1">ক্ষতি হোৱা তাৰিখ *</label>
+                  <input
+                    type="date"
+                    value={newDeduction.damageDate}
+                    onChange={(e) => setNewDeduction(prev => ({ ...prev, damageDate: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 font-bold text-slate-800"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-600 font-bold mb-1">আদায়ৰ শেষ তাৰিখ *</label>
+                  <input
+                    type="date"
+                    value={newDeduction.recoveryDate}
+                    onChange={(e) => setNewDeduction(prev => ({ ...prev, recoveryDate: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 font-bold text-slate-800"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-4 justify-end">
+                <button
+                  type="submit"
+                  className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2 rounded-lg transition-colors"
+                >
+                  ৰেকৰ্ড সংৰক্ষণ কৰক (Save Record)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsAddingDeduction(false)}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-lg transition-colors border border-slate-300"
+                >
+                  বাতিল কৰক (Cancel)
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 6. ADD CUSTOM ADVANCE MODAL FOR FORM XXII */}
+      {/* ======================================================== */}
+      {isAddingAdvance && (
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden my-auto">
+            <div className="bg-slate-900 text-white p-4 flex justify-between items-center">
+              <h3 className="font-extrabold text-sm flex items-center gap-1.5">
+                <Plus className="text-emerald-500 h-5 w-5" />
+                নতুন অগ্ৰিম ৰেকৰ্ড লিখক (Add Custom Advance)
+              </h3>
+              <button onClick={() => setIsAddingAdvance(false)} className="text-slate-400 hover:text-white">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddAdvance} className="p-6 space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-600 font-bold mb-1">শ্ৰমিক বাছক (Select Workman) *</label>
+                <select
+                  value={newAdvance.workerId}
+                  onChange={(e) => setNewAdvance(prev => ({ ...prev, workerId: e.target.value }))}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 font-bold text-slate-800"
+                  required
+                >
+                  <option value="">-- শ্ৰমিক বাছক --</option>
+                  {workers.filter(w => w.contractorId === selectedContractorId).map(w => (
+                    <option key={w.id} value={w.id}>{w.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-600 font-bold mb-1">অগ্ৰিম প্ৰদানৰ কাৰণ / উদ্দেশ্য *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Festival Advance, Medical Emergency"
+                  value={newAdvance.purpose}
+                  onChange={(e) => setNewAdvance(prev => ({ ...prev, purpose: e.target.value }))}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 font-bold text-slate-800"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-600 font-bold mb-1">অগ্ৰিম ধনৰ পৰিমাণ (₹) *</label>
+                  <input
+                    type="number"
+                    value={newAdvance.amount}
+                    onChange={(e) => setNewAdvance(prev => ({ ...prev, amount: Number(e.target.value) }))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 font-bold text-slate-800"
+                    required
+                    min={100}
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-600 font-bold mb-1">উদ্ধাৰ কিস্তি সংখ্যা *</label>
+                  <input
+                    type="number"
+                    value={newAdvance.installments}
+                    onChange={(e) => setNewAdvance(prev => ({ ...prev, installments: Number(e.target.value) }))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 font-bold text-slate-800"
+                    required
+                    min={1}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-600 font-bold mb-1">অগ্ৰিম প্ৰদানৰ তাৰিখ *</label>
+                  <input
+                    type="date"
+                    value={newAdvance.advanceDate}
+                    onChange={(e) => setNewAdvance(prev => ({ ...prev, advanceDate: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 font-bold text-slate-800"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-600 font-bold mb-1">আদায়ৰ শেষ তাৰিখ *</label>
+                  <input
+                    type="date"
+                    value={newAdvance.recoveryDate}
+                    onChange={(e) => setNewAdvance(prev => ({ ...prev, recoveryDate: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 font-bold text-slate-800"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-4 justify-end">
+                <button
+                  type="submit"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg transition-colors"
+                >
+                  অগ্ৰিম সংৰক্ষণ কৰক (Save Advance)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsAddingAdvance(false)}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-lg transition-colors border border-slate-300"
+                >
+                  বাতিল কৰক (Cancel)
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );
