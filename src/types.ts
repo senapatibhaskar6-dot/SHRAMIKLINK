@@ -76,6 +76,7 @@ export interface Attendance {
 export interface ComplianceDocument {
   id: string;
   contractorId: string;
+  industryId?: string; // Optional: tagged to specific principal employer factory
   month: string; // e.g. "August 2026"
   docType: 'EPF-Challan' | 'ESI-Challan' | 'GST-Return' | 'Wage-Register';
   fileUrl: string;

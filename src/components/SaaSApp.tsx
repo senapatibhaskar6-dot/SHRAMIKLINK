@@ -26,7 +26,14 @@ import {
   LogOut,
   Download,
   Loader2,
-  Zap
+  Zap,
+  Printer,
+  Filter,
+  Factory,
+  Receipt,
+  Calculator,
+  ArrowRight,
+  Percent
 } from 'lucide-react';
 import { 
   Industry, 
@@ -59,8 +66,27 @@ import { signInWithPopup, signOut, onAuthStateChanged, User } from 'firebase/aut
 import logoUrl from '../assets/images/shramiklink_logo_uploaded.jpeg';
 import TransparentImage from './TransparentImage';
 import { PWAInstallButton } from './PWAInstallButton';
+import { AppLanguage, getStoredLanguage, setStoredLanguage, TRANSLATIONS, SUPPORTED_LANGUAGES } from '../i18n';
+import { LanguageSelector } from './LanguageSelector';
 
-export default function SaaSApp() {
+interface SaaSAppProps {
+  externalLang?: AppLanguage;
+  onLanguageChange?: (lang: AppLanguage) => void;
+}
+
+export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps = {}) {
+  // Localization State (Pan-India Multilingual Engine)
+  const [internalLang, setInternalLang] = useState<AppLanguage>(() => getStoredLanguage());
+  const currentLang = externalLang || internalLang;
+  const handleLangChange = (l: AppLanguage) => {
+    setInternalLang(l);
+    setStoredLanguage(l);
+    if (onLanguageChange) {
+      onLanguageChange(l);
+    }
+  };
+  const t = TRANSLATIONS[currentLang];
+
   // Global State (persisted/synchronized to Postgres Cloud SQL)
   const [industries, setIndustries] = useState<Industry[]>(initialIndustries);
   const [contractors, setContractors] = useState<Contractor[]>(initialContractors);
@@ -360,11 +386,15 @@ export default function SaaSApp() {
   const [deploymentIndustryId, setDeploymentIndustryId] = useState<string>('ind-1');
   const [deploymentShift, setDeploymentShift] = useState<string>('Shift A (06:00 - 14:00)');
 
-  // Contractor Billing States
+  // Contractor Billing States & Automated Invoice Engine
   const [billMonth, setBillMonth] = useState('August 2026');
   const [billTargetIndustry, setBillTargetIndustry] = useState('ind-1');
   const [billBaseWage, setBillBaseWage] = useState(150000);
   const [billServiceCharge, setBillServiceCharge] = useState(15000); // 10%
+  const [billCommissionPct, setBillCommissionPct] = useState(10); // 10% Labour Contractor Commission
+  const [billCalculationMode, setBillCalculationMode] = useState<'auto' | 'custom'>('auto');
+  const [isInvoicePreviewOpen, setIsInvoicePreviewOpen] = useState(false);
+  const [selectedInvoiceBill, setSelectedInvoiceBill] = useState<Bill | null>(null);
   const [challanFile, setChallanFile] = useState<string | null>(null);
 
   // Inspector States
@@ -409,6 +439,256 @@ export default function SaaSApp() {
       hasESI,
       hasGST
     };
+  };
+
+  // Industry-wise Attendance Filter & Worker Check-In state
+  const [attendanceIndustryFilter, setAttendanceIndustryFilter] = useState<string>('ALL');
+  const [targetCheckInIndustry, setTargetCheckInIndustry] = useState<string>('');
+
+  // Industry-wise EPF & ESIC Challan Generator State
+  const [isChallanModalOpen, setIsChallanModalOpen] = useState(false);
+  const [challanTargetIndustry, setChallanTargetIndustry] = useState<string>('ind-1');
+  const [challanTargetMonth, setChallanTargetMonth] = useState<string>('August 2026');
+
+  // Contractor Industry-wise Work Summary Inspection & Print State
+  const [isWorkSummaryModalOpen, setIsWorkSummaryModalOpen] = useState(false);
+  const [summaryTargetIndustry, setSummaryTargetIndustry] = useState<string>('ALL');
+
+  // Helper generators for statutory identifiers (UAN & ESIC IP No.)
+  const getWorkerUAN = (w: Worker) => {
+    const digits = (w.aadhaarHash || '').replace(/\D/g, '').padEnd(4, '8');
+    return `1019${digits.slice(-4)}8821`;
+  };
+
+  const getWorkerESIIP = (w: Worker) => {
+    const digits = (w.aadhaarHash || '').replace(/\D/g, '').padEnd(4, '3');
+    return `31${digits.slice(-4)}9902`;
+  };
+
+  // Helper for Indian Currency in Words (Rupees Lakh/Crore format)
+  const toIndianWords = (num: number): string => {
+    const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
+    const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+    const inWords = (n: number): string => {
+      if (n === 0) return '';
+      if (n < 20) return a[n];
+      if (n < 100) return b[Math.floor(n / 10)] + ' ' + a[n % 10];
+      if (n < 1000) return a[Math.floor(n / 100)] + 'Hundred ' + inWords(n % 100);
+      if (n < 100000) return inWords(Math.floor(n / 1000)) + 'Thousand ' + inWords(n % 1000);
+      if (n < 10000000) return inWords(Math.floor(n / 100000)) + 'Lakh ' + inWords(n % 100000);
+      return inWords(Math.floor(n / 10000000)) + 'Crore ' + inWords(n % 10000000);
+    };
+    const rounded = Math.round(num);
+    if (rounded === 0) return 'Zero Rupees Only';
+    return 'Rupees ' + inWords(rounded).trim() + ' Only';
+  };
+
+  // Industry-wise Attendance & Wage Billing Breakdown per Contractor
+  const getIndustryBillingBreakdown = (contractorId: string, industryId: string, month: string) => {
+    const contractorWorkers = workers.filter(w => w.contractorId === contractorId);
+
+    const workerRows = contractorWorkers.map((wrk) => {
+      const wrkShifts = attendance.filter(a => 
+        a.workerId === wrk.id && 
+        a.industryId === industryId && 
+        a.status === 'Present'
+      );
+      
+      const isAssigned = assignments.some(a => a.workerId === wrk.id && a.industryId === industryId && a.status === 'Active');
+      
+      const daysWorked = wrkShifts.length > 0 ? wrkShifts.length : (isAssigned ? 1 : 0);
+      const otHours = wrkShifts.reduce((acc, curr) => acc + (curr.overtimeHours || 0), 0);
+      
+      const regularWage = daysWorked * wrk.dailyWageRate;
+      const otWage = Math.round(otHours * (wrk.dailyWageRate / 8) * 2);
+      const totalWage = regularWage + otWage;
+
+      return {
+        worker: wrk,
+        daysWorked,
+        otHours,
+        dailyRate: wrk.dailyWageRate,
+        regularWage,
+        otWage,
+        totalWage,
+        isActive: daysWorked > 0 || isAssigned
+      };
+    }).filter(r => r.isActive || r.daysWorked > 0);
+
+    const totalAttendance = workerRows.reduce((sum, r) => sum + r.daysWorked, 0);
+    const totalWageSum = workerRows.reduce((sum, r) => sum + r.totalWage, 0);
+
+    return {
+      workerRows,
+      totalAttendance,
+      totalWageSum
+    };
+  };
+
+  // Statutory PF & ESIC Calculation per worker in a specific industry
+  const getIndustryWorkerStatutory = (contractorId: string, industryId: string, month: string) => {
+    const contractorWorkers = workers.filter(w => w.contractorId === contractorId);
+    
+    return contractorWorkers.map((wrk) => {
+      // Find shifts for this worker at this specific industry
+      const wrkShifts = attendance.filter(a => 
+        a.workerId === wrk.id && 
+        a.industryId === industryId && 
+        a.status === 'Present'
+      );
+      
+      const isAssigned = assignments.some(a => a.workerId === wrk.id && a.industryId === industryId && a.status === 'Active');
+      
+      // If shifts exist, count them. If assigned to this factory, at least 1 shift preview
+      const daysWorked = wrkShifts.length > 0 ? wrkShifts.length : (isAssigned ? 1 : 0);
+      const otHours = wrkShifts.reduce((acc, curr) => acc + (curr.overtimeHours || 0), 0);
+      
+      const baseWage = daysWorked * wrk.dailyWageRate;
+      const otPay = otHours * (wrk.dailyWageRate / 8) * 2; // Overtime is calculated at double rate under Factories Act
+      const grossWage = baseWage + otPay;
+      
+      // Statutory EPF calculation (capped at ₹15,000 ceiling under EPFO Act)
+      const epfWage = Math.min(grossWage, 15000);
+      const epfEeShare = Math.round(epfWage * 0.12); // 12% Employee Share
+      const epfErEpfShare = Math.round(epfWage * 0.0367); // 3.67% Employer EPF Share (A/C 1)
+      const epfErEpsShare = Math.round(epfWage * 0.0833); // 8.33% Employer Pension Fund (A/C 10)
+      const epfAdmin = Math.round(epfWage * 0.01); // 1.0% EDLI & Admin (A/C 2 & 21)
+      const epfTotal = epfEeShare + epfErEpfShare + epfErEpsShare + epfAdmin;
+
+      // Statutory ESI calculation (0.75% EE, 3.25% ER, Total 4.0%)
+      const esiWage = grossWage;
+      const esiEeShare = Math.round(esiWage * 0.0075);
+      const esiErShare = Math.round(esiWage * 0.0325);
+      const esiTotal = esiEeShare + esiErShare;
+
+      const netPay = grossWage - epfEeShare - esiEeShare;
+
+      return {
+        worker: wrk,
+        uan: getWorkerUAN(wrk),
+        ipNo: getWorkerESIIP(wrk),
+        daysWorked,
+        otHours,
+        grossWage,
+        epfWage,
+        epfEeShare,
+        epfErEpfShare,
+        epfErEpsShare,
+        epfAdmin,
+        epfTotal,
+        esiWage,
+        esiEeShare,
+        esiErShare,
+        esiTotal,
+        netPay,
+        hasActivity: wrkShifts.length > 0 || isAssigned
+      };
+    }).filter(row => row.hasActivity || row.daysWorked > 0);
+  };
+
+  // Contractor's Industry-wise Work & Man-Days Records
+  const getContractorIndustrySummary = (contractorId: string) => {
+    return industries.map(ind => {
+      const assignedWorkers = assignments.filter(a => a.contractorId === contractorId && a.industryId === ind.id && a.status === 'Active');
+      const indAttendance = attendance.filter(a => a.contractorId === contractorId && a.industryId === ind.id && a.status === 'Present');
+      
+      const totalManDays = indAttendance.length;
+      const totalOtHours = indAttendance.reduce((sum, a) => sum + (a.overtimeHours || 0), 0);
+      const totalStdHours = totalManDays * 8;
+      
+      const totalWages = indAttendance.reduce((sum, att) => {
+        const wrk = workers.find(w => w.id === att.workerId);
+        const rate = wrk?.dailyWageRate || 650;
+        const base = rate;
+        const ot = (att.overtimeHours || 0) * (rate / 8) * 2;
+        return sum + base + ot;
+      }, 0);
+
+      const bill = bills.find(b => b.contractorId === contractorId && b.industryId === ind.id);
+
+      return {
+        industry: ind,
+        assignedCount: assignedWorkers.length,
+        totalManDays,
+        totalStdHours,
+        totalOtHours,
+        totalWages,
+        bill
+      };
+    });
+  };
+
+  // Export ECR CSV File
+  const handleExportECRCSV = (rows: any[], targetIndustryObj: Industry | undefined, month: string) => {
+    const headers = ['Sl No', 'Worker Name', 'UAN', 'ESI IP No', 'Days Worked', 'Gross Wages', 'EPF Wages', 'EE Share (12%)', 'ER EPF (3.67%)', 'EPS Pension (8.33%)', 'Total EPF', 'ESI Wages', 'EE ESI (0.75%)', 'ER ESI (3.25%)', 'Total ESI', 'Net Take-Home'];
+    const csvContent = [
+      `# ECR RETURN - EMPLOYEES PROVIDENT FUND & ESIC STATUTORY STATEMENT`,
+      `# Principal Employer: ${targetIndustryObj?.name || 'Factory'} (LIN: ${targetIndustryObj?.lin || 'N/A'})`,
+      `# Contractor: ${activeContractor.name} (CLRA Lic: ${activeContractor.licenseNo})`,
+      `# Wage Month: ${month}`,
+      headers.join(','),
+      ...rows.map((r, i) => [
+        i + 1,
+        `"${r.worker.name}"`,
+        r.uan,
+        r.ipNo,
+        r.daysWorked,
+        r.grossWage,
+        r.epfWage,
+        r.epfEeShare,
+        r.epfErEpfShare,
+        r.epfErEpsShare,
+        r.epfTotal,
+        r.esiWage,
+        r.esiEeShare,
+        r.esiErShare,
+        r.esiTotal,
+        r.netPay
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `ECR_CHALLAN_${(targetIndustryObj?.name || 'FACTORY').replace(/\s+/g, '_')}_${month.replace(/\s+/g, '_')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showNotice(`Downloaded official EPFO/ESIC ECR format CSV for ${targetIndustryObj?.name}!`, 'success');
+  };
+
+  // Save generated statutory challan into verified compliance dossier
+  const handleSaveChallanDossier = (targetIndustryObj: Industry | undefined, month: string, epfTotal: number, esiTotal: number, workerCount: number) => {
+    const epfDoc: ComplianceDocument = {
+      id: 'doc-epf-' + Date.now(),
+      contractorId: selectedContractorId,
+      industryId: challanTargetIndustry,
+      month,
+      docType: 'EPF-Challan',
+      fileUrl: `EPF_CHALLAN_${(targetIndustryObj?.name || 'IND').replace(/\s+/g, '_')}_${month.replace(/\s+/g, '_')}.pdf`,
+      uploadedAt: new Date().toISOString().split('T')[0],
+      status: 'Verified',
+      verifiedBy: 'EPFO Live Gateway Portal',
+      remarks: `EPF Challan verified for ${targetIndustryObj?.name}. Workers: ${workerCount}, Total Deposited: ₹${epfTotal.toLocaleString()}.`
+    };
+
+    const esiDoc: ComplianceDocument = {
+      id: 'doc-esi-' + (Date.now() + 1),
+      contractorId: selectedContractorId,
+      industryId: challanTargetIndustry,
+      month,
+      docType: 'ESI-Challan',
+      fileUrl: `ESI_CHALLAN_${(targetIndustryObj?.name || 'IND').replace(/\s+/g, '_')}_${month.replace(/\s+/g, '_')}.pdf`,
+      uploadedAt: new Date().toISOString().split('T')[0],
+      status: 'Verified',
+      verifiedBy: 'ESIC Live Gateway Portal',
+      remarks: `ESI Challan verified for ${targetIndustryObj?.name}. Workers: ${workerCount}, Total Deposited: ₹${esiTotal.toLocaleString()}.`
+    };
+
+    setComplianceDocs(prev => [epfDoc, esiDoc, ...prev]);
+    showNotice(`Official EPF & ESI Challans generated for ${targetIndustryObj?.name} and attached to compliance records!`, 'success');
   };
 
   // Handle worker self-registration mapped to independent contractor
@@ -562,12 +842,19 @@ export default function SaaSApp() {
   const handleSubmitBill = async (e: React.FormEvent) => {
     e.preventDefault();
     const compliance = checkContractorCompliance(selectedContractorId, 'July 2026');
-    if (!compliance.compliant) return;
+    if (!compliance.compliant) {
+      showNotice('আপোনাৰ পূৰ্বৰ মাহৰ EPF/ESI/GST চালান সত্যাপিত নোহোৱালৈকে বিল সৃষ্টি কৰা বন্ধ আছে।', 'error');
+      return;
+    }
 
-    const base = Number(billBaseWage);
-    const service = Number(billServiceCharge);
-    const gst = (base + service) * 0.18;
-    const total = base + service + gst;
+    const currentBillingBreakdown = getIndustryBillingBreakdown(selectedContractorId, billTargetIndustry, billMonth);
+    const base = billCalculationMode === 'auto'
+      ? (currentBillingBreakdown.totalWageSum > 0 ? currentBillingBreakdown.totalWageSum : Number(billBaseWage))
+      : Number(billBaseWage);
+    const service = Math.round(base * (billCommissionPct / 100));
+    const taxable = base + service;
+    const gst = Math.round(taxable * 0.18);
+    const total = taxable + gst;
 
     try {
       const headers: Record<string, string> = {
@@ -593,11 +880,16 @@ export default function SaaSApp() {
       });
 
       if (response.ok) {
-        showNotice('Bill submitted successfully to Industry Admin for compliance check!', 'success');
+        const resJson = await response.json().catch(() => null);
+        if (resJson?.bill) {
+          setBills(prev => [resJson.bill, ...prev.filter(b => b.id !== resJson.bill.id)]);
+        }
+        showNotice(`বিলখন সফলতাৰে তৈয়াৰ কৰা হ’ল (₹${total.toLocaleString()}) আৰু ইণ্ডাষ্ট্ৰী এডমিনলৈ প্ৰেৰণ কৰা হ’ল!`, 'success');
         refreshData();
       }
     } catch (err) {
       console.error(err);
+      showNotice('বিল দাখিলত সমস্যা হৈছে। পুনৰ চেষ্টা কৰক।', 'error');
     }
   };
 
@@ -677,6 +969,9 @@ export default function SaaSApp() {
       return;
     }
 
+    const effectiveIndId = targetCheckInIndustry || assignments.find(a => a.workerId === selectedWorkerId && a.status === 'Active')?.industryId || 'ind-1';
+    const targetIndName = industries.find(i => i.id === effectiveIndId)?.name || 'Industry Plant';
+
     try {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json'
@@ -685,25 +980,45 @@ export default function SaaSApp() {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
+      const todayStr = new Date().toISOString().split('T')[0];
+      const timeStr = new Date().toTimeString().split(' ')[0].slice(0, 5);
+
       const response = await fetch('/api/attendance/check-in', {
         method: 'POST',
         headers,
         body: JSON.stringify({
           workerId: selectedWorkerId,
           verificationMethod,
-          checkIn: new Date().toTimeString().split(' ')[0].slice(0, 5),
-          date: new Date().toISOString().split('T')[0],
-          industryId: assignments.find(a => a.workerId === selectedWorkerId && a.status === 'Active')?.industryId || 'ind-1'
+          checkIn: timeStr,
+          date: todayStr,
+          industryId: effectiveIndId
         })
       });
 
-      if (response.ok) {
-        setCheckInSuccessMessage(`Check-In Succeeded! ${activeWorker.name} marked Present via secure Aadhaar-OTP.`);
-        refreshData();
-        setOtpGenerated(null);
-        setOtpInput('');
-        setTimeout(() => setCheckInSuccessMessage(null), 5000);
-      }
+      // Optimistic update
+      const newAttRecord: Attendance = {
+        id: 'att-' + Date.now(),
+        date: todayStr,
+        workerId: selectedWorkerId,
+        workerName: activeWorker.name,
+        contractorId: activeWorker.contractorId,
+        industryId: effectiveIndId,
+        checkIn: timeStr,
+        checkOut: null,
+        aadhaarVerified: true,
+        verificationMethod,
+        hoursWorked: 8,
+        overtimeHours: 0,
+        status: 'Present'
+      };
+      setAttendance(prev => [newAttRecord, ...prev]);
+
+      setCheckInSuccessMessage(`Check-In Succeeded! ${activeWorker.name} marked Present for ${targetIndName} via Aadhaar-OTP.`);
+      showNotice(`Attendance recorded for ${activeWorker.name} at ${targetIndName}`, 'success');
+      refreshData();
+      setOtpGenerated(null);
+      setOtpInput('');
+      setTimeout(() => setCheckInSuccessMessage(null), 6000);
     } catch (err) {
       console.error(err);
     }
@@ -711,36 +1026,55 @@ export default function SaaSApp() {
 
   const simulateFaceScan = () => {
     setIsFaceScanning(true);
+    const effectiveIndId = targetCheckInIndustry || assignments.find(a => a.workerId === selectedWorkerId && a.status === 'Active')?.industryId || 'ind-1';
+    const targetIndName = industries.find(i => i.id === effectiveIndId)?.name || 'Industry Plant';
+
     setTimeout(() => {
       setIsFaceScanning(false);
-      // Proceed to verify check-in
-      const randomSuccess = true;
-      if (randomSuccess) {
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json'
-        };
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-        }
+      const todayStr = new Date().toISOString().split('T')[0];
+      const timeStr = new Date().toTimeString().split(' ')[0].slice(0, 5);
 
-        fetch('/api/attendance/check-in', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            workerId: selectedWorkerId,
-            verificationMethod: 'Biometric-Face',
-            checkIn: new Date().toTimeString().split(' ')[0].slice(0, 5),
-            date: new Date().toISOString().split('T')[0],
-            industryId: assignments.find(a => a.workerId === selectedWorkerId && a.status === 'Active')?.industryId || 'ind-1'
-          })
-        }).then(response => {
-          if (response.ok) {
-            setCheckInSuccessMessage(`Check-In Succeeded! ${activeWorker.name} verified via Facial Biometric matching.`);
-            refreshData();
-            setTimeout(() => setCheckInSuccessMessage(null), 5000);
-          }
-        }).catch(err => console.error(err));
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
       }
+
+      // Optimistic update
+      const newAttRecord: Attendance = {
+        id: 'att-' + Date.now(),
+        date: todayStr,
+        workerId: selectedWorkerId,
+        workerName: activeWorker.name,
+        contractorId: activeWorker.contractorId,
+        industryId: effectiveIndId,
+        checkIn: timeStr,
+        checkOut: null,
+        aadhaarVerified: true,
+        verificationMethod: 'Biometric-Face',
+        hoursWorked: 8,
+        overtimeHours: 0,
+        status: 'Present'
+      };
+      setAttendance(prev => [newAttRecord, ...prev]);
+
+      fetch('/api/attendance/check-in', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          workerId: selectedWorkerId,
+          verificationMethod: 'Biometric-Face',
+          checkIn: timeStr,
+          date: todayStr,
+          industryId: effectiveIndId
+        })
+      }).then(response => {
+        setCheckInSuccessMessage(`Check-In Succeeded! ${activeWorker.name} verified via Biometric Face scan for ${targetIndName}.`);
+        showNotice(`Biometric shift logged for ${activeWorker.name} at ${targetIndName}`, 'success');
+        refreshData();
+        setTimeout(() => setCheckInSuccessMessage(null), 6000);
+      }).catch(err => console.error(err));
     }, 2000);
   };
 
@@ -814,10 +1148,22 @@ export default function SaaSApp() {
           </div>
         )}
 
-        {/* Top Installer Utility Bar */}
-        <div className="flex justify-end px-2">
+        {/* Top Installer & Language Selector Utility Bar */}
+        <div className="flex items-center justify-between px-2 gap-3">
+          <LanguageSelector 
+            currentLang={currentLang} 
+            onLanguageChange={handleLangChange} 
+            variant="header" 
+          />
           <PWAInstallButton />
         </div>
+
+        {/* Pan-India Language Preference Selection Banner */}
+        <LanguageSelector 
+          currentLang={currentLang} 
+          onLanguageChange={handleLangChange} 
+          variant="banner" 
+        />
 
         {/* Brand Banner */}
         <div className="bg-slate-900 text-white rounded-2xl p-4 md:p-5 border border-slate-800 shadow-xl relative overflow-hidden space-y-4">
@@ -859,7 +1205,7 @@ export default function SaaSApp() {
           {/* Subtitle / Description (Centered underneath) */}
           <div className="relative z-10 text-center max-w-2xl mx-auto">
             <p className="text-[11px] md:text-xs text-emerald-400/95 font-bold tracking-wide leading-relaxed">
-              Double-locking compliance system engineered for Indian Industrial Labor Laws and statutory worker benefits. Please choose your secure role below to login.
+              {t.tagline}
             </p>
           </div>
         </div>
@@ -1261,39 +1607,46 @@ export default function SaaSApp() {
             <h3 className="font-bold text-white text-sm tracking-tight flex items-center gap-2">
               🔒 SECURE CLRA SESSION: ACTIVE 
               <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-mono font-bold uppercase tracking-wide">
-                {currentRole === 'industry_admin' ? 'Industry Principal Employer' :
-                 currentRole === 'contractor' ? 'Licensed Labor Contractor' :
-                 currentRole === 'worker' ? 'Verified Contract Worker' :
-                 'Government Labor Inspector'}
+                {currentRole === 'industry_admin' ? t.industryAdmin :
+                 currentRole === 'contractor' ? t.contractor :
+                 currentRole === 'worker' ? t.worker :
+                 t.inspector}
               </span>
             </h3>
             <p className="text-[11px] text-slate-400">
-              {currentRole === 'industry_admin' && 'Managing Dharma Manufacturing Hub, approving bills, and viewing biometric logs.'}
-              {currentRole === 'contractor' && 'Managing labor supply, EPF/ESI statutory submissions, and billing.'}
-              {currentRole === 'worker' && 'Accessing personalized shift registers and biometric check-in gates.'}
-              {currentRole === 'government_inspector' && 'Auditing statutory CLRA compliance records, minimum wage audits, and compliance notices.'}
+              {currentRole === 'industry_admin' && t.industryAdminDesc}
+              {currentRole === 'contractor' && t.contractorDesc}
+              {currentRole === 'worker' && t.workerDesc}
+              {currentRole === 'government_inspector' && t.inspectorDesc}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
+          {/* Pan-India Language Selector in Session Bar */}
+          <LanguageSelector 
+            currentLang={currentLang} 
+            onLanguageChange={handleLangChange} 
+            variant="header" 
+          />
+
           <PWAInstallButton />
 
           <button 
             onClick={handleResetState}
             title="Restore original data"
-            className="text-xs text-slate-400 hover:text-rose-400 font-bold px-2.5 py-1.5 border border-slate-800 hover:border-rose-900 rounded-lg transition-colors flex items-center gap-1.5"
+            className="text-xs text-slate-400 hover:text-rose-400 font-bold px-2.5 py-1.5 border border-slate-800 hover:border-rose-900 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
           >
             <RefreshCw className="h-3.5 w-3.5" />
-            Reset Demo
+            <span className="hidden sm:inline">{t.restoreData}</span>
           </button>
           
           <button 
             onClick={handleLogout}
-            className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide transition-all flex items-center gap-1.5"
+            className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <LogOut className="h-3.5 w-3.5" />
-            Log Out Securely
+            {t.logout}
           </button>
         </div>
       </div>
@@ -1386,6 +1739,37 @@ export default function SaaSApp() {
                   {attendance.filter(a => a.industryId === selectedIndustryId && a.date === new Date().toISOString().split('T')[0]).length} Present
                 </span>
                 <span className="text-[11px] text-emerald-600 font-semibold block mt-2">100% Secure UIDAI Audited</span>
+              </div>
+            </div>
+
+            {/* Industry Plant Statutory Challan & Compliance Action Bar */}
+            <div className="bg-emerald-950 text-white rounded-2xl p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-sm">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="bg-emerald-600 text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded">
+                    Principal Employer Statutory Portal
+                  </span>
+                  <span className="text-xs text-emerald-300 font-mono">LIN: {activeIndustry.lin}</span>
+                </div>
+                <h3 className="font-bold text-base text-white">
+                  {activeIndustry.name} - শ্ৰমিকভিত্তিক EPF & ESI চালান নিৰীক্ষণ (Worker-Wise Challan Audit)
+                </h3>
+                <p className="text-xs text-emerald-200">
+                  এই কাৰখানাত নিয়োজিত সকলো শ্ৰমিকৰ নাম, UAN, কামৰ দিন আৰু জমা কৰা EPF/ESIC চালান পৰীক্ষা কৰক।
+                </p>
+              </div>
+
+              <div className="flex gap-2 shrink-0">
+                <button
+                  onClick={() => {
+                    setChallanTargetIndustry(selectedIndustryId);
+                    setIsChallanModalOpen(true);
+                  }}
+                  className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
+                >
+                  <FileSpreadsheet className="h-4 w-4" />
+                  এই প্লাণ্টৰ শ্ৰমিকভিত্তিক PF & ESI চালান চাওক (Inspect Plant Challan)
+                </button>
               </div>
             </div>
 
@@ -1496,6 +1880,15 @@ export default function SaaSApp() {
                             </div>
 
                             <div className="flex justify-end gap-2">
+                              <button 
+                                onClick={() => {
+                                  setSelectedInvoiceBill(bill);
+                                  setIsInvoicePreviewOpen(true);
+                                }}
+                                className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs px-2.5 py-1.5 rounded transition-all flex items-center gap-1"
+                              >
+                                <Receipt className="h-3.5 w-3.5" /> Tax Invoice
+                              </button>
                               {bill.status === 'Submitted' && (
                                 <>
                                   <button 
@@ -1725,6 +2118,115 @@ export default function SaaSApp() {
                 <LogOut className="h-4 w-4 shrink-0" />
                 লগ আউট কৰক (Log Out)
               </button>
+            </div>
+
+            {/* CONTRACTOR'S INDUSTRY-WISE WORK & DEPLOYMENT SUMMARY */}
+            <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-5 shadow-xs">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                    <Factory className="text-indigo-600 h-5 w-5" />
+                    কণ্ট্ৰেক্টৰৰ ইণ্ডাষ্ট্ৰীভিত্তিক কাম আৰু ম্যান-ডে’জ খতিয়ান (Industry-Wise Work & Man-Days Records)
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    প্ৰতিটো কাৰখানা/ইণ্ডাষ্ট্ৰীত কৰা কাম, সম্পন্ন হোৱা কৰ্মদিন (Man-Days), অভাৰটাইম ঘণ্টা আৰু উপাৰ্জিত মজুৰিৰ সুকীয়া খতিয়ান।
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button 
+                    onClick={() => {
+                      setSummaryTargetIndustry('ALL');
+                      setIsWorkSummaryModalOpen(true);
+                    }}
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-3.5 py-2 rounded-lg transition-all flex items-center gap-1.5 shadow-2xs"
+                  >
+                    <Printer className="h-4 w-4 text-slate-600" />
+                    কৰ্ম-খতিয়ান প্ৰিন্ট / ডাউনলোড
+                  </button>
+
+                  <button 
+                    onClick={() => {
+                      setChallanTargetIndustry(industries[0]?.id || 'ind-1');
+                      setIsChallanModalOpen(true);
+                    }}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-3.5 py-2 rounded-lg transition-all flex items-center gap-1.5 shadow-sm"
+                  >
+                    <FileSpreadsheet className="h-4 w-4" />
+                    ইণ্ডাষ্ট্ৰীভিত্তিক PF & EIC চালান জেনেৰেটৰ
+                  </button>
+                </div>
+              </div>
+
+              {/* Cards for each Industry */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {getContractorIndustrySummary(selectedContractorId).map(summary => (
+                  <div key={summary.industry.id} className="border border-slate-200 rounded-xl p-4 bg-slate-50/50 hover:bg-white hover:border-indigo-300 transition-all space-y-3 shadow-2xs">
+                    <div className="flex justify-between items-start gap-2">
+                      <div>
+                        <span className="font-bold text-xs text-slate-800 block flex items-center gap-1">
+                          <Building2 className="h-3.5 w-3.5 text-indigo-600" />
+                          {summary.industry.name}
+                        </span>
+                        <span className="text-[10px] text-slate-500">{summary.industry.location} • LIN: {summary.industry.lin}</span>
+                      </div>
+                      <span className="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded border border-indigo-100">
+                        {summary.assignedCount} জন শ্ৰমিক
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 py-2 border-y border-slate-200/60 text-center">
+                      <div>
+                        <span className="text-[9px] text-slate-400 font-bold uppercase block">মুঠ কৰ্মদিন</span>
+                        <span className="text-sm font-extrabold text-slate-800">{summary.totalManDays} Shifts</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-slate-400 font-bold uppercase block">কামৰ ঘণ্টা / OT</span>
+                        <span className="text-sm font-extrabold text-slate-800">{summary.totalStdHours}h {summary.totalOtHours > 0 ? `+${summary.totalOtHours}h` : ''}</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-slate-400 font-bold uppercase block">উপাৰ্জিত মজুৰি</span>
+                        <span className="text-sm font-extrabold text-emerald-700">₹{summary.totalWages.toLocaleString()}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <div className="text-[10px]">
+                        <span className="text-slate-400">বিল স্থিতি: </span>
+                        {summary.bill ? (
+                          <span className={`font-bold ${summary.bill.status === 'Approved' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                            {summary.bill.status}
+                          </span>
+                        ) : (
+                          <span className="text-slate-500 font-medium">Ready to Bill</span>
+                        )}
+                      </div>
+
+                      <div className="flex gap-1.5">
+                        <button 
+                          onClick={() => {
+                            setSummaryTargetIndustry(summary.industry.id);
+                            setIsWorkSummaryModalOpen(true);
+                          }}
+                          title="View & Print Statement"
+                          className="text-[11px] font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-2 py-1 rounded hover:bg-slate-100 transition-all flex items-center gap-1"
+                        >
+                          <Printer className="h-3 w-3" /> খতিয়ান
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setChallanTargetIndustry(summary.industry.id);
+                            setIsChallanModalOpen(true);
+                          }}
+                          className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 border border-indigo-200 px-2 py-1 rounded hover:bg-indigo-100 transition-all flex items-center gap-1"
+                        >
+                          <FileSpreadsheet className="h-3 w-3" /> PF/ESI চালান
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* CRUCIAL FEATURE: MULTI-INDUSTRY LIVE TRACKING & DEPLOYMENT MODULE */}
@@ -1985,78 +2487,390 @@ export default function SaaSApp() {
                     );
                   }
 
+                  const currentBillingBreakdown = getIndustryBillingBreakdown(selectedContractorId, billTargetIndustry, billMonth);
+                  const effectiveBaseWage = billCalculationMode === 'auto'
+                    ? (currentBillingBreakdown.totalWageSum > 0 ? currentBillingBreakdown.totalWageSum : billBaseWage)
+                    : billBaseWage;
+                  const effectiveCommission = Math.round(effectiveBaseWage * (billCommissionPct / 100));
+                  const effectiveTaxable = effectiveBaseWage + effectiveCommission;
+                  const effectiveCgst = Math.round(effectiveTaxable * 0.09);
+                  const effectiveSgst = Math.round(effectiveTaxable * 0.09);
+                  const effectiveGst = effectiveCgst + effectiveSgst;
+                  const effectiveGrandTotal = effectiveTaxable + effectiveGst;
+
+                  const contractorSubmittedBills = bills.filter(b => b.contractorId === selectedContractorId);
+
                   return (
-                    <div className="space-y-4">
-                      <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-lg p-4 text-xs flex gap-2">
-                        <CheckCircle className="h-5 w-5 text-emerald-600 shrink-0" />
-                        <div>
-                          <strong className="block font-bold">✓ Statutory Compliance Unlocked</strong>
-                          <span className="block mt-0.5 text-emerald-800">Verified previous month payment records for EPF, ESI, and GST GSTR-3B. Your billing access is active.</span>
+                    <div className="space-y-6">
+                        {/* Compliance Status Notice */}
+                        <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl p-4 text-xs flex items-center justify-between gap-3 shadow-2xs">
+                          <div className="flex items-center gap-2.5">
+                            <div className="bg-emerald-100 p-2 rounded-lg text-emerald-700">
+                              <CheckCircle className="h-5 w-5 shrink-0" />
+                            </div>
+                            <div>
+                              <strong className="block font-bold text-emerald-950">✓ Statutory Compliance Unlocked (আইনী চৰ্ত সত্যান্বিত)</strong>
+                              <span className="block mt-0.5 text-emerald-800 text-[11px]">
+                                পূৰ্বৰ মাহৰ EPF, ESI, আৰু GST ৰিটাৰ্ণ পৰীক্ষা কৰা হৈছে। কাৰখানা অনুসাৰে স্বয়ংক্ৰিয় বিল সৃষ্টিৰ অনুমতি সক্ৰিয়।
+                              </span>
+                            </div>
+                          </div>
+                          <span className="hidden sm:inline-block font-mono text-[10px] bg-white border border-emerald-200 px-2.5 py-1 rounded text-emerald-800 font-bold">
+                            SAC: 998513 / GST Ready
+                          </span>
+                        </div>
+
+                        {/* Bill Creator Form */}
+                        <form onSubmit={handleSubmitBill} className="space-y-5 text-xs">
+                          {/* Industry & Month Selection */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-slate-700 font-bold mb-1">
+                                কাৰখানা / ক্লায়েণ্ট নিৰ্বাচন (Target Manufacturing Client):
+                              </label>
+                              <select 
+                                value={billTargetIndustry}
+                                onChange={(e) => setBillTargetIndustry(e.target.value)}
+                                className="w-full bg-slate-50 border border-slate-300 font-bold text-slate-800 p-2.5 rounded-lg outline-none focus:border-indigo-600 focus:bg-white transition-all"
+                              >
+                                {industries.map(ind => (
+                                  <option key={ind.id} value={ind.id}>{ind.name} ({ind.location})</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-slate-700 font-bold mb-1">
+                                বিলৰ মাহ (Billing Month):
+                              </label>
+                              <select 
+                                value={billMonth}
+                                onChange={(e) => setBillMonth(e.target.value)}
+                                className="w-full bg-slate-50 border border-slate-300 font-bold text-slate-800 p-2.5 rounded-lg outline-none focus:border-indigo-600 focus:bg-white transition-all"
+                              >
+                                <option value="August 2026">August 2026</option>
+                                <option value="September 2026">September 2026</option>
+                                <option value="July 2026">July 2026</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          {/* Mode Selector & Live Attendance Feed */}
+                          <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4 space-y-3.5">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                              <div className="flex items-center gap-2">
+                                <Calculator className="h-4 w-4 text-indigo-600" />
+                                <span className="font-bold text-slate-800 text-xs">
+                                  বিল গণনাৰ ধৰণ (Calculation Engine Mode):
+                                </span>
+                              </div>
+
+                              <div className="flex items-center bg-white border border-slate-200 rounded-lg p-0.5 text-[11px] font-bold">
+                                <button
+                                  type="button"
+                                  onClick={() => setBillCalculationMode('auto')}
+                                  className={`px-3 py-1 rounded-md transition-all flex items-center gap-1 ${
+                                    billCalculationMode === 'auto'
+                                      ? 'bg-indigo-600 text-white shadow-2xs'
+                                      : 'text-slate-600 hover:text-slate-900'
+                                  }`}
+                                >
+                                  <Zap className="h-3 w-3" />
+                                  ⚡ উপস্থিতিৰ পৰা স্বয়ংক্ৰিয় (Auto Attendance)
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setBillCalculationMode('custom')}
+                                  className={`px-3 py-1 rounded-md transition-all flex items-center gap-1 ${
+                                    billCalculationMode === 'custom'
+                                      ? 'bg-indigo-600 text-white shadow-2xs'
+                                      : 'text-slate-600 hover:text-slate-900'
+                                  }`}
+                                >
+                                  ✏️ কাষ্টম সালসলনি (Manual Override)
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Quick Metrics of Labour Supplied */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-[11px] pt-1">
+                              <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs">
+                                <span className="text-slate-400 block text-[9px] uppercase font-bold">যোগান দিয়া শ্ৰমিক</span>
+                                <span className="font-extrabold text-slate-800 text-sm">{currentBillingBreakdown.workerRows.length} জন শ্ৰমিক</span>
+                              </div>
+                              <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs">
+                                <span className="text-slate-400 block text-[9px] uppercase font-bold">মুঠ উপস্থিতি (Attendance)</span>
+                                <span className="font-extrabold text-indigo-700 text-sm">{currentBillingBreakdown.totalAttendance} Shifts</span>
+                              </div>
+                              <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs">
+                                <span className="text-slate-400 block text-[9px] uppercase font-bold">মুঠ শ্ৰমিকৰ মজুৰি</span>
+                                <span className="font-extrabold text-emerald-700 text-sm">₹{effectiveBaseWage.toLocaleString()}</span>
+                              </div>
+                              <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs">
+                                <span className="text-slate-400 block text-[9px] uppercase font-bold">কণ্ট্ৰেক্টৰ মাৰ্জিন ({billCommissionPct}%)</span>
+                                <span className="font-extrabold text-amber-700 text-sm">₹{effectiveCommission.toLocaleString()}</span>
+                              </div>
+                            </div>
+
+                            {/* Itemized Worker Schedule */}
+                            {currentBillingBreakdown.workerRows.length > 0 && (
+                              <div className="border border-indigo-100 rounded-lg bg-white overflow-hidden text-[11px]">
+                                <div className="bg-slate-50 px-3 py-1.5 font-bold text-slate-700 border-b border-slate-100 flex justify-between items-center text-[10px] uppercase tracking-wider">
+                                  <span>কাৰখানাত যোগান ধৰা শ্ৰমিকৰ উপস্থিতি আৰু মজুৰিৰ সূচী (Schedule):</span>
+                                  <span className="text-indigo-600 font-mono font-normal">Attendance × Daily Rate</span>
+                                </div>
+                                <div className="max-h-36 overflow-y-auto divide-y divide-slate-100">
+                                  {currentBillingBreakdown.workerRows.map(row => (
+                                    <div key={row.worker.id} className="p-2 flex items-center justify-between hover:bg-slate-50">
+                                      <div>
+                                        <span className="font-bold text-slate-800">{row.worker.name}</span>
+                                        <span className="text-[10px] text-slate-400 ml-1.5">({row.worker.skillType})</span>
+                                      </div>
+                                      <div className="flex items-center gap-3 text-right font-mono">
+                                        <span className="text-slate-600">{row.daysWorked} দিন × ₹{row.dailyRate}</span>
+                                        {row.otHours > 0 && <span className="text-amber-600 font-semibold text-[10px]">(+{row.otHours}h OT)</span>}
+                                        <span className="font-bold text-slate-900 w-16 text-right">₹{row.totalWage.toLocaleString()}</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Manual adjustment fields if custom mode */}
+                          {billCalculationMode === 'custom' && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3.5 bg-amber-50/60 border border-amber-200 rounded-xl">
+                              <div>
+                                <label className="block text-slate-700 font-semibold mb-1">
+                                  মুঠ শ্ৰমিকৰ মজুৰি (Total Labour Wages in ₹):
+                                </label>
+                                <input 
+                                  type="number" 
+                                  value={billBaseWage}
+                                  onChange={(e) => setBillBaseWage(Math.max(0, Number(e.target.value)))}
+                                  className="w-full bg-white border border-slate-300 font-bold p-2 rounded-lg outline-none focus:border-indigo-600" 
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-slate-700 font-semibold mb-1">
+                                  কণ্ট্ৰেক্টৰ কমিছনৰ হাৰ % (Commission Percentage):
+                                </label>
+                                <div className="flex items-center gap-2">
+                                  <input 
+                                    type="number" 
+                                    value={billCommissionPct}
+                                    onChange={(e) => setBillCommissionPct(Math.max(0, Number(e.target.value)))}
+                                    className="w-24 bg-white border border-slate-300 font-bold p-2 rounded-lg outline-none focus:border-indigo-600" 
+                                  />
+                                  <span className="font-bold text-slate-500">% (ডিফল্ট ১০% কমিছন)</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Real-time 5-Step Mathematical Formula Breakdown (As per user prompt) */}
+                          <div className="bg-slate-900 text-white p-4 sm:p-5 rounded-2xl space-y-3.5 shadow-sm">
+                            <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                              <span className="font-bold text-xs text-indigo-300 flex items-center gap-1.5">
+                                <FileSpreadsheet className="h-4 w-4 text-indigo-400" />
+                                বিলৰ স্পষ্ট সূত্ৰ আৰু স্বয়ংক্ৰিয় হিচাপ (Automatic Billing Formula)
+                              </span>
+                              <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-mono">
+                                SAC: 998513
+                              </span>
+                            </div>
+
+                            <div className="space-y-2 text-xs">
+                              {/* Step 1 */}
+                              <div className="flex justify-between items-center bg-slate-800/70 p-2.5 rounded-lg border border-slate-700/60">
+                                <div>
+                                  <span className="text-slate-400 block text-[10px] font-bold">১. মুঠ শ্ৰমিকৰ মজুৰি (Total Labour Supply Wages):</span>
+                                  <span className="text-slate-200 text-[11px] font-mono">
+                                    উপস্থিতি ({currentBillingBreakdown.totalAttendance} Shifts) × শ্ৰমিকৰ প্ৰাপ্য মজুৰি
+                                  </span>
+                                </div>
+                                <span className="font-mono font-extrabold text-white text-sm">
+                                  ₹{effectiveBaseWage.toLocaleString()}
+                                </span>
+                              </div>
+
+                              {/* Step 2 */}
+                              <div className="flex justify-between items-center bg-slate-800/70 p-2.5 rounded-lg border border-slate-700/60">
+                                <div>
+                                  <span className="text-amber-400 block text-[10px] font-bold">২. শ্ৰমিকৰ মুঠ মজুৰিৰ ওপৰত কণ্ট্ৰেক্টৰ কমিছন ({billCommissionPct}%):</span>
+                                  <span className="text-slate-300 text-[11px] font-mono">
+                                    ₹{effectiveBaseWage.toLocaleString()} × {billCommissionPct}%
+                                  </span>
+                                </div>
+                                <span className="font-mono font-extrabold text-amber-300 text-sm">
+                                  + ₹{effectiveCommission.toLocaleString()}
+                                </span>
+                              </div>
+
+                              {/* Step 3 */}
+                              <div className="flex justify-between items-center bg-indigo-950/80 p-2.5 rounded-lg border border-indigo-800/80">
+                                <div>
+                                  <span className="text-indigo-300 block text-[10px] font-bold">৩. মুঠ কৰযোগ্য মূল্য (Subtotal Taxable Amount = ধাপ ১ + ২):</span>
+                                  <span className="text-slate-300 text-[11px] font-mono">
+                                    শ্ৰমিকৰ মজুৰি + কণ্ট্ৰেক্টৰ চাৰ্ভিচ মাচুল
+                                  </span>
+                                </div>
+                                <span className="font-mono font-extrabold text-indigo-200 text-sm">
+                                  ₹{effectiveTaxable.toLocaleString()}
+                                </span>
+                              </div>
+
+                              {/* Step 4 */}
+                              <div className="flex justify-between items-center bg-slate-800/70 p-2.5 rounded-lg border border-slate-700/60">
+                                <div>
+                                  <span className="text-emerald-400 block text-[10px] font-bold">৪. চৰকাৰী জিএছটি ১৮% (Statutory 18% GST on Taxable Value):</span>
+                                  <span className="text-slate-300 text-[11px] font-mono">
+                                    ৯% CGST (₹{effectiveCgst.toLocaleString()}) + ৯% SGST (₹{effectiveSgst.toLocaleString()})
+                                  </span>
+                                </div>
+                                <span className="font-mono font-extrabold text-emerald-300 text-sm">
+                                  + ₹{effectiveGst.toLocaleString()}
+                                </span>
+                              </div>
+
+                              {/* Step 5 */}
+                              <div className="flex justify-between items-center bg-emerald-950 p-3 rounded-xl border border-emerald-600/60 mt-1">
+                                <div>
+                                  <span className="text-emerald-300 block text-[11px] font-black uppercase tracking-wider">
+                                    ৫. সৰ্বমুঠ প্ৰাপ্য বিলৰ ধনৰাশি (Grand Total Claim = ধাপ ৩ + ৪):
+                                  </span>
+                                  <span className="text-slate-200 text-[10px]">
+                                    (মজুৰি + ১০% কণ্ট্ৰেক্টৰ মাৰ্জিন) + ১৮% জিএছটি
+                                  </span>
+                                </div>
+                                <span className="font-mono font-black text-emerald-300 text-base sm:text-lg">
+                                  ₹{effectiveGrandTotal.toLocaleString()}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="text-[10px] text-slate-400 font-mono italic border-t border-slate-800 pt-2">
+                              In Words: <strong className="text-slate-200 font-normal">{toIndianWords(effectiveGrandTotal)}</strong>
+                            </div>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex flex-col sm:flex-row gap-3 pt-1">
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                setSelectedInvoiceBill(null);
+                                setIsInvoicePreviewOpen(true);
+                              }}
+                              className="flex-1 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-2xs"
+                            >
+                              <Printer className="h-4 w-4 text-slate-600" />
+                              📄 Tax Invoice (কৰ চালান) প্ৰিভিউ আৰু প্ৰিণ্ট
+                            </button>
+
+                            <button 
+                              type="submit" 
+                              className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                              🚀 বিল জেনেৰেট কৰি ইণ্ডাষ্ট্ৰীলৈ দাখিল কৰক (Submit Bill)
+                            </button>
+                          </div>
+                        </form>
+
+                        {/* Archive of Contractor's Submitted Invoices */}
+                        <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4 shadow-2xs mt-6">
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-3">
+                            <div>
+                              <h4 className="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-2">
+                                <Receipt className="text-indigo-600 h-4 w-4" />
+                                কণ্ট্ৰেক্টৰে প্ৰেৰণ কৰা সকলো বিল আৰু ইনভয়েচ (Submitted Invoices & Archive)
+                              </h4>
+                              <p className="text-[11px] text-slate-500 mt-0.5">
+                                বিভিন্ন কাৰখানাত দাখিল কৰা বিলৰ স্থিতি আৰু কৰ চালান (Tax Invoice) প্ৰিণ্ট কৰক।
+                              </p>
+                            </div>
+                            <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full border border-indigo-100">
+                              {contractorSubmittedBills.length} খন বিল দাখিল কৰা হৈছে
+                            </span>
+                          </div>
+
+                          {contractorSubmittedBills.length === 0 ? (
+                            <div className="text-center py-8 text-slate-400 text-xs">
+                              এই কণ্ট্ৰেক্টৰে এতিয়ালৈকে কোনো বিল দাখিল কৰা নাই।
+                            </div>
+                          ) : (
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-left text-xs text-slate-600">
+                                <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] font-bold">
+                                  <tr>
+                                    <th className="p-3">বিল নম্বৰ / মাহ</th>
+                                    <th className="p-3">কাৰখানা / ক্লায়েণ্ট</th>
+                                    <th className="p-3 text-right">শ্ৰমিক মজুৰি</th>
+                                    <th className="p-3 text-right">কমিছন (10%)</th>
+                                    <th className="p-3 text-right">জিএছটি (18%)</th>
+                                    <th className="p-3 text-right font-black">মুঠ বিল (₹)</th>
+                                    <th className="p-3 text-center">স্থিতি</th>
+                                    <th className="p-3 text-right">একশ্যন</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 font-mono">
+                                  {contractorSubmittedBills.map(bill => {
+                                    const clientInd = industries.find(i => i.id === bill.industryId);
+                                    return (
+                                      <tr key={bill.id} className="hover:bg-slate-50/80 transition-colors">
+                                        <td className="p-3">
+                                          <span className="font-bold text-slate-800 block">{bill.id.toUpperCase()}</span>
+                                          <span className="text-[10px] text-slate-400 font-sans">{bill.month}</span>
+                                        </td>
+                                        <td className="p-3 font-sans">
+                                          <span className="font-semibold text-slate-800 block">{clientInd?.name || bill.industryId}</span>
+                                          <span className="text-[10px] text-slate-400">{clientInd?.location}</span>
+                                        </td>
+                                        <td className="p-3 text-right text-slate-700">
+                                          ₹{bill.baseAmount.toLocaleString()}
+                                        </td>
+                                        <td className="p-3 text-right text-amber-700">
+                                          ₹{bill.serviceCharge.toLocaleString()}
+                                        </td>
+                                        <td className="p-3 text-right text-emerald-700">
+                                          ₹{bill.gstAmount.toLocaleString()}
+                                        </td>
+                                        <td className="p-3 text-right font-extrabold text-slate-900">
+                                          ₹{bill.totalAmount.toLocaleString()}
+                                        </td>
+                                        <td className="p-3 text-center font-sans">
+                                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                            bill.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                                            bill.status === 'Rejected' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
+                                            'bg-amber-50 text-amber-700 border border-amber-200'
+                                          }`}>
+                                            {bill.status === 'Approved' ? '✓ Approved' : bill.status}
+                                          </span>
+                                        </td>
+                                        <td className="p-3 text-right font-sans">
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setSelectedInvoiceBill(bill);
+                                              setIsInvoicePreviewOpen(true);
+                                            }}
+                                            className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[11px] px-2.5 py-1.5 rounded-lg transition-all inline-flex items-center gap-1"
+                                          >
+                                            <Printer className="h-3.5 w-3.5" /> ইনভয়েচ
+                                          </button>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
                         </div>
                       </div>
-
-                      <form onSubmit={handleSubmitBill} className="space-y-4 text-xs">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-slate-500 font-semibold mb-1">Target Manufacturing Client</label>
-                            <select 
-                              value={billTargetIndustry}
-                              onChange={(e) => setBillTargetIndustry(e.target.value)}
-                              className="w-full border border-slate-200 p-2 rounded outline-none"
-                            >
-                              {industries.map(ind => (
-                                <option key={ind.id} value={ind.id}>{ind.name}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-slate-500 font-semibold mb-1">Billing Month</label>
-                            <input 
-                              type="text" 
-                              value={billMonth} 
-                              disabled 
-                              className="w-full border border-slate-200 p-2 rounded bg-slate-50 text-slate-400 outline-none" 
-                            />
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-slate-500 font-semibold mb-1">Worker Wage Component (INR)</label>
-                            <input 
-                              type="number" 
-                              value={billBaseWage}
-                              onChange={(e) => setBillBaseWage(Number(e.target.value))}
-                              className="w-full border border-slate-200 p-2 rounded outline-none" 
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-slate-500 font-semibold mb-1">Contractor Service Charge (INR)</label>
-                            <input 
-                              type="number" 
-                              value={billServiceCharge}
-                              onChange={(e) => setBillServiceCharge(Number(e.target.value))}
-                              className="w-full border border-slate-200 p-2 rounded outline-none" 
-                            />
-                          </div>
-                        </div>
-
-                        <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-1.5 font-semibold text-slate-700">
-                          <div className="flex justify-between"><span>Base + Service Charge:</span> <span>₹{(billBaseWage + billServiceCharge).toLocaleString()}</span></div>
-                          <div className="flex justify-between text-slate-500"><span>Statutory GST (18%):</span> <span>₹{((billBaseWage + billServiceCharge) * 0.18).toLocaleString()}</span></div>
-                          <div className="flex justify-between border-t border-slate-200 pt-1.5 text-indigo-900 font-bold"><span>Grand Total Claim:</span> <span>₹{((billBaseWage + billServiceCharge) * 1.18).toLocaleString()}</span></div>
-                        </div>
-
-                        <button 
-                          type="submit" 
-                          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded"
-                        >
-                          Generate & Submit Bill
-                        </button>
-                      </form>
-                    </div>
-                  );
-                })()}
+                    );
+                  })()}
               </div>
 
               {/* Uploaded Documents Tracker */}
@@ -2099,20 +2913,147 @@ export default function SaaSApp() {
 
             </div>
 
-            {/* Contractor Payroll Register Sheets */}
-            <div className="bg-white border border-slate-200 rounded-lg p-6 space-y-4">
-              <h4 className="font-bold text-slate-800 text-sm border-b border-slate-100 pb-3 flex items-center gap-1.5">
-                <FileSpreadsheet className="text-indigo-600 h-4 w-4" />
-                Contract Wages & EPF/ESI Compliant Payroll Sheets
-              </h4>
+            {/* Contractor's Industry-Wise Attendance Register */}
+            <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-4 shadow-xs">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
+                <div>
+                  <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                    <UserCheck className="text-emerald-600 h-4 w-4" />
+                    ইণ্ডাষ্ট্ৰীভিত্তিক শ্ৰমিকৰ দৈনিক উপস্থিতি ৰেজিষ্টাৰ (Industry-Wise Shift Attendance Register)
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    প্ৰতিটো কাৰখানাৰ নাম উল্লেখ কৰি শ্ৰমিকসকলৰ উপস্থিতি আৰু অভাৰটাইম ঘণ্টা পৰিদৰ্শন কৰক।
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-400 flex items-center gap-1">
+                    <Filter className="h-3.5 w-3.5" /> ইণ্ডাষ্ট্ৰী বাছক:
+                  </span>
+                  <select
+                    value={attendanceIndustryFilter}
+                    onChange={(e) => setAttendanceIndustryFilter(e.target.value)}
+                    className="text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500"
+                  >
+                    <option value="ALL">সকলো ইণ্ডাষ্ট্ৰী / কাৰখানা (All Industries)</option>
+                    {industries.map(ind => (
+                      <option key={ind.id} value={ind.id}>{ind.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs text-slate-600">
                   <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] font-bold">
                     <tr>
-                      <th className="p-3">Worker Name</th>
+                      <th className="p-3">তাৰিখ (Date)</th>
+                      <th className="p-3">শ্ৰমিকৰ নাম (Worker)</th>
+                      <th className="p-3">কাৰখানা / ইণ্ডাষ্ট্ৰী (Industry Plant)</th>
+                      <th className="p-3">ইন / আউট (In/Out)</th>
+                      <th className="p-3 text-center">কামৰ ঘণ্টা</th>
+                      <th className="p-3 text-center">অভাৰটাইম (OT)</th>
+                      <th className="p-3 text-center">বায়’মেট্ৰিক নিৰীক্ষণ</th>
+                      <th className="p-3 text-right">মজুৰি (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {attendance
+                      .filter(a => a.contractorId === selectedContractorId)
+                      .filter(a => attendanceIndustryFilter === 'ALL' || a.industryId === attendanceIndustryFilter)
+                      .map(att => {
+                        const ind = industries.find(i => i.id === att.industryId);
+                        const wrk = workers.find(w => w.id === att.workerId);
+                        const rate = wrk?.dailyWageRate || 650;
+                        const otWage = (att.overtimeHours || 0) * (rate / 8) * 2;
+                        const shiftWage = rate + otWage;
+
+                        return (
+                          <tr key={att.id} className="hover:bg-slate-50/60 transition-colors">
+                            <td className="p-3 font-mono font-medium text-slate-700">{att.date}</td>
+                            <td className="p-3">
+                              <span className="font-bold text-slate-900 block">{att.workerName}</span>
+                              <span className="text-[10px] text-slate-400 font-mono">UAN: {wrk ? getWorkerUAN(wrk) : 'N/A'}</span>
+                            </td>
+                            <td className="p-3">
+                              <span className="inline-flex items-center gap-1 font-semibold text-[11px] bg-slate-100 text-slate-800 border border-slate-200 px-2 py-0.5 rounded-md">
+                                <Building2 className="h-3 w-3 text-indigo-600" />
+                                {ind ? ind.name : 'Unknown Plant'}
+                              </span>
+                              <span className="block text-[9px] text-slate-400 mt-0.5">{ind?.location}</span>
+                            </td>
+                            <td className="p-3 font-mono text-[11px]">
+                              <span className="text-emerald-700 font-semibold">{att.checkIn}</span> - <span className="text-slate-500">{att.checkOut || '17:00'}</span>
+                            </td>
+                            <td className="p-3 text-center font-semibold text-slate-700">{att.hoursWorked || 8} hrs</td>
+                            <td className="p-3 text-center">
+                              {att.overtimeHours > 0 ? (
+                                <span className="bg-amber-100 text-amber-900 font-bold px-1.5 py-0.5 rounded text-[10px]">
+                                  +{att.overtimeHours} hrs
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 font-normal">--</span>
+                              )}
+                            </td>
+                            <td className="p-3 text-center">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                                <CheckCircle className="h-3 w-3" />
+                                {att.verificationMethod === 'Biometric-Face' ? 'Face Match' : 'UIDAI OTP'}
+                              </span>
+                            </td>
+                            <td className="p-3 text-right font-bold text-slate-800 font-mono">
+                              ₹{Math.round(shiftWage).toLocaleString()}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Contractor Payroll Register Sheets */}
+            <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-4 shadow-xs">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
+                <div>
+                  <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                    <FileSpreadsheet className="text-indigo-600 h-4 w-4" />
+                    Contract Wages & EPF/ESI Compliant Payroll Sheets
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    শ্ৰমিকসকলৰ নাম, উপাৰ্জিত মজুৰি, আৰু চৰকাৰী নিয়ম অনুসৰি EPF (12%) আৰু ESI (0.75%) কৰ্তনৰ সম্পূৰ্ণ হিচাপ।
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    value={challanTargetIndustry}
+                    onChange={(e) => setChallanTargetIndustry(e.target.value)}
+                    className="text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500"
+                  >
+                    {industries.map(ind => (
+                      <option key={ind.id} value={ind.id}>{ind.name}</option>
+                    ))}
+                  </select>
+
+                  <button
+                    onClick={() => setIsChallanModalOpen(true)}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-3.5 py-2 rounded-lg transition-all flex items-center gap-1.5 shadow-sm"
+                  >
+                    <FileSpreadsheet className="h-4 w-4" />
+                    এই ইণ্ডাষ্ট্ৰীৰ PF/ESI চালান উলিয়াওক (Generate Challan)
+                  </button>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-slate-600">
+                  <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] font-bold">
+                    <tr>
+                      <th className="p-3">Worker Details</th>
+                      <th className="p-3">UAN / ESIC IP</th>
                       <th className="p-3">Skill Category</th>
-                      <th className="p-3">Daily Wage Rate</th>
+                      <th className="p-3 font-mono">Daily Rate</th>
                       <th className="p-3 text-center">Days Present</th>
                       <th className="p-3 text-center">OT Hours</th>
                       <th className="p-3 text-right">Gross Wage Earned</th>
@@ -2123,22 +3064,24 @@ export default function SaaSApp() {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {workers.filter(w => w.contractorId === selectedContractorId).map(wrk => {
-                      // Calculate days present from attendance
                       const wrkAttendance = attendance.filter(a => a.workerId === wrk.id && a.status === 'Present');
                       const daysPresent = wrkAttendance.length;
                       const otHours = wrkAttendance.reduce((acc, curr) => acc + curr.overtimeHours, 0);
                       
-                      // Wage calculation under Indian Minimum Wage Standards
                       const baseWage = daysPresent * wrk.dailyWageRate;
-                      const otPay = otHours * (wrk.dailyWageRate / 8) * 2; // OT is calculated at double rate under Factories Act
+                      const otPay = otHours * (wrk.dailyWageRate / 8) * 2;
                       const grossWage = baseWage + otPay;
-                      const epf = grossWage * 0.12;
+                      const epf = Math.min(grossWage, 15000) * 0.12;
                       const esi = grossWage * 0.0075;
                       const netPay = grossWage - epf - esi;
 
                       return (
                         <tr key={wrk.id} className="hover:bg-slate-50/50">
                           <td className="p-3 font-semibold text-slate-800">{wrk.name}</td>
+                          <td className="p-3 font-mono text-[10px] text-slate-500">
+                            <div>UAN: {getWorkerUAN(wrk)}</div>
+                            <div>IP: {getWorkerESIIP(wrk)}</div>
+                          </td>
                           <td className="p-3 text-slate-500">{wrk.skillType}</td>
                           <td className="p-3 font-mono">₹{wrk.dailyWageRate}</td>
                           <td className="p-3 text-center font-bold text-slate-700">{daysPresent}</td>
@@ -2205,17 +3148,37 @@ export default function SaaSApp() {
                 </div>
               </div>
 
-              {/* WORKER PRIVACY RULE BANNER */}
-              <div className="bg-slate-800 border border-slate-700 p-4 rounded-lg space-y-1 text-xs">
-                <div className="flex items-center gap-1.5 font-bold text-amber-400">
-                  <ShieldCheck className="h-4 w-4" /> 
-                  Worker Privacy Shield Active
+              {/* WORKER INDUSTRY SELECTION & MULTI-INDUSTRY BADGE */}
+              <div className="bg-slate-800 border border-slate-700 p-4 rounded-lg space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 font-bold text-emerald-400">
+                    <Factory className="h-4 w-4 text-emerald-400" /> 
+                    কাম কৰা কাৰখানা / ইণ্ডাষ্ট্ৰী নিৰ্বাচন (Reporting Factory)
+                  </div>
+                  <span className="text-[10px] bg-slate-700 text-indigo-300 px-2 py-0.5 rounded font-mono">
+                    Multi-Industry Shift Enabled
+                  </span>
                 </div>
-                <p className="text-slate-300 leading-relaxed">
-                  Compliance standards block direct factory brand identities. To protect vendor agreements and secure business, direct factory names are encrypted on worker dashboards.
+
+                <p className="text-slate-300 text-[11px] leading-relaxed">
+                  আপুনি যদি বিভিন্ন ইণ্ডাষ্ট্ৰী বা কাৰখানাত কাম কৰিছে, তেন্তে আজি কাম কৰা ইণ্ডাষ্ট্ৰীখন বাছক। আপোনাৰ উপস্থিতি সেই নিৰ্দিষ্ট ইণ্ডাষ্ট্ৰীৰ নামত ৰেকৰ্ড হ'ব।
                 </p>
-                <div className="font-mono text-[10px] text-indigo-400 mt-2">
-                  🔒 DEPLOYED STATE: SECURE_CLIENT_ID_CODENAME_X902
+
+                <div className="pt-1">
+                  <select
+                    value={targetCheckInIndustry || assignments.find(a => a.workerId === selectedWorkerId && a.status === 'Active')?.industryId || 'ind-1'}
+                    onChange={(e) => setTargetCheckInIndustry(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-600 text-white rounded px-3 py-1.5 text-xs font-semibold outline-none focus:border-emerald-500"
+                  >
+                    {industries.map(ind => {
+                      const isAssigned = assignments.some(a => a.workerId === selectedWorkerId && a.industryId === ind.id && a.status === 'Active');
+                      return (
+                        <option key={ind.id} value={ind.id}>
+                          {ind.name} ({ind.location}) {isAssigned ? '✓ [Active Deployment]' : ''}
+                        </option>
+                      );
+                    })}
+                  </select>
                 </div>
               </div>
             </div>
@@ -2385,6 +3348,88 @@ export default function SaaSApp() {
                 </div>
               </div>
 
+            </div>
+
+            {/* Worker's Industry-Wise Shift & Wage History Table */}
+            <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-4 shadow-xs">
+              <div className="border-b border-slate-100 pb-3">
+                <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                  <UserCheck className="text-indigo-600 h-4 w-4" />
+                  শ্ৰমিকৰ ইণ্ডাষ্ট্ৰীভিত্তিক উপস্থিতি আৰু দৈনিক মজুৰিৰ খতিয়ান (Worker's Industry-Wise Shift & Wage History)
+                </h4>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {activeWorker.name}-এ বিভিন্ন কাৰখানাত সম্পন্ন কৰা কামৰ উপস্থিতি আৰু উপাৰ্জিত মজুৰিৰ তালিকা।
+                </p>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-slate-600">
+                  <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] font-bold">
+                    <tr>
+                      <th className="p-3">তাৰিখ (Date)</th>
+                      <th className="p-3">কাৰখানা / ইণ্ডাষ্ট্ৰী (Industry Plant)</th>
+                      <th className="p-3">ইন - আউট (In - Out)</th>
+                      <th className="p-3 text-center">কামৰ ঘণ্টা</th>
+                      <th className="p-3 text-center">অভাৰটাইম (OT)</th>
+                      <th className="p-3 text-center">বায়’মেট্ৰিক সত্যতা</th>
+                      <th className="p-3 text-right">উপাৰ্জিত মজুৰি (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {attendance.filter(a => a.workerId === selectedWorkerId).length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="p-4 text-center text-slate-400 italic">
+                          এই শ্ৰমিকজনৰ এতিয়ালৈকে কোনো উপস্থিতি ৰেকৰ্ড হোৱা নাই। ওপৰৰ চেকাৰৰ পৰা চেক-ইন কৰক।
+                        </td>
+                      </tr>
+                    ) : (
+                      attendance
+                        .filter(a => a.workerId === selectedWorkerId)
+                        .map(att => {
+                          const ind = industries.find(i => i.id === att.industryId);
+                          const rate = activeWorker.dailyWageRate || 650;
+                          const otWage = (att.overtimeHours || 0) * (rate / 8) * 2;
+                          const shiftWage = rate + otWage;
+
+                          return (
+                            <tr key={att.id} className="hover:bg-slate-50/60 transition-colors">
+                              <td className="p-3 font-mono font-medium text-slate-700">{att.date}</td>
+                              <td className="p-3">
+                                <span className="inline-flex items-center gap-1 font-semibold text-[11px] bg-slate-100 text-slate-800 border border-slate-200 px-2.5 py-1 rounded-md">
+                                  <Building2 className="h-3 w-3 text-indigo-600" />
+                                  {ind ? ind.name : 'Unknown Plant'}
+                                </span>
+                                <span className="block text-[10px] text-slate-400 mt-0.5">{ind?.location}</span>
+                              </td>
+                              <td className="p-3 font-mono text-[11px]">
+                                <span className="text-emerald-700 font-semibold">{att.checkIn}</span> - <span className="text-slate-500">{att.checkOut || '17:00'}</span>
+                              </td>
+                              <td className="p-3 text-center font-semibold text-slate-700">{att.hoursWorked || 8} hrs</td>
+                              <td className="p-3 text-center">
+                                {att.overtimeHours > 0 ? (
+                                  <span className="bg-amber-100 text-amber-900 font-bold px-1.5 py-0.5 rounded text-[10px]">
+                                    +{att.overtimeHours} hrs
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400 font-normal">--</span>
+                                )}
+                              </td>
+                              <td className="p-3 text-center">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                                  <CheckCircle className="h-3 w-3" />
+                                  {att.verificationMethod === 'Biometric-Face' ? 'Face Match' : 'UIDAI OTP'}
+                                </span>
+                              </td>
+                              <td className="p-3 text-right font-extrabold text-emerald-700 font-mono">
+                                ₹{Math.round(shiftWage).toLocaleString()}
+                              </td>
+                            </tr>
+                          );
+                        })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {/* Public Worker Registration Form (Self-Registration ecosystem) */}
@@ -2781,6 +3826,750 @@ export default function SaaSApp() {
           </div>
         </div>
       )}
+
+      {/* ======================================================== */}
+      {/* 1. INDUSTRY-WISE EPF & ESIC (EIC) CHALLAN & ECR GENERATOR */}
+      {/* ======================================================== */}
+      {isChallanModalOpen && (() => {
+        const targetInd = industries.find(i => i.id === challanTargetIndustry) || industries[0];
+        const statutoryRows = getIndustryWorkerStatutory(selectedContractorId, challanTargetIndustry, challanTargetMonth);
+        const totalWages = statutoryRows.reduce((s, r) => s + r.grossWage, 0);
+        const totalEpfEe = statutoryRows.reduce((s, r) => s + r.epfEeShare, 0);
+        const totalEpfEr = statutoryRows.reduce((s, r) => s + (r.epfErEpfShare + r.epfErEpsShare + r.epfAdmin), 0);
+        const totalEpf = statutoryRows.reduce((s, r) => s + r.epfTotal, 0);
+        const totalEsiEe = statutoryRows.reduce((s, r) => s + r.esiEeShare, 0);
+        const totalEsiEr = statutoryRows.reduce((s, r) => s + r.esiErShare, 0);
+        const totalEsi = statutoryRows.reduce((s, r) => s + r.esiTotal, 0);
+        const totalDays = statutoryRows.reduce((s, r) => s + r.daysWorked, 0);
+
+        return (
+          <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 z-50 overflow-y-auto">
+            <div className="bg-white rounded-2xl max-w-5xl w-full shadow-2xl border border-slate-200 overflow-hidden my-auto max-h-[92vh] flex flex-col">
+              
+              {/* Modal Header */}
+              <div className="bg-slate-900 text-white p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="bg-indigo-600 text-white font-extrabold text-[10px] px-2 py-0.5 rounded tracking-wide uppercase">
+                      EPFO & ESIC Electronic Challan Return (ECR)
+                    </span>
+                    <span className="text-xs text-indigo-300 font-mono">TRRN: 310260810{challanTargetIndustry.replace(/\D/g, '') || '92'}</span>
+                  </div>
+                  <h3 className="font-extrabold text-lg text-white mt-1 flex items-center gap-2">
+                    <FileSpreadsheet className="text-indigo-400 h-5 w-5" />
+                    ইণ্ডাষ্ট্ৰীভিত্তিক শ্ৰমিকৰ নাম সম্বলিত PF আৰু EIC চালান (Industry-Wise Statutory Challan)
+                  </h3>
+                </div>
+
+                <button 
+                  onClick={() => setIsChallanModalOpen(false)} 
+                  className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors self-end sm:self-center"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              {/* Selector Bar */}
+              <div className="bg-slate-50 border-b border-slate-200 p-4 flex flex-wrap items-center justify-between gap-4 shrink-0 text-xs">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">কাৰখানা / ইণ্ডাষ্ট্ৰী বাছক (Factory Plant):</label>
+                    <select
+                      value={challanTargetIndustry}
+                      onChange={(e) => setChallanTargetIndustry(e.target.value)}
+                      className="bg-white font-bold text-slate-800 border border-slate-300 rounded-lg px-3 py-1.5 outline-none focus:border-indigo-500"
+                    >
+                      {industries.map(ind => (
+                        <option key={ind.id} value={ind.id}>{ind.name} ({ind.location})</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">মজুৰি মাহ (Wage Month):</label>
+                    <select
+                      value={challanTargetMonth}
+                      onChange={(e) => setChallanTargetMonth(e.target.value)}
+                      className="bg-white font-bold text-slate-800 border border-slate-300 rounded-lg px-3 py-1.5 outline-none focus:border-indigo-500"
+                    >
+                      <option value="August 2026">August 2026</option>
+                      <option value="September 2026">September 2026</option>
+                      <option value="July 2026">July 2026</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Establishment Metadata */}
+                <div className="flex flex-wrap gap-4 text-[11px] bg-white border border-slate-200 p-2.5 rounded-lg">
+                  <div>
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Principal Employer</span>
+                    <span className="font-bold text-slate-800">{targetInd?.name} (LIN: {targetInd?.lin})</span>
+                  </div>
+                  <div className="border-l border-slate-200 pl-3">
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Labor Contractor</span>
+                    <span className="font-bold text-slate-800">{activeContractor.name}</span>
+                  </div>
+                  <div className="border-l border-slate-200 pl-3">
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold">EPF / ESI Codes</span>
+                    <span className="font-mono font-bold text-indigo-700">{activeContractor.epfCode} / {activeContractor.esiCode}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Summary KPIs */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 p-4 bg-indigo-50/40 border-b border-indigo-100 shrink-0 text-center">
+                <div className="bg-white p-3 rounded-xl border border-indigo-100">
+                  <span className="text-[10px] text-slate-500 font-bold uppercase block">অন্তৰ্ভুক্ত শ্ৰমিক (Covered)</span>
+                  <span className="text-lg font-black text-slate-900">{statutoryRows.length} Workers</span>
+                </div>
+                <div className="bg-white p-3 rounded-xl border border-indigo-100">
+                  <span className="text-[10px] text-slate-500 font-bold uppercase block">মুঠ কৰ্মদিন (Days Worked)</span>
+                  <span className="text-lg font-black text-slate-900">{totalDays} Man-Days</span>
+                </div>
+                <div className="bg-white p-3 rounded-xl border border-indigo-100">
+                  <span className="text-[10px] text-slate-500 font-bold uppercase block">মুঠ মজুৰি (Gross Wages)</span>
+                  <span className="text-lg font-black text-slate-900">₹{totalWages.toLocaleString()}</span>
+                </div>
+                <div className="bg-white p-3 rounded-xl border border-indigo-100">
+                  <span className="text-[10px] text-indigo-600 font-bold uppercase block">মুঠ EPF চালান (A/C 1,10,2)</span>
+                  <span className="text-lg font-black text-indigo-700">₹{totalEpf.toLocaleString()}</span>
+                  <span className="text-[9px] text-slate-400 block">EE: ₹{totalEpfEe} | ER: ₹{totalEpfEr}</span>
+                </div>
+                <div className="bg-white p-3 rounded-xl border border-indigo-100 col-span-2 sm:col-span-1">
+                  <span className="text-[10px] text-emerald-600 font-bold uppercase block">মুঠ ESIC চালান (4.0%)</span>
+                  <span className="text-lg font-black text-emerald-700">₹{totalEsi.toLocaleString()}</span>
+                  <span className="text-[9px] text-slate-400 block">EE: ₹{totalEsiEe} | ER: ₹{totalEsiEr}</span>
+                </div>
+              </div>
+
+              {/* Worker-by-Worker Breakdown Table */}
+              <div className="flex-1 overflow-y-auto p-4">
+                <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+                  <table className="w-full text-left text-xs text-slate-600">
+                    <thead className="bg-slate-100 text-slate-700 uppercase tracking-wider text-[10px] font-extrabold sticky top-0 z-10 border-b border-slate-200">
+                      <tr>
+                        <th className="p-3">#</th>
+                        <th className="p-3">শ্ৰমিকৰ নাম (Worker)</th>
+                        <th className="p-3">UAN (12-Digit)</th>
+                        <th className="p-3">ESIC IP No</th>
+                        <th className="p-3 text-center">কৰ্মদিন</th>
+                        <th className="p-3 text-right">মুঠ মজুৰি</th>
+                        <th className="p-3 text-right bg-indigo-50/70 text-indigo-900">EPF কৰ্তন (12%)</th>
+                        <th className="p-3 text-right bg-indigo-50/70 text-indigo-900">EPF জমা (ER)</th>
+                        <th className="p-3 text-right bg-indigo-100/70 text-indigo-950">মুঠ PF চালান</th>
+                        <th className="p-3 text-right bg-emerald-50/70 text-emerald-900">ESI কৰ্তন (0.75%)</th>
+                        <th className="p-3 text-right bg-emerald-50/70 text-emerald-900">ESI জমা (ER 3.25%)</th>
+                        <th className="p-3 text-right bg-emerald-100/70 text-emerald-950">মুঠ ESI চালান</th>
+                        <th className="p-3 text-right font-black">Net Pay</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-150">
+                      {statutoryRows.length === 0 ? (
+                        <tr>
+                          <td colSpan={13} className="p-6 text-center text-slate-400 italic">
+                            এই কাৰখানাত এই মাহত কোনো শ্ৰমিকৰ উপস্থিতি বা কৰ্তব্য পোৱা নগ’ল।
+                          </td>
+                        </tr>
+                      ) : (
+                        statutoryRows.map((row, idx) => (
+                          <tr key={row.worker.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="p-3 font-mono text-slate-400">{idx + 1}</td>
+                            <td className="p-3">
+                              <span className="font-bold text-slate-900 block">{row.worker.name}</span>
+                              <span className="text-[10px] text-slate-400">{row.worker.skillType} • ₹{row.worker.dailyWageRate}/day</span>
+                            </td>
+                            <td className="p-3 font-mono font-bold text-slate-700 text-[11px]">{row.uan}</td>
+                            <td className="p-3 font-mono text-slate-600 text-[11px]">{row.ipNo}</td>
+                            <td className="p-3 text-center font-bold text-slate-800">
+                              {row.daysWorked} {row.otHours > 0 ? <span className="text-amber-600 text-[10px] block">+{row.otHours}h OT</span> : null}
+                            </td>
+                            <td className="p-3 text-right font-bold text-slate-800 font-mono">₹{row.grossWage.toLocaleString()}</td>
+                            <td className="p-3 text-right font-mono text-slate-600 bg-indigo-50/30">₹{row.epfEeShare}</td>
+                            <td className="p-3 text-right font-mono text-slate-600 bg-indigo-50/30">₹{row.epfErEpfShare + row.epfErEpsShare + row.epfAdmin}</td>
+                            <td className="p-3 text-right font-mono font-bold text-indigo-700 bg-indigo-50/70">₹{row.epfTotal}</td>
+                            <td className="p-3 text-right font-mono text-slate-600 bg-emerald-50/30">₹{row.esiEeShare}</td>
+                            <td className="p-3 text-right font-mono text-slate-600 bg-emerald-50/30">₹{row.esiErShare}</td>
+                            <td className="p-3 text-right font-mono font-bold text-emerald-700 bg-emerald-50/70">₹{row.esiTotal}</td>
+                            <td className="p-3 text-right font-black text-slate-900 font-mono">₹{row.netPay.toLocaleString()}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Modal Footer with Actions */}
+              <div className="bg-slate-50 border-t border-slate-200 p-4 flex flex-col sm:flex-row justify-between items-center gap-3 shrink-0">
+                <div className="text-xs text-slate-500">
+                  <span className="font-semibold text-slate-700">Official EPFO & ESIC Compliant:</span> Electronic Challan Format with worker-by-worker UAN mapping.
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => handleExportECRCSV(statutoryRows, targetInd, challanTargetMonth)}
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 border border-slate-300 shadow-2xs"
+                  >
+                    <Download className="h-4 w-4 text-slate-600" />
+                    ECR Return (CSV) ডাউনল’ড
+                  </button>
+
+                  <button
+                    onClick={() => window.print()}
+                    className="bg-white hover:bg-slate-100 text-slate-800 font-bold text-xs px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 border border-slate-300 shadow-2xs"
+                  >
+                    <Printer className="h-4 w-4 text-slate-600" />
+                    প্ৰিণ্ট / PDF সংৰক্ষণ
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      handleSaveChallanDossier(targetInd, challanTargetMonth, totalEpf, totalEsi, statutoryRows.length);
+                      setIsChallanModalOpen(false);
+                    }}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    বিলৰ সৈতে চালান সংলগ্ন কৰক (Save & Attach to Bill)
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ======================================================== */}
+      {/* 2. CONTRACTOR CLRA WORK & MAN-DAYS DISTRIBUTION REPORT */}
+      {/* ======================================================== */}
+      {isWorkSummaryModalOpen && (() => {
+        const summaries = getContractorIndustrySummary(selectedContractorId)
+          .filter(s => summaryTargetIndustry === 'ALL' || s.industry.id === summaryTargetIndustry);
+        const totalManDays = summaries.reduce((sum, s) => sum + s.totalManDays, 0);
+        const totalWages = summaries.reduce((sum, s) => sum + s.totalWages, 0);
+        const totalHours = summaries.reduce((sum, s) => sum + s.totalStdHours + s.totalOtHours, 0);
+
+        return (
+          <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 z-50 overflow-y-auto">
+            <div className="bg-white rounded-2xl max-w-4xl w-full shadow-2xl border border-slate-200 overflow-hidden my-auto max-h-[92vh] flex flex-col">
+              
+              {/* Header */}
+              <div className="bg-slate-900 text-white p-5 flex justify-between items-center shrink-0">
+                <div>
+                  <span className="bg-slate-700 text-indigo-300 font-extrabold text-[10px] px-2 py-0.5 rounded tracking-wide uppercase">
+                    CLRA Act 1970 Statutory Certificate
+                  </span>
+                  <h3 className="font-extrabold text-lg text-white mt-1 flex items-center gap-2">
+                    <Printer className="text-indigo-400 h-5 w-5" />
+                    কণ্ট্ৰেক্টৰৰ ইণ্ডাষ্ট্ৰীভিত্তিক কৰ্ম-খতিয়ান (Industry Work & Man-Days Statement)
+                  </h3>
+                </div>
+
+                <button 
+                  onClick={() => setIsWorkSummaryModalOpen(false)} 
+                  className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              {/* Filter */}
+              <div className="bg-slate-50 border-b border-slate-200 p-4 flex flex-wrap items-center justify-between gap-3 shrink-0 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-slate-500">ইণ্ডাষ্ট্ৰী ফিল্টাৰ:</span>
+                  <select
+                    value={summaryTargetIndustry}
+                    onChange={(e) => setSummaryTargetIndustry(e.target.value)}
+                    className="bg-white font-bold text-slate-800 border border-slate-300 rounded-lg px-3 py-1.5 outline-none focus:border-indigo-500"
+                  >
+                    <option value="ALL">সকলো ইণ্ডাষ্ট্ৰী / কাৰখানা (All Industries Consolidated)</option>
+                    {industries.map(ind => (
+                      <option key={ind.id} value={ind.id}>{ind.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="text-[11px] text-slate-500">
+                  কণ্ট্ৰেক্টৰ: <strong className="text-slate-800">{activeContractor.name}</strong> | লাইচেঞ্চ: <strong className="text-slate-800">{activeContractor.licenseNo}</strong>
+                </div>
+              </div>
+
+              {/* Printable Body */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                {/* Official Letterhead */}
+                <div className="border-b-2 border-slate-800 pb-4 text-center space-y-1">
+                  <h2 className="font-black text-base text-slate-900 uppercase tracking-wide">
+                    {activeContractor.name}
+                  </h2>
+                  <p className="text-xs text-slate-600">
+                    Licensed Labor Contractor Under Contract Labour (Regulation & Abolition) Act, 1970
+                  </p>
+                  <div className="flex justify-center gap-4 text-[10px] font-mono text-slate-500 pt-1">
+                    <span>CLRA License: {activeContractor.licenseNo}</span>
+                    <span>•</span>
+                    <span>EPF Code: {activeContractor.epfCode}</span>
+                    <span>•</span>
+                    <span>ESIC Code: {activeContractor.esiCode}</span>
+                    <span>•</span>
+                    <span>PAN: {activeContractor.pan}</span>
+                  </div>
+                </div>
+
+                {/* KPI Bar */}
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div className="border border-slate-200 rounded-xl p-3 bg-slate-50">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block">মুঠ কাৰখানা সামৰি লোৱা</span>
+                    <span className="text-xl font-black text-slate-800">{summaries.length} Plants</span>
+                  </div>
+                  <div className="border border-slate-200 rounded-xl p-3 bg-slate-50">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block">মুঠ কৰ্মদিন (Total Man-Days)</span>
+                    <span className="text-xl font-black text-indigo-700">{totalManDays} Man-Days</span>
+                  </div>
+                  <div className="border border-slate-200 rounded-xl p-3 bg-slate-50">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block">মুঠ উপাৰ্জিত মজুৰি</span>
+                    <span className="text-xl font-black text-emerald-700">₹{totalWages.toLocaleString()}</span>
+                  </div>
+                </div>
+
+                {/* Details Breakdown */}
+                <div className="space-y-4">
+                  <h4 className="font-bold text-sm text-slate-800">প্ৰতিটো ইণ্ডাষ্ট্ৰী আৰু কাৰখানাভিত্তিক কামৰ বিতং বিৱৰণ:</h4>
+
+                  <div className="border border-slate-200 rounded-xl overflow-hidden">
+                    <table className="w-full text-left text-xs text-slate-600">
+                      <thead className="bg-slate-100 text-slate-700 uppercase tracking-wider text-[10px] font-bold border-b border-slate-200">
+                        <tr>
+                          <th className="p-3">কাৰখানা / ইণ্ডাষ্ট্ৰীৰ নাম</th>
+                          <th className="p-3">অৱস্থান আৰু LIN</th>
+                          <th className="p-3 text-center">সক্ৰিয় শ্ৰমিক</th>
+                          <th className="p-3 text-center">সম্পূৰ্ণ হোৱা কৰ্মদিন</th>
+                          <th className="p-3 text-center">মুঠ কামৰ ঘণ্টা</th>
+                          <th className="p-3 text-right">মুঠ মজুৰি (₹)</th>
+                          <th className="p-3 text-center">বিল স্থিতি</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-150">
+                        {summaries.map(s => (
+                          <tr key={s.industry.id} className="hover:bg-slate-50">
+                            <td className="p-3 font-bold text-slate-900">{s.industry.name}</td>
+                            <td className="p-3 text-[11px] text-slate-500">{s.industry.location} • LIN: {s.industry.lin}</td>
+                            <td className="p-3 text-center font-bold text-slate-700">{s.assignedCount} জন</td>
+                            <td className="p-3 text-center font-bold text-indigo-700">{s.totalManDays} Shifts</td>
+                            <td className="p-3 text-center font-mono">{s.totalStdHours}h {s.totalOtHours > 0 ? `(+${s.totalOtHours}h OT)` : ''}</td>
+                            <td className="p-3 text-right font-mono font-bold text-emerald-700">₹{s.totalWages.toLocaleString()}</td>
+                            <td className="p-3 text-center">
+                              <span className="text-[10px] font-bold bg-slate-100 px-2 py-0.5 rounded text-slate-700">
+                                {s.bill?.status || 'Active Cycle'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Signatures */}
+                <div className="grid grid-cols-2 gap-8 pt-8 border-t border-slate-200 text-xs">
+                  <div className="space-y-6 text-center">
+                    <div className="h-10 border-b border-dashed border-slate-400"></div>
+                    <span className="font-bold text-slate-700 block">লেবাৰ কণ্ট্ৰেক্টৰৰ স্বাক্ষৰ আৰু ছীল (Contractor Signature)</span>
+                    <span className="text-[10px] text-slate-400 block">{activeContractor.name}</span>
+                  </div>
+                  <div className="space-y-6 text-center">
+                    <div className="h-10 border-b border-dashed border-slate-400"></div>
+                    <span className="font-bold text-slate-700 block">কাৰখানা মেনেজাৰ / প্ৰধান নিয়োগকৰ্তাৰ স্বাক্ষৰ (Factory Manager)</span>
+                    <span className="text-[10px] text-slate-400 block">Principal Employer Endorsement</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="bg-slate-50 border-t border-slate-200 p-4 flex justify-between items-center shrink-0">
+                <span className="text-xs text-slate-500">Government CLRA Compliance Audit Document</span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => window.print()}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Printer className="h-4 w-4" />
+                    খতিয়ান প্ৰিন্ট / PDF ডাউনল’ড (Print Statement)
+                  </button>
+                  <button
+                    onClick={() => setIsWorkSummaryModalOpen(false)}
+                    className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl transition-all"
+                  >
+                    বন্ধ কৰক (Close)
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ======================================================== */}
+      {/* 3. OFFICIAL GST TAX INVOICE & AUTOMATED BILL VIEWER MODAL */}
+      {/* ======================================================== */}
+      {isInvoicePreviewOpen && (() => {
+        const isExistingBill = !!selectedInvoiceBill;
+        const targetIndId = isExistingBill ? selectedInvoiceBill.industryId : billTargetIndustry;
+        const targetMonth = isExistingBill ? selectedInvoiceBill.month : billMonth;
+        const targetInd = industries.find(i => i.id === targetIndId) || industries[0];
+        const activeContractor = contractors.find(c => c.id === selectedContractorId) || contractors[0];
+
+        const breakdown = getIndustryBillingBreakdown(selectedContractorId, targetIndId, targetMonth);
+
+        const currentWage = isExistingBill 
+          ? selectedInvoiceBill.baseAmount 
+          : (billCalculationMode === 'auto' ? (breakdown.totalWageSum > 0 ? breakdown.totalWageSum : billBaseWage) : billBaseWage);
+
+        const currentCommission = isExistingBill 
+          ? selectedInvoiceBill.serviceCharge 
+          : Math.round(currentWage * (billCommissionPct / 100));
+
+        const currentTaxable = currentWage + currentCommission;
+
+        const currentCgst = Math.round(currentTaxable * 0.09);
+        const currentSgst = Math.round(currentTaxable * 0.09);
+        const currentGst = isExistingBill ? selectedInvoiceBill.gstAmount : (currentCgst + currentSgst);
+        const currentGrandTotal = isExistingBill ? selectedInvoiceBill.totalAmount : (currentTaxable + currentGst);
+
+        const invoiceNo = isExistingBill 
+          ? `TAX-INV/${targetInd.id.toUpperCase()}/${targetMonth.replace(/\s+/g, '').toUpperCase()}/${selectedInvoiceBill.id.toUpperCase()}`
+          : `TAX-INV/${targetInd.id.toUpperCase()}/${targetMonth.replace(/\s+/g, '').toUpperCase()}/042`;
+
+        const invoiceDate = isExistingBill 
+          ? (selectedInvoiceBill.submittedAt || '2026-08-31') 
+          : '2026-09-04';
+
+        const gstReg = `27AAECP${activeContractor.id.replace(/\D/g, '').padEnd(3, '0')}4892Z1`;
+        const indGstReg = `27AABCT8921K1ZZ`;
+
+        return (
+          <div className="fixed inset-0 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 z-50 overflow-y-auto">
+            <div className="bg-white rounded-2xl max-w-4xl w-full shadow-2xl border border-slate-200 overflow-hidden my-auto max-h-[94vh] flex flex-col">
+              
+              {/* Modal Control Header */}
+              <div className="bg-slate-900 text-white p-4 sm:p-5 flex justify-between items-center shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="bg-indigo-600 p-2 rounded-lg text-white">
+                    <Receipt className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-sm sm:text-base flex items-center gap-2">
+                      {t.viewInvoice} (GST Tax Invoice - Rule 46 CGST)
+                      <span className="bg-emerald-500/20 text-emerald-300 text-[10px] px-2 py-0.5 rounded font-mono font-bold">
+                        Rule 46 CGST / SAC 998513
+                      </span>
+                    </h3>
+                    <p className="text-[11px] text-slate-400">
+                      {t.statutoryEnglishNote}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => window.print()}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Printer className="h-3.5 w-3.5" />
+                    প্ৰিন্ট / PDF (Print)
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsInvoicePreviewOpen(false);
+                      setSelectedInvoiceBill(null);
+                    }}
+                    className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition-colors"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Printable Invoice Container */}
+              <div className="p-6 sm:p-8 overflow-y-auto space-y-6 text-slate-800 text-xs font-sans print:p-0">
+                
+                {/* Official Invoice Header */}
+                <div className="border-b-2 border-slate-900 pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3">
+                  <div>
+                    <span className="text-[10px] font-bold text-indigo-900 uppercase tracking-wider block">
+                      FORM GST INV-1 (TAX INVOICE)
+                    </span>
+                    <h1 className="text-xl sm:text-2xl font-black text-slate-900 uppercase tracking-tight">
+                      TAX INVOICE / কৰ চালান
+                    </h1>
+                    <span className="text-[11px] text-slate-500">
+                      Original for Recipient / Duplicate for Supplier
+                    </span>
+                  </div>
+
+                  <div className="text-left sm:text-right font-mono space-y-0.5 text-[11px]">
+                    <div><strong>ইনভয়েচ নং (Invoice No):</strong> <span className="text-indigo-900 font-bold">{invoiceNo}</span></div>
+                    <div><strong>তাৰিখ (Invoice Date):</strong> <span>{invoiceDate}</span></div>
+                    <div><strong>সেৱাৰ শ্ৰেণী (SAC Code):</strong> <strong>998513</strong> (Manpower Supply Services)</div>
+                    <div><strong>বিল মাহ (Supply Period):</strong> <span className="font-bold text-slate-900">{targetMonth}</span></div>
+                  </div>
+                </div>
+
+                {/* Two Column Parties Details: Supplier & Recipient */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[11px]">
+                  {/* Supplier (Contractor) */}
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1.5">
+                    <span className="text-[9px] font-black uppercase text-indigo-700 tracking-wider block border-b border-slate-200 pb-1">
+                      যোগানকাৰী / কণ্ট্ৰেক্টৰ (Supplier / Labour Contractor)
+                    </span>
+                    <h4 className="font-black text-slate-900 text-xs sm:text-sm">{activeContractor.name}</h4>
+                    <div className="text-slate-600">MIDC Industrial Complex, Phase II, Guwahati/Pune</div>
+                    <div className="pt-1 font-mono text-[10px] space-y-0.5">
+                      <div><strong>GSTIN:</strong> <span className="text-slate-900 font-bold">{gstReg}</span></div>
+                      <div><strong>PAN:</strong> {activeContractor.pan} | <strong>CLRA Lic:</strong> {activeContractor.licenseNo}</div>
+                      <div><strong>EPF Code:</strong> {activeContractor.epfCode} | <strong>ESIC Code:</strong> {activeContractor.esiCode}</div>
+                      <div><strong>বেংক একাউণ্ট:</strong> SBI Current A/c 301984210984 | IFSC: SBIN0001824</div>
+                    </div>
+                  </div>
+
+                  {/* Recipient (Industry) */}
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1.5">
+                    <span className="text-[9px] font-black uppercase text-emerald-700 tracking-wider block border-b border-slate-200 pb-1">
+                      প্ৰাপক / উদ্যোগ (Billed To / Principal Employer Client)
+                    </span>
+                    <h4 className="font-black text-slate-900 text-xs sm:text-sm">{targetInd.name}</h4>
+                    <div className="text-slate-600">{targetInd.location}</div>
+                    <div className="pt-1 font-mono text-[10px] space-y-0.5">
+                      <div><strong>Recipient GSTIN:</strong> <span className="text-slate-900 font-bold">{indGstReg}</span></div>
+                      <div><strong>Factory LIN:</strong> {targetInd.lin}</div>
+                      <div><strong>Reg/License No:</strong> {targetInd.regNo}</div>
+                      <div><strong>State Code:</strong> 27 (Maharashtra / Assam Industrial Zone)</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Itemized Worker Attendance Schedule */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                      <Users className="h-3.5 w-3.5 text-indigo-600" />
+                      অনুসূচী: যোগান ধৰা শ্ৰমিকৰ উপস্থিতি আৰু প্ৰাপ্য মজুৰি (Worker Attendance & Wage Schedule)
+                    </h4>
+                    <span className="text-[10px] font-bold text-slate-500 font-mono">
+                      মুঠ উপস্থিতি: {breakdown.totalAttendance} Man-Days
+                    </span>
+                  </div>
+
+                  <div className="border border-slate-200 rounded-xl overflow-hidden">
+                    <table className="w-full text-left text-[11px]">
+                      <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200 text-[10px] uppercase">
+                        <tr>
+                          <th className="p-2.5">ক্ৰমিক</th>
+                          <th className="p-2.5">শ্ৰমিকৰ নাম (Worker Name)</th>
+                          <th className="p-2.5">দক্ষতা (Trade)</th>
+                          <th className="p-2.5 text-center">উপস্থিতি (Shifts)</th>
+                          <th className="p-2.5 text-right">দৈনিক মজুৰি</th>
+                          <th className="p-2.5 text-right">ওভাৰটাইম</th>
+                          <th className="p-2.5 text-right font-black">মুঠ মজুৰি (₹)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-mono">
+                        {breakdown.workerRows.map((r, idx) => (
+                          <tr key={r.worker.id} className="hover:bg-slate-50/50">
+                            <td className="p-2.5 text-slate-400 font-normal">{idx + 1}</td>
+                            <td className="p-2.5 font-bold text-slate-900 font-sans">{r.worker.name}</td>
+                            <td className="p-2.5 text-slate-600 font-sans text-[10px]">{r.worker.skillType}</td>
+                            <td className="p-2.5 text-center font-bold text-indigo-700">{r.daysWorked} দিন</td>
+                            <td className="p-2.5 text-right text-slate-700">₹{r.dailyRate}</td>
+                            <td className="p-2.5 text-right text-amber-700">{r.otHours > 0 ? `+${r.otHours}h (₹${r.otWage})` : '-'}</td>
+                            <td className="p-2.5 text-right font-black text-slate-900">₹{r.totalWage.toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Mathematical Consolidated Tax Summary (Formula requested by user) */}
+                <div className="space-y-3 pt-2">
+                  <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                    <Calculator className="h-3.5 w-3.5 text-indigo-600" />
+                    বিলৰ বিতং হিচাপ আৰু কৰ সংগ্ৰহ (Consolidated Tax Calculation Breakdown)
+                  </h4>
+
+                  <div className="border border-slate-300 rounded-xl overflow-hidden font-mono text-xs">
+                    <table className="w-full text-left">
+                      <thead className="bg-slate-900 text-white font-bold text-[10px] uppercase">
+                        <tr>
+                          <th className="p-3">বিৱৰণ (Description of Service / SAC 998513)</th>
+                          <th className="p-3 text-center">উপস্থিতি (Man-Days)</th>
+                          <th className="p-3 text-center">কমিছন %</th>
+                          <th className="p-3 text-right">ধনৰাশি (Amount in ₹)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200">
+                        {/* Line 1: Worker wages */}
+                        <tr className="bg-white">
+                          <td className="p-3 font-sans">
+                            <strong className="text-slate-900 block font-bold">১. শ্ৰমিকৰ যোগানৰ মুঠ মজুৰি (Labour Wages)</strong>
+                            <span className="text-[10px] text-slate-500 font-normal">
+                              Total Attendance × Worker Wage Rate under Minimum Wages Act
+                            </span>
+                          </td>
+                          <td className="p-3 text-center font-bold text-indigo-900">{breakdown.totalAttendance}</td>
+                          <td className="p-3 text-center text-slate-400">-</td>
+                          <td className="p-3 text-right font-bold text-slate-900">₹{currentWage.toLocaleString()}</td>
+                        </tr>
+
+                        {/* Line 2: Contractor commission */}
+                        <tr className="bg-white">
+                          <td className="p-3 font-sans">
+                            <strong className="text-amber-900 block font-bold">২. লেবাৰ কণ্ট্ৰেক্টৰ চাৰ্ভিচ মাৰ্জিন / কমিছন (Contractor Commission 10%)</strong>
+                            <span className="text-[10px] text-slate-500 font-normal">
+                              Contractor service charge @ 10% on Labour Wage Total
+                            </span>
+                          </td>
+                          <td className="p-3 text-center text-slate-400">-</td>
+                          <td className="p-3 text-center font-bold text-amber-700">10%</td>
+                          <td className="p-3 text-right font-bold text-amber-800">+ ₹{currentCommission.toLocaleString()}</td>
+                        </tr>
+
+                        {/* Line 3: Taxable Subtotal */}
+                        <tr className="bg-slate-50 font-bold">
+                          <td className="p-3 font-sans text-slate-900">
+                            ৩. মুঠ কৰযোগ্য মূল্য / চাবট’টেল (Total Taxable Value = ১ + ২)
+                          </td>
+                          <td className="p-3 text-center">-</td>
+                          <td className="p-3 text-center">-</td>
+                          <td className="p-3 text-right text-slate-900 font-black">₹{currentTaxable.toLocaleString()}</td>
+                        </tr>
+
+                        {/* Line 4: CGST 9% */}
+                        <tr className="bg-white">
+                          <td className="p-3 font-sans text-slate-700 pl-6">
+                            • Central GST (CGST @ 9% on Taxable Value)
+                          </td>
+                          <td className="p-3 text-center">-</td>
+                          <td className="p-3 text-center text-slate-600">9%</td>
+                          <td className="p-3 text-right text-emerald-800">₹{currentCgst.toLocaleString()}</td>
+                        </tr>
+
+                        {/* Line 5: SGST 9% */}
+                        <tr className="bg-white">
+                          <td className="p-3 font-sans text-slate-700 pl-6">
+                            • State GST (SGST @ 9% on Taxable Value)
+                          </td>
+                          <td className="p-3 text-center">-</td>
+                          <td className="p-3 text-center text-slate-600">9%</td>
+                          <td className="p-3 text-right text-emerald-800">₹{currentSgst.toLocaleString()}</td>
+                        </tr>
+
+                        {/* Line 6: Grand Total */}
+                        <tr className="bg-emerald-900 text-white font-black text-sm">
+                          <td className="p-3.5 font-sans">
+                            <span className="text-[10px] block uppercase tracking-wider text-emerald-300 font-bold">
+                              সৰ্বমুঠ প্ৰাপ্য বিলৰ ধনৰাশি (FINAL PAYABLE INVOICE AMOUNT)
+                            </span>
+                            (শ্ৰমিকৰ মজুৰি + ১০% কণ্ট্ৰেক্টৰ মাৰ্জিন) + ১৮% জিএছটি
+                          </td>
+                          <td className="p-3.5 text-center text-emerald-200">{breakdown.totalAttendance} Shifts</td>
+                          <td className="p-3.5 text-center text-emerald-200">18% GST</td>
+                          <td className="p-3.5 text-right font-black text-emerald-200 text-base">
+                            ₹{currentGrandTotal.toLocaleString()}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Words */}
+                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 font-mono text-[11px]">
+                    <strong>কথাত মুঠ ধনৰাশি (Amount in Words):</strong>{' '}
+                    <span className="text-slate-900 font-bold">{toIndianWords(currentGrandTotal)}</span>
+                  </div>
+                </div>
+
+                {/* Statutory Certifications & Declarations */}
+                <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/50 space-y-2 text-[10px] text-slate-600">
+                  <strong className="block text-slate-800 uppercase font-bold tracking-wider">
+                    আইনী ঘোষণা আৰু চৰ্তাৱলী (Statutory Undertaking under CLRA & GST Act 2017):
+                  </strong>
+                  <p>
+                    ১. আমি প্ৰমাণপত্ৰ প্ৰদান কৰোঁ যে ওপৰত বিল কৰা মজুৰিৰ হাৰ আৰু উপস্থিতিৰ তথ্যবোৰ বায়’মেট্ৰিক আৰু আধাৰ ডিজিটেল উপস্থিতি ৰেজিষ্টাৰৰ পৰা সঁচা আৰু নূন্যতম মজুৰি আইন (Minimum Wages Act) অনুসৰি।
+                  </p>
+                  <p>
+                    ২. উক্ত শ্ৰমিকসকলৰ যোৱা মাহৰ বৈমূখ্যহীন EPF আৰু ESIC চালান আৰু ইচিআৰ (ECR) জমা কৰা হৈছে আৰু ৰাজ্যিক পৰিদৰ্শক বা ইণ্ডাষ্ট্ৰীৰ বাবে পৰীক্ষণীয়।
+                  </p>
+                </div>
+
+                {/* Signatures & Seal */}
+                <div className="grid grid-cols-2 gap-8 pt-6 border-t-2 border-slate-900 text-xs">
+                  <div className="space-y-6 text-center">
+                    <div className="h-10 border-b border-dashed border-slate-400"></div>
+                    <div>
+                      <span className="font-bold text-slate-900 block">কণ্ট্ৰেক্টৰৰ হৈ কৰ্তৃত্বপ্ৰাপ্ত স্বাক্ষৰ (Authorised Signatory)</span>
+                      <span className="text-[10px] text-slate-500 block font-mono">{activeContractor.name}</span>
+                      <span className="text-[9px] text-slate-400 block">Stamp & Signature of Contractor</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6 text-center">
+                    <div className="h-10 border-b border-dashed border-slate-400"></div>
+                    <div>
+                      <span className="font-bold text-slate-900 block">কাৰখানা মেনেজাৰ / প্ৰধান নিয়োগকৰ্তা (Principal Employer)</span>
+                      <span className="text-[10px] text-slate-500 block font-mono">{targetInd.name}</span>
+                      <span className="text-[9px] text-slate-400 block">Verified & Passed for Payment</span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Modal Footer */}
+              <div className="bg-slate-100 border-t border-slate-200 p-4 flex flex-col sm:flex-row justify-between items-center gap-3 shrink-0">
+                <span className="text-xs text-slate-500 font-mono">
+                  Official GST INV-1 Document Generated Automatically by ShramikSathi
+                </span>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => window.print()}
+                    className="bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Printer className="h-4 w-4" />
+                    প্ৰিন্ট / PDF সংৰক্ষণ কৰক
+                  </button>
+
+                  {!isExistingBill && (
+                    <button
+                      onClick={(e) => {
+                        setIsInvoicePreviewOpen(false);
+                        handleSubmitBill(e);
+                      }}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      বিল দাখিল কৰক (Submit Bill)
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => {
+                      setIsInvoicePreviewOpen(false);
+                      setSelectedInvoiceBill(null);
+                    }}
+                    className="bg-white hover:bg-slate-200 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl border border-slate-300 transition-all"
+                  >
+                    বন্ধ কৰক (Close)
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        );
+      })()}
 
     </div>
   );
