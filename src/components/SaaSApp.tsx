@@ -31,6 +31,7 @@ import {
   Filter,
   Factory,
   Receipt,
+  Briefcase,
   Calculator,
   ArrowRight,
   Percent
@@ -424,6 +425,49 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
 
   // Industry-wise Attendance Filter & Worker Check-In state
   const [attendanceIndustryFilter, setAttendanceIndustryFilter] = useState<string>('ALL');
+  const [requisitionContractorFilter, setRequisitionContractorFilter] = useState<string>('ALL');
+  
+  // Contractor Contract Allotments & Worker Quotas State
+  const [allotments, setAllotments] = useState<{
+    id: string;
+    contractorId: string;
+    industryId: string;
+    allottedWorkers: number;
+    contractValue: number;
+    validUntil: string;
+    workDescription: string;
+    status: 'Active' | 'Suspended';
+  }[]>(() => {
+    const saved = localStorage.getItem('s_allotments');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Error parsing allotments:', e);
+      }
+    }
+    return [
+      { id: 'alot-1', contractorId: 'con-1', industryId: 'ind-1', allottedWorkers: 50, contractValue: 120000, validUntil: '2026-12-31', workDescription: 'Electrical & General Assembly Maintenance', status: 'Active' },
+      { id: 'alot-2', contractorId: 'con-1', industryId: 'ind-2', allottedWorkers: 35, contractValue: 85000, validUntil: '2026-10-15', workDescription: 'Dispatch Yard Helpers & Packing', status: 'Active' },
+      { id: 'alot-3', contractorId: 'con-2', industryId: 'ind-1', allottedWorkers: 80, contractValue: 240000, validUntil: '2027-03-31', workDescription: 'Heavy Machine Operation & Forging', status: 'Active' },
+      { id: 'alot-4', contractorId: 'con-2', industryId: 'ind-3', allottedWorkers: 40, contractValue: 95000, validUntil: '2026-11-30', workDescription: 'Loading, Unloading & Logistics', status: 'Active' }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('s_allotments', JSON.stringify(allotments));
+  }, [allotments]);
+
+  const [isAddingAllotment, setIsAddingAllotment] = useState(false);
+  const [newAllotment, setNewAllotment] = useState({
+    contractorId: 'con-1',
+    industryId: 'ind-1',
+    allottedWorkers: 50,
+    contractValue: 100000,
+    validUntil: '2026-12-31',
+    workDescription: 'General Maintenance & Packing',
+    status: 'Active' as 'Active' | 'Suspended'
+  });
   const [targetCheckInIndustry, setTargetCheckInIndustry] = useState<string>('');
 
   // Industry-wise EPF & ESIC Challan Generator State
@@ -514,6 +558,52 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
     advanceDate: '2026-08-20',
     recoveryDate: '2026-08-31'
   });
+
+  // Forgot Password / Password Reset States - Free of cost security verification
+  const [resetStep, setResetStep] = useState<'none' | 'request' | 'new_password'>('none');
+  const [resetEmailOrPhone, setResetEmailOrPhone] = useState<string>('');
+  const [resetSecurityName, setResetSecurityName] = useState<string>('');
+  const [newResetPassword, setNewResetPassword] = useState<string>('');
+
+  const handleInitiatePasswordReset = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmailOrPhone || !resetSecurityName) {
+      showNotice('অনুগ্ৰহ কৰি মেইল/নম্বৰ আৰু নাম দুয়োটাই লিখক। (Please enter Email/Phone and Full Name)', 'error');
+      return;
+    }
+    const matched = credentialUsers.find(
+      u => u.emailOrPhone.trim().toLowerCase() === resetEmailOrPhone.trim().toLowerCase() &&
+           u.name.trim().toLowerCase() === resetSecurityName.trim().toLowerCase()
+    );
+    if (!matched) {
+      showNotice('প্ৰবিষ্ট কৰা তথ্যসমূহ মিলি যোৱা নাই! অনুগ্ৰহ কৰি সঠিক তথ্য লিখক। (Details do not match our records!)', 'error');
+      return;
+    }
+    setResetStep('new_password');
+    setNewResetPassword('');
+    showNotice('পৰিচয় প্ৰমাণিত হৈছে! অনুগ্ৰহ কৰি নতুন পাছৱৰ্ড ছেট কৰক। (Identity verified! Please set your new password)', 'success');
+  };
+
+  const handleSaveNewPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newResetPassword) {
+      showNotice('অনুগ্ৰহ কৰি নতুন পাছৱৰ্ডটো লিখক। (Please enter your new password)', 'error');
+      return;
+    }
+    const updated = credentialUsers.map(u => {
+      if (u.emailOrPhone.trim().toLowerCase() === resetEmailOrPhone.trim().toLowerCase()) {
+        return { ...u, passwordHash: newResetPassword };
+      }
+      return u;
+    });
+    setCredentialUsers(updated);
+    localStorage.setItem('s_credential_users', JSON.stringify(updated));
+    showNotice('আপোনাৰ পাছৱৰ্ড সফলতাৰে পৰিৱৰ্তন কৰা হৈছে! নতুন পাছৱৰ্ডেৰে লগইন কৰক। (Password reset successful!)', 'success');
+    setResetStep('none');
+    setResetEmailOrPhone('');
+    setResetSecurityName('');
+    setNewResetPassword('');
+  };
 
   // Helper generators for statutory identifiers (UAN & ESIC IP No.)
   const getWorkerUAN = (w: Worker) => {
@@ -650,34 +740,44 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
 
   // Contractor's Industry-wise Work & Man-Days Records
   const getContractorIndustrySummary = (contractorId: string) => {
-    return industries.map(ind => {
-      const assignedWorkers = assignments.filter(a => a.contractorId === contractorId && a.industryId === ind.id && a.status === 'Active');
-      const indAttendance = attendance.filter(a => a.contractorId === contractorId && a.industryId === ind.id && a.status === 'Present');
-      
-      const totalManDays = indAttendance.length;
-      const totalOtHours = indAttendance.reduce((sum, a) => sum + (a.overtimeHours || 0), 0);
-      const totalStdHours = totalManDays * 8;
-      
-      const totalWages = indAttendance.reduce((sum, att) => {
-        const wrk = workers.find(w => w.id === att.workerId);
-        const rate = wrk?.dailyWageRate || 650;
-        const base = rate;
-        const ot = (att.overtimeHours || 0) * (rate / 8) * 2;
-        return sum + base + ot;
-      }, 0);
+    const contractorAllotments = allotments.filter(al => al.contractorId === contractorId);
+    const allottedIndustryIds = contractorAllotments.map(al => al.industryId);
 
-      const bill = bills.find(b => b.contractorId === contractorId && b.industryId === ind.id);
+    return industries
+      .filter(ind => allottedIndustryIds.includes(ind.id) || assignments.some(a => a.contractorId === contractorId && a.industryId === ind.id && a.status === 'Active'))
+      .map(ind => {
+        const allotmentDetail = contractorAllotments.find(al => al.industryId === ind.id);
+        const assignedWorkers = assignments.filter(a => a.contractorId === contractorId && a.industryId === ind.id && a.status === 'Active');
+        const indAttendance = attendance.filter(a => a.contractorId === contractorId && a.industryId === ind.id && a.status === 'Present');
+        
+        const totalManDays = indAttendance.length;
+        const totalOtHours = indAttendance.reduce((sum, a) => sum + (a.overtimeHours || 0), 0);
+        const totalStdHours = totalManDays * 8;
+        
+        const totalWages = indAttendance.reduce((sum, att) => {
+          const wrk = workers.find(w => w.id === att.workerId);
+          const rate = wrk?.dailyWageRate || 650;
+          const base = rate;
+          const ot = (att.overtimeHours || 0) * (rate / 8) * 2;
+          return sum + base + ot;
+        }, 0);
 
-      return {
-        industry: ind,
-        assignedCount: assignedWorkers.length,
-        totalManDays,
-        totalStdHours,
-        totalOtHours,
-        totalWages,
-        bill
-      };
-    });
+        const bill = bills.find(b => b.contractorId === contractorId && b.industryId === ind.id);
+
+        return {
+          industry: ind,
+          assignedCount: assignedWorkers.length,
+          totalManDays,
+          totalStdHours,
+          totalOtHours,
+          totalWages,
+          bill,
+          allotmentLimit: allotmentDetail?.allottedWorkers || 50,
+          workDescription: allotmentDetail?.workDescription || 'General Labour Support',
+          validUntil: allotmentDetail?.validUntil || '2026-12-31',
+          status: allotmentDetail?.status || 'Active'
+        };
+      });
   };
 
   // Export ECR CSV File
@@ -807,6 +907,32 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
     const workerObj = workers.find(w => w.id === workerId);
     if (!workerObj) return;
 
+    // Check active allotment for target industry
+    const activeAllotmentObj = allotments.find(
+      al => al.contractorId === workerObj.contractorId && al.industryId === deploymentIndustryId && al.status === 'Active'
+    );
+
+    if (!activeAllotmentObj) {
+      showNotice(
+        `এই উদ্যোগত আপোনাৰ কোনো সক্ৰিয় আৱণ্টন (Allotment) নাই! (You do not have an active contract allotment for this industry!)`,
+        'error'
+      );
+      return;
+    }
+
+    // Check quota limit
+    const activeCount = assignments.filter(
+      a => a.contractorId === workerObj.contractorId && a.industryId === deploymentIndustryId && a.status === 'Active'
+    ).length;
+
+    if (activeCount >= activeAllotmentObj.allottedWorkers) {
+      showNotice(
+        `আৱণ্টিত শ্ৰমিকৰ সৰ্বোচ্চ সীমা অতিক্ৰম কৰিছে! ক’টা সীমা: ${activeAllotmentObj.allottedWorkers} জন শ্ৰমিক। (Worker quota exceeded! Max limit: ${activeAllotmentObj.allottedWorkers} workers.)`,
+        'error'
+      );
+      return;
+    }
+
     try {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json'
@@ -878,22 +1004,35 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch('/api/compliance/upload-missing', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          contractorId: 'con-3',
-          month: 'July 2026',
-          docType: 'GST-Return',
-          fileUrl: 'GSTR3B-JUL-SIMULATED.pdf',
-          remarks: 'GST Return challan uploaded manually. Sandbox automatically verified payment of ₹94,500.'
-        })
-      });
+      const activeContractorObj = contractors.find(c => c.id === selectedContractorId) || contractors[0];
+      const compliance = checkContractorCompliance(selectedContractorId, 'July 2026');
 
-      if (response.ok) {
-        showNotice('GST Challan uploaded. Sahyadri Allied Services compliance unlocked!', 'success');
-        refreshData();
+      const missingDocs = [];
+      if (!compliance.hasEPF) missingDocs.push('EPF-Challan');
+      if (!compliance.hasESI) missingDocs.push('ESI-Challan');
+      if (!compliance.hasGST) missingDocs.push('GST-Return');
+
+      if (missingDocs.length === 0) {
+        showNotice('All statutory challans are already verified for this contractor!', 'info');
+        return;
       }
+
+      for (const docType of missingDocs) {
+        await fetch('/api/compliance/upload-missing', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            contractorId: selectedContractorId,
+            month: 'July 2026',
+            docType: docType,
+            fileUrl: `${docType.toLowerCase()}-JUL-SIMULATED.pdf`,
+            remarks: `${docType} uploaded digitally. Automatic government portal verification succeeded.`
+          })
+        });
+      }
+
+      showNotice(`Statutory compliance challans uploaded! ${activeContractorObj.name} is now fully unlocked!`, 'success');
+      refreshData();
     } catch (err) {
       console.error(err);
     }
@@ -1410,6 +1549,101 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                   </button>
                 </div>
               </form>
+            ) : resetStep !== 'none' ? (
+              <div className="space-y-4 bg-slate-50 border border-slate-100 p-5 rounded-xl">
+                {resetStep === 'request' && (
+                  <form onSubmit={handleInitiatePasswordReset} className="space-y-4">
+                    <div className="text-center space-y-1">
+                      <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto text-base">
+                        🔑
+                      </div>
+                      <h4 className="font-bold text-slate-900 text-xs">পাছৱৰ্ড পুনৰুদ্ধাৰ (Password Recovery)</h4>
+                      <p className="text-[10px] text-slate-500">
+                        Enter your registered Email/Phone and Full Name to securely reset your password. 100% Free of cost.
+                      </p>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase">মেইল ঠিকনা / ফোন নম্বৰ (Registered Email/Phone)</label>
+                      <input 
+                        type="text"
+                        required
+                        placeholder="E.g., contractor@shramiklink.com"
+                        value={resetEmailOrPhone}
+                        onChange={(e) => setResetEmailOrPhone(e.target.value)}
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-indigo-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase">পঞ্জীভুক্ত পূৰ্ণ নাম (Registered Full Name)</label>
+                      <input 
+                        type="text"
+                        required
+                        placeholder="E.g., Apex Solutions (Contractor)"
+                        value={resetSecurityName}
+                        onChange={(e) => setResetSecurityName(e.target.value)}
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-indigo-500"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setResetStep('none');
+                          setResetEmailOrPhone('');
+                          setResetSecurityName('');
+                        }}
+                        className="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 py-2 rounded-lg text-xs font-bold cursor-pointer text-center"
+                      >
+                        বাতিল কৰক (Cancel)
+                      </button>
+                      <button
+                        type="submit"
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg text-xs font-bold cursor-pointer text-center shadow-xs"
+                      >
+                        প্ৰমাণিত কৰক (Verify Identity)
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {resetStep === 'new_password' && (
+                  <form onSubmit={handleSaveNewPassword} className="space-y-4">
+                    <div className="text-center space-y-1">
+                      <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto text-base">
+                        🔐
+                      </div>
+                      <h4 className="font-bold text-slate-900 text-xs">নতুন পাছৱৰ্ড ছেট কৰক (Choose New Password)</h4>
+                      <p className="text-[10px] text-slate-500">
+                        Create a secure new password for your account linked to <strong className="text-indigo-600">{resetEmailOrPhone}</strong>.
+                      </p>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase">নতুন পাছৱৰ্ড লিখক (Enter New Password)</label>
+                      <input 
+                        type="password"
+                        required
+                        placeholder="Choose secure password"
+                        value={newResetPassword}
+                        onChange={(e) => setNewResetPassword(e.target.value)}
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-indigo-500"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1">
+                      <button
+                        type="submit"
+                        className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 py-2.5 rounded-lg text-xs font-bold cursor-pointer text-center shadow-xs uppercase tracking-wider font-extrabold"
+                      >
+                        পাছৱৰ্ড সলনি কৰক (Update & Reset Password)
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
             ) : (
               <div className="space-y-4">
                 
@@ -1459,6 +1693,19 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                         onChange={(e) => setLoginPassword(e.target.value)}
                         className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:bg-white focus:border-indigo-500"
                       />
+                    </div>
+
+                    <div className="text-right">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setResetStep('request');
+                          setResetEmailOrPhone(loginEmailOrPhone);
+                        }}
+                        className="text-[10px] font-black text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer"
+                      >
+                        পাছৱৰ্ড পাহৰি গৈছে? (Forgot Password?)
+                      </button>
                     </div>
 
                     <button
@@ -1889,34 +2136,57 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               
               {/* Daily Requirements Posting */}
-              <div className="lg:col-span-1 bg-white border border-slate-200 rounded-lg p-6 space-y-6">
+              <div className="lg:col-span-1 bg-white border border-slate-200 rounded-lg p-6 space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <h4 className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
                     <Plus className="text-indigo-600 h-4 w-4" />
-                    Labor Requisitions
+                    Labor Requisitions (শ্ৰমিকৰ দৈনিক চাহিদা)
                   </h4>
                   <button 
                     onClick={() => setIsRequirementModalOpen(true)}
-                    className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs px-2.5 py-1.5 rounded transition-all"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-2.5 py-1.5 rounded transition-all"
                   >
                     Post Requirement
                   </button>
                 </div>
 
+                {/* Contractor Filter Dropdown */}
+                <div className="flex items-center justify-between gap-2 bg-slate-50 border border-slate-150 p-2.5 rounded-lg text-xs">
+                  <span className="font-bold text-slate-500">ঠিকাদাৰ বাছক (Filter Contractor):</span>
+                  <select
+                    value={requisitionContractorFilter}
+                    onChange={(e) => setRequisitionContractorFilter(e.target.value)}
+                    className="bg-white border border-slate-200 rounded px-2 py-1 outline-none font-semibold text-slate-700 focus:border-indigo-500"
+                  >
+                    <option value="ALL">সকলো ঠিকাদাৰ (All Contractors)</option>
+                    {contractors.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="space-y-4 max-h-[350px] overflow-y-auto">
-                  {requirements.filter(r => r.industryId === selectedIndustryId).length === 0 ? (
-                    <div className="text-center py-8 text-slate-400 text-xs">
-                      No daily requirements posted yet.
-                    </div>
-                  ) : (
-                    requirements.filter(r => r.industryId === selectedIndustryId).map(req => (
-                      <div key={req.id} className="border border-slate-100 rounded-lg p-4 bg-slate-50/50 space-y-2">
+                  {(() => {
+                    const filteredReqs = requirements
+                      .filter(r => r.industryId === selectedIndustryId)
+                      .filter(r => requisitionContractorFilter === 'ALL' || r.contractorId === requisitionContractorFilter);
+
+                    if (filteredReqs.length === 0) {
+                      return (
+                        <div className="text-center py-8 text-slate-400 text-xs italic">
+                          এই ঠিকাদাৰৰ বাবে কোনো দৈনিক চাহিদা লিখা হোৱা নাই। (No requirements posted for this contractor.)
+                        </div>
+                      );
+                    }
+
+                    return filteredReqs.map(req => (
+                      <div key={req.id} className="border border-slate-150 rounded-lg p-4 bg-slate-50/50 hover:bg-white hover:border-indigo-200 transition-all space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="bg-indigo-50 text-indigo-800 font-bold text-[10px] uppercase px-2 py-0.5 rounded">
+                          <span className="bg-indigo-50 text-indigo-800 font-bold text-[10px] uppercase px-2 py-0.5 rounded border border-indigo-100">
                             {req.skillType}
                           </span>
                           <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                            req.status === 'Open' ? 'bg-emerald-50 text-emerald-800' : 'bg-slate-200 text-slate-600'
+                            req.status === 'Open' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-slate-200 text-slate-600'
                           }`}>
                             {req.status}
                           </span>
@@ -1925,12 +2195,15 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                           <span>Required: <strong className="text-slate-800 font-bold">{req.workersNeeded} Workers</strong></span>
                           <span>Shift: <strong className="text-slate-700 font-medium">{req.shiftTiming.split(' ')[0]}</strong></span>
                         </div>
-                        <div className="text-[10px] text-slate-400">
-                          Target Contractor: {contractors.find(c => c.id === req.contractorId)?.name || 'General Pool'}
+                        <div className="text-[10px] text-slate-400 border-t border-slate-100 pt-1.5 mt-1 flex justify-between items-center">
+                          <span>ঠিকাদাৰ (Contractor):</span>
+                          <span className="font-semibold text-slate-600 truncate max-w-[150px]">
+                            {contractors.find(c => c.id === req.contractorId)?.name || 'General Pool'}
+                          </span>
                         </div>
                       </div>
-                    ))
-                  )}
+                    ));
+                  })()}
                 </div>
               </div>
 
@@ -2041,6 +2314,260 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                 </div>
               </div>
 
+            </div>
+
+            {/* STATUTORY CONTRACT ALLOTMENTS & WORKER QUOTAS MANAGER */}
+            <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-6 shadow-xs">
+              <div className="border-b border-slate-100 pb-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <div>
+                  <h4 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
+                    <ShieldCheck className="text-indigo-600 h-5 w-5" />
+                    চুক্তি আৱণ্টন আৰু শ্ৰমিক ক’টা নিয়ন্ত্ৰণ (Contract Allotments & Worker Quotas)
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Manage active labor contractor assignments, restrict max worker deployment quotas, track contract values, and enforce compliance validity.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setNewAllotment(prev => ({ ...prev, industryId: selectedIndustryId }));
+                    setIsAddingAllotment(!isAddingAllotment);
+                  }}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-3.5 py-2 rounded-lg flex items-center gap-1.5 transition-all shadow-xs"
+                >
+                  <Plus className="h-4 w-4" />
+                  নতুন আৱণ্টন যোগ কৰক (Add Allotment)
+                </button>
+              </div>
+
+              {/* Form to Add New Allotment */}
+              {isAddingAllotment && (
+                <div className="bg-slate-50/80 border border-slate-200 rounded-xl p-5 space-y-4 animate-fadeIn">
+                  <span className="font-extrabold text-slate-800 text-xs block uppercase tracking-wider text-indigo-600">
+                    নতুন কণ্ট্ৰেক্ট আৱণ্টন প্ৰপত্ৰ (New Allotment Form)
+                  </span>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                    <div>
+                      <label className="block text-slate-600 font-bold mb-1.5">ঠিকাদাৰ প্ৰতিষ্ঠান (Select Contractor):</label>
+                      <select
+                        value={newAllotment.contractorId}
+                        onChange={(e) => setNewAllotment(prev => ({ ...prev, contractorId: e.target.value }))}
+                        className="w-full bg-white border border-slate-200 rounded-lg p-2.5 font-semibold text-slate-700 outline-none focus:border-indigo-600"
+                      >
+                        {contractors.map(c => (
+                          <option key={c.id} value={c.id}>{c.name} (CLRA: {c.licenseNo.split('-')[0]})</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-600 font-bold mb-1.5">সৰ্বোচ্চ শ্ৰমিকৰ ক’টা (Max Worker Quota):</label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={newAllotment.allottedWorkers}
+                        onChange={(e) => setNewAllotment(prev => ({ ...prev, allottedWorkers: Math.max(1, Number(e.target.value)) }))}
+                        className="w-full bg-white border border-slate-200 rounded-lg p-2 font-semibold text-slate-700 outline-none focus:border-indigo-600 font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-600 font-bold mb-1.5">চুক্তিৰ মূল্য (Contract Value in ₹):</label>
+                      <input
+                        type="number"
+                        min={1000}
+                        value={newAllotment.contractValue}
+                        onChange={(e) => setNewAllotment(prev => ({ ...prev, contractValue: Math.max(0, Number(e.target.value)) }))}
+                        className="w-full bg-white border border-slate-200 rounded-lg p-2 font-semibold text-slate-700 outline-none focus:border-indigo-600 font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                    <div className="md:col-span-2">
+                      <label className="block text-slate-600 font-bold mb-1.5">কামৰ চমু বিৱৰণ (Work/Scope Description):</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Electrical Maintenance / Loading Yards / General Packing"
+                        value={newAllotment.workDescription}
+                        onChange={(e) => setNewAllotment(prev => ({ ...prev, workDescription: e.target.value }))}
+                        className="w-full bg-white border border-slate-200 rounded-lg p-2.5 font-semibold text-slate-700 outline-none focus:border-indigo-600"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-600 font-bold mb-1.5">চুক্তিৰ ম্যাদ উকলিব লগা তাৰিখ (Valid Until):</label>
+                      <input
+                        type="date"
+                        value={newAllotment.validUntil}
+                        onChange={(e) => setNewAllotment(prev => ({ ...prev, validUntil: e.target.value }))}
+                        className="w-full bg-white border border-slate-200 rounded-lg p-2 font-semibold text-slate-700 outline-none focus:border-indigo-600 font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 justify-end pt-2 text-xs">
+                    <button
+                      onClick={() => setIsAddingAllotment(false)}
+                      className="text-slate-500 font-bold px-4 py-2 hover:bg-slate-100 rounded-lg transition-all"
+                    >
+                      বাতিল কৰক (Cancel)
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (!newAllotment.workDescription) {
+                          showNotice('অনুগ্ৰহ কৰি কামৰ বিৱৰণ লিখক! (Please write work description)', 'error');
+                          return;
+                        }
+                        const allotmentObj = {
+                          ...newAllotment,
+                          id: 'alot-' + Date.now()
+                        };
+                        setAllotments(prev => [allotmentObj, ...prev]);
+                        setIsAddingAllotment(false);
+                        setNewAllotment({
+                          contractorId: 'con-1',
+                          industryId: 'ind-1',
+                          allottedWorkers: 50,
+                          contractValue: 100000,
+                          validUntil: '2026-12-31',
+                          workDescription: 'General Maintenance & Packing',
+                          status: 'Active'
+                        });
+                        showNotice('চুক্তি আৱণ্টন আৰু শ্ৰমিক ক’টা সফলতাৰে সংৰক্ষণ কৰা হৈছে! (Contract allotment successfully created!)', 'success');
+                      }}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold px-5 py-2.5 rounded-lg transition-all shadow-xs"
+                    >
+                      প্ৰতিষ্ঠা কৰক (Confirm Allotment)
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Allotments Overview List */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-slate-600">
+                  <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] font-bold border-b border-slate-200/80">
+                    <tr>
+                      <th className="p-3">ঠিকাদাৰ প্ৰতিষ্ঠান (Contractor Agency)</th>
+                      <th className="p-3">আৱণ্টিত শ্ৰমিক ক’টা (Quota)</th>
+                      <th className="p-3">নিয়োজিত শ্ৰমিক (Active Deploy)</th>
+                      <th className="p-3">চুক্তিৰ মূল্য (Contract Value)</th>
+                      <th className="p-3">কামৰ বিৱৰণ (Scope of Work)</th>
+                      <th className="p-3 font-mono text-center">বৈধতা (Validity)</th>
+                      <th className="p-3 text-center">স্থিতি (Status)</th>
+                      <th className="p-3 text-right">একশ্যন (Action)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {allotments.filter(al => al.industryId === selectedIndustryId).length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="p-6 text-center text-slate-400 italic">
+                          এই প্লাণ্টত কোনো ঠিকাদাৰৰ বাবে এতিয়ালৈকে কোনো সক্ৰিয় চুক্তি আৱণ্টন কৰা হোৱা ない।
+                        </td>
+                      </tr>
+                    ) : (
+                      allotments
+                        .filter(al => al.industryId === selectedIndustryId)
+                        .map(al => {
+                          const contractor = contractors.find(c => c.id === al.contractorId);
+                          const activeDeployedCount = assignments.filter(
+                            as => as.contractorId === al.contractorId && as.industryId === selectedIndustryId && as.status === 'Active'
+                          ).length;
+                          
+                          const isNearLimit = activeDeployedCount >= al.allottedWorkers;
+                          const isExpired = new Date(al.validUntil) < new Date('2026-09-05');
+
+                          return (
+                            <tr key={al.id} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="p-3">
+                                <span className="font-extrabold text-slate-900 block">{contractor?.name || 'Unknown'}</span>
+                                <span className="text-[10px] text-slate-400 block mt-0.5">Lic: {contractor?.licenseNo}</span>
+                              </td>
+                              <td className="p-3 font-mono font-bold text-slate-800 text-sm">
+                                {al.allottedWorkers} জন
+                              </td>
+                              <td className="p-3">
+                                <div className="flex items-center gap-1.5">
+                                  <span className={`font-mono font-extrabold text-sm ${isNearLimit ? 'text-amber-600' : 'text-slate-800'}`}>
+                                    {activeDeployedCount}
+                                  </span>
+                                  <span className="text-slate-400">/</span>
+                                  <span className="text-xs text-slate-400 font-mono">{al.allottedWorkers}</span>
+                                </div>
+                                <div className="w-24 bg-slate-100 h-1.5 rounded-full overflow-hidden mt-1">
+                                  <div 
+                                    className={`h-full rounded-full ${isNearLimit ? 'bg-amber-500' : 'bg-indigo-600'}`} 
+                                    style={{ width: `${Math.min(100, (activeDeployedCount / al.allottedWorkers) * 100)}%` }}
+                                  />
+                                </div>
+                              </td>
+                              <td className="p-3 font-mono font-extrabold text-emerald-700 text-sm">
+                                ₹{al.contractValue.toLocaleString()}
+                              </td>
+                              <td className="p-3 font-medium text-slate-700 max-w-[150px] truncate">
+                                {al.workDescription}
+                              </td>
+                              <td className="p-3 font-mono text-center">
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${isExpired ? 'bg-rose-50 text-rose-800 border border-rose-150' : 'bg-slate-100 text-slate-600'}`}>
+                                  {al.validUntil}
+                                </span>
+                              </td>
+                              <td className="p-3 text-center">
+                                <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full border ${
+                                  al.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'
+                                }`}>
+                                  <span className={`h-1.5 w-1.5 rounded-full ${al.status === 'Active' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                                  {al.status}
+                                </span>
+                              </td>
+                              <td className="p-3 text-right">
+                                <div className="flex gap-2 justify-end">
+                                  <button
+                                    onClick={() => {
+                                      const updated = allotments.map(item => {
+                                        if (item.id === al.id) {
+                                          const nextStatus = item.status === 'Active' ? 'Suspended' as const : 'Active' as const;
+                                          showNotice(
+                                            `আৱণ্টন স্থিতি পৰিৱৰ্তন কৰা হৈছে: ${nextStatus}! (Allotment status set to ${nextStatus})`,
+                                            'info'
+                                          );
+                                          return { ...item, status: nextStatus };
+                                        }
+                                        return item;
+                                      });
+                                      setAllotments(updated);
+                                    }}
+                                    className={`px-2.5 py-1.5 rounded text-[10px] font-bold transition-all ${
+                                      al.status === 'Active' 
+                                        ? 'bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/40' 
+                                        : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200/40'
+                                    }`}
+                                  >
+                                    {al.status === 'Active' ? 'Suspended কৰক' : 'Active কৰক'}
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      if (confirm('আপুনি এই আৱণ্টনটো ডিলিট কৰিব বিচাৰে নেকি? (Are you sure you want to delete this allotment?)')) {
+                                        setAllotments(prev => prev.filter(item => item.id !== al.id));
+                                        showNotice('আৱণ্টন ডিলিট কৰা হৈছে। (Allotment deleted.)', 'info');
+                                      }
+                                    }}
+                                    className="p-1.5 text-slate-400 hover:text-rose-600 transition-colors"
+                                    title="Delete Allotment"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {/* Daily Shift Attendance & Overtime Tracker */}
@@ -2341,13 +2868,116 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
               </div>
             </div>
 
-            {/* CRUCIAL FEATURE: MULTI-INDUSTRY LIVE TRACKING & DEPLOYMENT MODULE */}
+            {/* DAILY LABOUR REQUISITIONS FOR CONTRACTOR */}
             <div className="bg-white border border-slate-200 rounded-lg p-6 space-y-6">
               <div className="border-b border-slate-100 pb-3 flex justify-between items-center">
                 <div>
                   <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                    <Briefcase className="text-indigo-600 h-5 w-5" />
+                    দৈনিক শ্ৰমিক চাহিদা (Daily Labour Requisitions)
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    উদ্যোগসমূহৰ পৰা অহা সক্ৰিয় শ্ৰমিকৰ চাহিদা আৰু যোগানৰ অগ্ৰগতি পৰীক্ষা কৰক। (Track live labour requirements requested by manufacturing plants.)
+                  </p>
+                </div>
+                <span className="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2.5 py-1 rounded-full border border-indigo-100">
+                  {requirements.filter(r => r.contractorId === selectedContractorId && r.status === 'Open').length} সক্ৰিয় চাহিদা (Active)
+                </span>
+              </div>
+
+              {(() => {
+                const activeReqs = requirements.filter(r => r.contractorId === selectedContractorId && r.status === 'Open');
+                
+                if (activeReqs.length === 0) {
+                  return (
+                    <div className="text-center py-8 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-slate-400 text-xs italic">
+                      আপোনাৰ বাবে কোনো সক্ৰিয় শ্ৰমিক চাহিদা নাই। (No active labor requirements are currently posted for your agency.)
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {activeReqs.map(req => {
+                      const fulfilledCount = assignments.filter(a => {
+                        if (a.industryId !== req.industryId || a.contractorId !== req.contractorId || a.status !== 'Active') {
+                          return false;
+                        }
+                        const worker = workers.find(w => w.id === a.workerId);
+                        return worker?.skillType === req.skillType;
+                      }).length;
+
+                      const pct = Math.min(100, Math.round((fulfilledCount / req.workersNeeded) * 100));
+
+                      return (
+                        <div key={req.id} className="border border-slate-200 rounded-xl p-4 bg-slate-50/50 hover:bg-white hover:border-indigo-300 transition-all space-y-3.5 shadow-2xs">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <span className="font-bold text-xs text-slate-800 block">
+                                {req.industryName}
+                              </span>
+                              <span className="text-[10px] text-slate-400">{req.shiftTiming}</span>
+                            </div>
+                            <span className="bg-indigo-50 text-indigo-800 font-bold text-[9px] uppercase px-2 py-0.5 rounded border border-indigo-100">
+                              {req.skillType}
+                            </span>
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between text-xs font-semibold text-slate-600">
+                              <span>যোগানৰ স্থিতি (Fulfillment):</span>
+                              <span>{fulfilledCount} / {req.workersNeeded} শ্ৰমিক (Workers)</span>
+                            </div>
+                            
+                            {/* Fulfillment Progress Bar */}
+                            <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                  pct >= 100 ? 'bg-emerald-500' : pct >= 50 ? 'bg-indigo-500' : 'bg-amber-500'
+                                }`}
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                            <div className="flex justify-between text-[10px] text-slate-400">
+                              <span>অগ্ৰগতি (Progress)</span>
+                              <span>{pct}% Completed</span>
+                            </div>
+                          </div>
+
+                          <div className="border-t border-slate-100 pt-3 flex justify-between items-center text-xs">
+                            <span className="text-[10px] text-slate-400 font-mono">Date: {req.date}</span>
+                            <button
+                              onClick={() => {
+                                // Set deployment form target industry and shift to make it easy for contractor
+                                setDeploymentIndustryId(req.industryId);
+                                setDeploymentShift(req.shiftTiming);
+                                // Scroll to deployment board
+                                const el = document.getElementById('deployment-board');
+                                if (el) {
+                                  el.scrollIntoView({ behavior: 'smooth' });
+                                }
+                                showNotice(`Deployment presets configured for ${req.industryName}. Choose a worker to deploy!`, 'info');
+                              }}
+                              className="text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 hover:underline text-[11px]"
+                            >
+                              শ্ৰমিক পঠাওক (Deploy Workers) →
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* CRUCIAL FEATURE: MULTI-INDUSTRY LIVE TRACKING & DEPLOYMENT MODULE */}
+            <div id="deployment-board" className="bg-white border border-slate-200 rounded-lg p-6 space-y-6">
+              <div className="border-b border-slate-100 pb-3 flex justify-between items-center">
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
                     <Users className="text-indigo-600 h-5 w-5" />
-                    Multi-Industry Deployment Board
+                    Multi-Industry Deployment Board (কাৰখানাভিত্তিক শ্ৰমিক নিয়োজন বোৰ্ড)
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">
                     Track, deploy, and recall your contract workforce across multiple manufacturing industries in real time.
@@ -2385,11 +3015,17 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                                 <select 
                                   value={deploymentIndustryId}
                                   onChange={(e) => setDeploymentIndustryId(e.target.value)}
-                                  className="w-full border border-slate-200 p-1 rounded"
+                                  className="w-full border border-slate-200 p-1 rounded font-bold text-slate-700 bg-white"
                                 >
-                                  {industries.map(ind => (
-                                    <option key={ind.id} value={ind.id}>{ind.name.split(' ')[0]} ({ind.location.split(',')[0]})</option>
-                                  ))}
+                                  {allotments
+                                    .filter(al => al.contractorId === selectedContractorId && al.status === 'Active')
+                                    .map(al => {
+                                      const ind = industries.find(i => i.id === al.industryId);
+                                      if (!ind) return null;
+                                      return (
+                                        <option key={ind.id} value={ind.id}>{ind.name.split(' ')[0]} (Quota: {al.allottedWorkers})</option>
+                                      );
+                                    })}
                                 </select>
                               </div>
                               <div>
@@ -2397,7 +3033,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                                 <select 
                                   value={deploymentShift}
                                   onChange={(e) => setDeploymentShift(e.target.value)}
-                                  className="w-full border border-slate-200 p-1 rounded"
+                                  className="w-full border border-slate-200 p-1 rounded font-semibold text-slate-700 bg-white"
                                 >
                                   <option value="General (09:00 - 17:00)">General (09:00 - 17:00)</option>
                                   <option value="Shift A (06:00 - 14:00)">Shift A (06:00 - 14:00)</option>
@@ -2414,7 +3050,10 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                             <button 
                               onClick={() => {
                                 setDeployingWorkerId(wrk.id);
-                                setDeploymentIndustryId(industries[0].id);
+                                const activeAllots = allotments.filter(al => al.contractorId === selectedContractorId && al.status === 'Active');
+                                if (activeAllots.length > 0) {
+                                  setDeploymentIndustryId(activeAllots[0].industryId);
+                                }
                               }}
                               className="w-full bg-slate-900 hover:bg-indigo-700 text-white text-[10px] font-bold py-1 px-2 rounded tracking-wide uppercase transition-colors"
                             >
@@ -2427,116 +3066,60 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                   </div>
                 </div>
 
-                {/* 2. Deployed: Tata Motors */}
-                <div className="border border-slate-200 rounded-lg p-4 bg-slate-50/50 space-y-3">
-                  <div className="font-bold text-xs text-indigo-700 uppercase tracking-wider flex justify-between items-center">
-                    <span>🏭 Tata Motors Pune</span>
-                    <span className="bg-indigo-100 text-indigo-700 rounded-full px-2 py-0.5 text-[10px]">
-                      {assignments.filter(a => a.contractorId === selectedContractorId && a.industryId === 'ind-1' && a.status === 'Active').length}
-                    </span>
-                  </div>
-                  <div className="space-y-3 max-h-[350px] overflow-y-auto">
-                    {assignments.filter(a => a.contractorId === selectedContractorId && a.industryId === 'ind-1' && a.status === 'Active').length === 0 ? (
-                      <div className="text-center py-8 text-slate-400 text-xs italic">
-                        No workers active here.
-                      </div>
-                    ) : (
-                      assignments.filter(a => a.contractorId === selectedContractorId && a.industryId === 'ind-1' && a.status === 'Active').map(asg => {
-                        const wrkObj = workers.find(w => w.id === asg.workerId);
-                        if (!wrkObj) return null;
-                        return (
-                          <div key={asg.id} className="bg-white border border-slate-150 p-3 rounded shadow-2xs space-y-2">
-                            <div>
-                              <span className="font-semibold text-slate-800 text-xs block">{wrkObj.name}</span>
-                              <span className="text-[10px] text-slate-500 block font-medium mt-0.5">Shift: {asg.shiftTiming.split(' ')[0]}</span>
-                              <span className="text-[10px] text-slate-400">Wage: ₹{wrkObj.dailyWageRate}/day</span>
-                            </div>
-                            <button 
-                              onClick={() => handleRecallWorker(asg.id)}
-                              className="w-full text-center text-rose-600 hover:text-white border border-rose-200 hover:bg-rose-600 text-[10px] font-bold py-1 px-2 rounded uppercase transition-all"
-                            >
-                              Recall Worker
-                            </button>
+                {/* Dynamically render contractor's allotted industries next to idle pool */}
+                {allotments
+                  .filter(al => al.contractorId === selectedContractorId && al.status === 'Active')
+                  .map(al => {
+                    const ind = industries.find(i => i.id === al.industryId);
+                    if (!ind) return null;
+                    const count = assignments.filter(a => a.contractorId === selectedContractorId && a.industryId === ind.id && a.status === 'Active').length;
+                    const isOverQuota = count >= al.allottedWorkers;
+                    
+                    return (
+                      <div key={al.id} className="border border-slate-200 rounded-lg p-4 bg-slate-50/50 space-y-3 shadow-2xs">
+                        <div className="font-bold text-xs uppercase tracking-wider flex flex-col gap-1">
+                          <div className="flex justify-between items-center text-indigo-700">
+                            <span className="truncate max-w-[130px] font-extrabold flex items-center gap-1">
+                              🏭 {ind.name.split(' ')[0]}
+                            </span>
+                            <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${isOverQuota ? 'bg-rose-100 text-rose-700' : 'bg-indigo-100 text-indigo-700'}`}>
+                              {count} / {al.allottedWorkers}
+                            </span>
                           </div>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-
-                {/* 3. Deployed: JSW Steel */}
-                <div className="border border-slate-200 rounded-lg p-4 bg-slate-50/50 space-y-3">
-                  <div className="font-bold text-xs text-amber-700 uppercase tracking-wider flex justify-between items-center">
-                    <span>🏭 JSW Steel Bellary</span>
-                    <span className="bg-amber-100 text-amber-700 rounded-full px-2 py-0.5 text-[10px]">
-                      {assignments.filter(a => a.contractorId === selectedContractorId && a.industryId === 'ind-2' && a.status === 'Active').length}
-                    </span>
-                  </div>
-                  <div className="space-y-3 max-h-[350px] overflow-y-auto">
-                    {assignments.filter(a => a.contractorId === selectedContractorId && a.industryId === 'ind-2' && a.status === 'Active').length === 0 ? (
-                      <div className="text-center py-8 text-slate-400 text-xs italic">
-                        No workers active here.
-                      </div>
-                    ) : (
-                      assignments.filter(a => a.contractorId === selectedContractorId && a.industryId === 'ind-2' && a.status === 'Active').map(asg => {
-                        const wrkObj = workers.find(w => w.id === asg.workerId);
-                        if (!wrkObj) return null;
-                        return (
-                          <div key={asg.id} className="bg-white border border-slate-150 p-3 rounded shadow-2xs space-y-2">
-                            <div>
-                              <span className="font-semibold text-slate-800 text-xs block">{wrkObj.name}</span>
-                              <span className="text-[10px] text-slate-500 block font-medium mt-0.5">Shift: {asg.shiftTiming.split(' ')[0]}</span>
-                              <span className="text-[10px] text-slate-400">Wage: ₹{wrkObj.dailyWageRate}/day</span>
+                          <span className="text-[9px] text-slate-400 normal-case font-semibold block truncate">
+                            Limit: {al.allottedWorkers} Workers • {al.workDescription}
+                          </span>
+                        </div>
+                        <div className="space-y-3 max-h-[350px] overflow-y-auto">
+                          {assignments.filter(a => a.contractorId === selectedContractorId && a.industryId === ind.id && a.status === 'Active').length === 0 ? (
+                            <div className="text-center py-12 text-slate-400 text-[10px] italic">
+                              No workers active here.
                             </div>
-                            <button 
-                              onClick={() => handleRecallWorker(asg.id)}
-                              className="w-full text-center text-rose-600 hover:text-white border border-rose-200 hover:bg-rose-600 text-[10px] font-bold py-1 px-2 rounded uppercase transition-all"
-                            >
-                              Recall Worker
-                            </button>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-
-                {/* 4. Deployed: Serum Institute */}
-                <div className="border border-slate-200 rounded-lg p-4 bg-slate-50/50 space-y-3">
-                  <div className="font-bold text-xs text-emerald-700 uppercase tracking-wider flex justify-between items-center">
-                    <span>🏭 Serum Institute</span>
-                    <span className="bg-emerald-100 text-emerald-700 rounded-full px-2 py-0.5 text-[10px]">
-                      {assignments.filter(a => a.contractorId === selectedContractorId && a.industryId === 'ind-3' && a.status === 'Active').length}
-                    </span>
-                  </div>
-                  <div className="space-y-3 max-h-[350px] overflow-y-auto">
-                    {assignments.filter(a => a.contractorId === selectedContractorId && a.industryId === 'ind-3' && a.status === 'Active').length === 0 ? (
-                      <div className="text-center py-8 text-slate-400 text-xs italic">
-                        No workers active here.
+                          ) : (
+                            assignments.filter(a => a.contractorId === selectedContractorId && a.industryId === ind.id && a.status === 'Active').map(asg => {
+                              const wrkObj = workers.find(w => w.id === asg.workerId);
+                              if (!wrkObj) return null;
+                              return (
+                                <div key={asg.id} className="bg-white border border-slate-150 p-2.5 rounded hover:border-indigo-300 transition-all space-y-2">
+                                  <div>
+                                    <span className="font-semibold text-slate-800 text-xs block">{wrkObj.name}</span>
+                                    <span className="text-[9px] text-slate-500 block font-medium mt-0.5">Shift: {asg.shiftTiming.split(' ')[0]}</span>
+                                    <span className="text-[9px] text-slate-400">Wage: ₹{wrkObj.dailyWageRate}/day</span>
+                                  </div>
+                                  <button 
+                                    onClick={() => handleRecallWorker(asg.id)}
+                                    className="w-full text-center text-rose-600 hover:text-white border border-rose-200 hover:bg-rose-600 text-[9px] font-bold py-1 rounded uppercase transition-all"
+                                  >
+                                    Recall Worker
+                                  </button>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
                       </div>
-                    ) : (
-                      assignments.filter(a => a.contractorId === selectedContractorId && a.industryId === 'ind-3' && a.status === 'Active').map(asg => {
-                        const wrkObj = workers.find(w => w.id === asg.workerId);
-                        if (!wrkObj) return null;
-                        return (
-                          <div key={asg.id} className="bg-white border border-slate-150 p-3 rounded shadow-2xs space-y-2">
-                            <div>
-                              <span className="font-semibold text-slate-800 text-xs block">{wrkObj.name}</span>
-                              <span className="text-[10px] text-slate-500 block font-medium mt-0.5">Shift: {asg.shiftTiming.split(' ')[0]}</span>
-                              <span className="text-[10px] text-slate-400">Wage: ₹{wrkObj.dailyWageRate}/day</span>
-                            </div>
-                            <button 
-                              onClick={() => handleRecallWorker(asg.id)}
-                              className="w-full text-center text-rose-600 hover:text-white border border-rose-200 hover:bg-rose-600 text-[10px] font-bold py-1 px-2 rounded uppercase transition-all"
-                            >
-                              Recall Worker
-                            </button>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
+                    );
+                  })}
 
               </div>
             </div>
@@ -2585,13 +3168,13 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                           </div>
                         </div>
 
-                        {selectedContractorId === 'con-3' && (
+                        {!compliance.compliant && (
                           <div className="pt-2">
                             <button 
                               onClick={handleUploadMissingChallan}
-                              className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs py-2 rounded shadow-xs transition-colors flex items-center justify-center gap-1.5"
+                              className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs py-2.5 rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer uppercase tracking-wider font-extrabold"
                             >
-                              <Upload className="h-4 w-4" /> Upload Missing GSTR-3B Challan & Unlock
+                              <Upload className="h-4 w-4 animate-bounce" /> চৰকাৰী চালান আপলোড কৰি আনলক কৰক (Upload Missing Challans & Unlock)
                             </button>
                           </div>
                         )}
@@ -3472,14 +4055,20 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-200 bg-white font-mono">
-                        {clraDeductions.length === 0 ? (
+                        {clraDeductions.filter(d => {
+                          const w = workers.find(wrk => wrk.id === d.workerId);
+                          return w && w.contractorId === selectedContractorId;
+                        }).length === 0 ? (
                           <tr>
                             <td colSpan={8} className="p-8 text-center text-slate-400 italic font-sans">
                               কোনো ক্ষতি বা কৰ্তনৰ ৰেকৰ্ড পোৱা নগ’ল। (No deduction records found.)
                             </td>
                           </tr>
                         ) : (
-                          clraDeductions.map((ded, idx) => {
+                          clraDeductions.filter(d => {
+                            const w = workers.find(wrk => wrk.id === d.workerId);
+                            return w && w.contractorId === selectedContractorId;
+                          }).map((ded, idx) => {
                             const wrkObj = workers.find(w => w.id === ded.workerId);
                             return (
                               <tr key={ded.id} className="hover:bg-slate-50/50">
@@ -3524,14 +4113,20 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-200 bg-white font-mono">
-                        {clraAdvances.length === 0 ? (
+                        {clraAdvances.filter(a => {
+                          const w = workers.find(wrk => wrk.id === a.workerId);
+                          return w && w.contractorId === selectedContractorId;
+                        }).length === 0 ? (
                           <tr>
                             <td colSpan={8} className="p-8 text-center text-slate-400 italic font-sans">
                               কোনো অগ্ৰিম ধনৰ ৰেকৰ্ড পোৱা নগ’ল। (No advance payment records found.)
                             </td>
                           </tr>
                         ) : (
-                          clraAdvances.map((adv, idx) => {
+                          clraAdvances.filter(a => {
+                            const w = workers.find(wrk => wrk.id === a.workerId);
+                            return w && w.contractorId === selectedContractorId;
+                          }).map((adv, idx) => {
                             const wrkObj = workers.find(w => w.id === adv.workerId);
                             return (
                               <tr key={adv.id} className="hover:bg-slate-50/50">
