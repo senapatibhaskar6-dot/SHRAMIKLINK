@@ -1159,17 +1159,17 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
         </div>
 
         {/* Brand Banner */}
-        <div className="bg-slate-900 text-white rounded-2xl p-4 md:p-5 border border-slate-800 shadow-xl relative overflow-hidden space-y-4">
+        <div className="bg-slate-900 text-white rounded-2xl p-3.5 md:p-4 border border-slate-800 shadow-xl relative overflow-hidden space-y-3">
           {/* Subtle graphic elements */}
           <div className="absolute right-0 top-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
           <div className="absolute left-1/3 bottom-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
 
           {/* Top Row: Logo (Left), ShramikLink (Center), Pill (Right) */}
-          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-3 border-b border-slate-800/30 pb-4">
+          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-2 border-b border-slate-800/30 pb-2.5">
             
             {/* Logo (Left side) */}
             <div className="flex-1 flex justify-center md:justify-start w-full md:w-auto">
-              <div className="relative group w-11 h-11 md:w-13 md:h-13 bg-white p-1 rounded-xl flex items-center justify-center border border-white shadow-md hover:scale-105 transition-transform duration-300">
+              <div className="relative group w-9 h-9 md:w-11 md:h-11 bg-white p-1 rounded-xl flex items-center justify-center border border-white shadow-md hover:scale-105 transition-transform duration-300">
                 <TransparentImage 
                   src={logoUrl} 
                   alt="ShramikLink Official Logo" 
@@ -1181,15 +1181,15 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
 
             {/* ShramikLink (Center) */}
             <div className="flex-1 flex justify-center text-center">
-              <h2 className="text-xl md:text-2xl font-black tracking-tight text-white select-none">
+              <h2 className="text-lg md:text-xl font-black tracking-tight text-white select-none">
                 <span className="text-orange-500">ShramikLink</span>
               </h2>
             </div>
 
             {/* Pill (Right side) */}
             <div className="flex-1 flex justify-center md:justify-end w-full md:w-auto">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 text-emerald-400 rounded-full text-[10px] font-bold uppercase tracking-wider border border-emerald-500/20 whitespace-nowrap shadow-xs">
-                <ShieldCheck className="h-3.5 w-3.5 shrink-0" /> Multi-Role Secure Login Gateway
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-full text-[9px] font-bold uppercase tracking-wider border border-emerald-500/20 whitespace-nowrap shadow-xs">
+                <ShieldCheck className="h-3 w-3 shrink-0" /> Multi-Role Secure Login Gateway
               </div>
             </div>
 
@@ -1197,7 +1197,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
 
           {/* Subtitle / Description (Centered underneath) */}
           <div className="relative z-10 text-center max-w-2xl mx-auto">
-            <p className="text-[11px] md:text-xs text-emerald-400/95 font-bold tracking-wide leading-relaxed">
+            <p className="text-[10px] md:text-[11px] text-emerald-400/95 font-bold tracking-wide leading-relaxed">
               {t.tagline}
             </p>
           </div>
