@@ -105,7 +105,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
           />
 
           {/* Modal / Menu */}
-          <div className="absolute right-0 mt-1 w-64 sm:w-80 bg-slate-900 border border-slate-700 rounded-xl sm:rounded-2xl shadow-2xl z-50 p-2 sm:p-3 animate-fadeIn text-slate-100 origin-top-right">
+          <div className="absolute left-0 mt-1 w-64 sm:w-80 bg-slate-900 border border-slate-700 rounded-xl sm:rounded-2xl shadow-2xl z-50 p-2 sm:p-3 animate-fadeIn text-slate-100 origin-top-left">
             <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-800 px-1 sm:px-2">
               <div className="flex items-center gap-1">
                 <Globe className="h-3 w-3 sm:h-4 sm:w-4 text-indigo-400" />

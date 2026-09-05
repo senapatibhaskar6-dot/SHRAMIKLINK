@@ -193,51 +193,32 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
       return;
     }
 
-    const generated = Math.floor(100000 + Math.random() * 900000).toString();
-    setSimulatedOtpCode(generated);
-    setOtpStep(true);
+    const newUser: CredentialUser = {
+      name: registerName,
+      emailOrPhone: registerEmailOrPhone.trim().toLowerCase(),
+      passwordHash: registerPassword,
+      role: registerRole
+    };
     
-    const isPhone = /^\d+$/.test(registerEmailOrPhone) || registerEmailOrPhone.length <= 11;
-    const msg = isPhone 
-      ? `SMS simulated to +91-${registerEmailOrPhone}: Your ShramikLink Verification OTP is ${generated}`
-      : `Email simulated to ${registerEmailOrPhone}: Your ShramikLink Verification OTP is ${generated}`;
+    const updated = [...credentialUsers, newUser];
+    setCredentialUsers(updated);
+    localStorage.setItem('s_credential_users', JSON.stringify(updated));
+
+    setCurrentRole(registerRole);
+    localStorage.setItem('s_current_role', registerRole);
+    setIsLoggedIn(true);
+    localStorage.setItem('s_is_logged_in', 'true');
     
-    setShowSimulatedSms(msg);
-    showNotice('পঞ্জীয়ন OTP প্ৰেৰণ কৰা হৈছে! (OTP sent successfully!)', 'success');
+    setRegisterName('');
+    setRegisterEmailOrPhone('');
+    setRegisterPassword('');
+    
+    showNotice(`পঞ্জীয়ন আৰু লগইন সফল হৈছে! স্বাগতম ${newUser.name}! (Registration & Login Successful!)`, 'success');
+    refreshData();
   };
 
   const handleVerifyRegisterOtp = (e: React.FormEvent) => {
     e.preventDefault();
-    if (enteredOtpCode === simulatedOtpCode) {
-      const newUser: CredentialUser = {
-        name: registerName,
-        emailOrPhone: registerEmailOrPhone.trim().toLowerCase(),
-        passwordHash: registerPassword,
-        role: registerRole
-      };
-      
-      const updated = [...credentialUsers, newUser];
-      setCredentialUsers(updated);
-      localStorage.setItem('s_credential_users', JSON.stringify(updated));
-
-      setCurrentRole(registerRole);
-      localStorage.setItem('s_current_role', registerRole);
-      setIsLoggedIn(true);
-      localStorage.setItem('s_is_logged_in', 'true');
-      
-      setOtpStep(false);
-      setSimulatedOtpCode('');
-      setEnteredOtpCode('');
-      setShowSimulatedSms(null);
-      setRegisterName('');
-      setRegisterEmailOrPhone('');
-      setRegisterPassword('');
-      
-      showNotice(`পঞ্জীয়ন আৰু লগইন সফল হৈছে! স্বাগতম ${newUser.name}! (Registration & Login Successful!)`, 'success');
-      refreshData();
-    } else {
-      showNotice('ভুল OTP প্ৰবিষ্ট কৰা হৈছে! অনুগ্ৰহ কৰি আকৌ চেষ্টা কৰক। (Invalid OTP code)', 'error');
-    }
   };
 
   // Load database tables from full-stack backend
@@ -1240,7 +1221,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
               <span className="text-[10px] uppercase font-bold text-indigo-600 tracking-widest block">Unified Credentials Gateway</span>
               <h3 className="text-base font-black text-slate-950 tracking-tight">🔒 সুৰক্ষিত লগইন আৰু পঞ্জীয়ন প্ৰণালী</h3>
               <p className="text-[11px] text-slate-500 leading-relaxed">
-                Log in securely using registered credentials or create a new multi-tenant portal profile verified by a simulated SMS/Email OTP code.
+                Log in securely using registered credentials or create a new multi-tenant portal profile secured by password.
               </p>
             </div>
 
@@ -1408,7 +1389,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                       type="submit"
                       className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all shadow-xs cursor-pointer text-center mt-1"
                     >
-                      OTP অনুৰোধ কৰক (Request 6-Digit Verification OTP)
+                      পঞ্জীয়ন সম্পূৰ্ণ কৰক (Complete Registration)
                     </button>
                   </form>
                 )}
