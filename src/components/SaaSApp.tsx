@@ -2247,6 +2247,17 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                     >
                       সুৰক্ষিতভাৱে প্ৰৱেশ কৰক (Enter Secure Session)
                     </button>
+
+                    <div className="pt-2 border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => handleDemoLogin('supervisor')}
+                        className="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 py-2 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                      >
+                        <span>👷</span>
+                        <span>১-ক্লিকত ছুপাৰভাইজাৰ পেনেল খোলক (1-Click Supervisor Access)</span>
+                      </button>
+                    </div>
                   </form>
                 )}
 
@@ -2549,10 +2560,64 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
           
           <button 
             onClick={handleLogout}
-            className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide transition-all flex items-center gap-1.5 cursor-pointer"
+            className="bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold tracking-wide transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
           >
             <LogOut className="h-3.5 w-3.5" />
             {t.logout}
+          </button>
+        </div>
+      </div>
+
+      {/* Role Navigation & Fast Switcher Bar (Direct Switcher) */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-2.5 flex flex-col lg:flex-row items-center justify-between gap-3 shadow-md">
+        <div className="flex items-center gap-1.5 flex-wrap w-full lg:w-auto">
+          <span className="text-[11px] font-black uppercase text-slate-400 px-2 tracking-wider shrink-0 flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            পেনেল বাছক (Active Desk):
+          </span>
+          {[
+            { role: 'industry_admin', label: '🏭 ইণ্ডাষ্ট্ৰী এডমিন (Admin)', desc: 'ফেক্টৰী প্ৰশাসন' },
+            { role: 'supervisor', label: '👷 ছুপাৰভাইজাৰ পেনেল (Supervisor Desk)', desc: 'গেট হাজিৰা আৰু মন্তব্য', isPrimary: true },
+            { role: 'contractor', label: '🏢 ঠিকাদাৰ ডেস্ক (Contractor)', desc: 'লেবাৰ বিল আৰু খতিয়ান' },
+            { role: 'worker', label: '👤 শ্ৰমিক ডেস্ক (Worker)', desc: 'প্ৰফাইল আৰু পাছবুক' },
+            { role: 'government_inspector', label: '⚖️ চৰকাৰী পৰিদৰ্শক (Inspector)', desc: 'CLRA নিৰীক্ষণ' },
+          ].map((item) => {
+            const isActive = currentRole === item.role;
+            return (
+              <button
+                key={item.role}
+                onClick={() => {
+                  setCurrentRole(item.role as any);
+                  localStorage.setItem('s_current_role', item.role);
+                  showNotice(`সক্ৰিয় পেনেল সলনি কৰা হ'ল: ${item.label}`, 'info');
+                }}
+                className={`px-3 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                  isActive
+                    ? 'bg-emerald-500 text-slate-950 shadow-md ring-2 ring-emerald-300'
+                    : item.isPrimary
+                    ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs border border-indigo-400/40'
+                    : 'bg-slate-800 hover:bg-slate-700 text-slate-200'
+                }`}
+              >
+                <span>{item.label}</span>
+                {item.isPrimary && !isActive && (
+                  <span className="text-[9px] bg-emerald-400 text-slate-950 px-1.5 py-0.2 rounded-full font-black">
+                    হাজিৰা & মন্তব্য
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex items-center gap-2 w-full lg:w-auto justify-end shrink-0">
+          <button
+            onClick={handleLogout}
+            className="bg-rose-600 hover:bg-rose-700 text-white font-black text-xs px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+            title="লগ আউট কৰক (Log Out)"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>লগ আউট কৰক (Log Out)</span>
           </button>
         </div>
       </div>

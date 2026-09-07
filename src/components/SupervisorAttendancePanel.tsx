@@ -78,6 +78,26 @@ export const SupervisorAttendancePanel: React.FC<SupervisorAttendancePanelProps>
   // Quick batch status map: workerId -> { present: boolean, otHours: number }
   const [workerAttendanceState, setWorkerAttendanceState] = useState<Record<string, { present: boolean; otHours: number }>>({});
 
+  // Worker remarks state: workerId -> remark text
+  const [workerRemarks, setWorkerRemarks] = useState<Record<string, string>>(() => {
+    try {
+      const saved = localStorage.getItem('s_worker_remarks');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      return {};
+    }
+  });
+
+  const handleUpdateRemark = (workerId: string, remark: string) => {
+    setWorkerRemarks(prev => {
+      const updated = { ...prev, [workerId]: remark };
+      try {
+        localStorage.setItem('s_worker_remarks', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+  };
+
   // Add Supervisor Modal State
   const [isAddSupModalOpen, setIsAddSupModalOpen] = useState<boolean>(false);
   const [newSupName, setNewSupName] = useState<string>('');
@@ -461,14 +481,20 @@ export const SupervisorAttendancePanel: React.FC<SupervisorAttendancePanelProps>
                 <th className="p-3">দক্ষতা (Skill)</th>
                 <th className="p-3 text-center">দৈনিক হাৰ (Wage Rate)</th>
                 <th className="p-3 text-center w-36">হাজিৰা স্থিতি (Attendance)</th>
-                <th className="p-3 text-center w-36">অতিৰিক্ত কাম (Overtime OT)</th>
+                <th className="p-3 text-center w-28">অতিৰিক্ত কাম (Overtime OT)</th>
+                <th className="p-3 text-center min-w-[210px] bg-indigo-50/80 text-indigo-950 border-x border-indigo-100">
+                  <div className="flex items-center justify-center gap-1">
+                    <span>📝</span>
+                    <span>মন্তব্য (Remarks / টোকা)</span>
+                  </div>
+                </th>
                 <th className="p-3 text-center">চৰকাৰী খতিয়ান স্থিতি</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
               {filteredWorkers.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-slate-400 font-semibold">
+                  <td colSpan={9} className="p-8 text-center text-slate-400 font-semibold">
                     কোনো শ্ৰমিক পোৱা নগ’ল। অনুগ্ৰহ কৰি ফিল্টাৰ সলনি কৰক।
                   </td>
                 </tr>
@@ -560,6 +586,39 @@ export const SupervisorAttendancePanel: React.FC<SupervisorAttendancePanelProps>
                             }`}
                           />
                           <span className="text-[10px] text-slate-500 font-bold">ঘণ্টা</span>
+                        </div>
+                      </td>
+
+                      {/* Supervisor Remarks Column */}
+                      <td className="p-2.5 text-center bg-indigo-50/20 border-x border-indigo-50">
+                        <div className="flex flex-col gap-1 items-center">
+                          <div className="flex items-center gap-1 w-full max-w-[210px]">
+                            <input
+                              type="text"
+                              value={workerRemarks[wrk.id] ?? ''}
+                              onChange={(e) => handleUpdateRemark(wrk.id, e.target.value)}
+                              placeholder="মন্তব্য লিখক (Remark)..."
+                              className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-indigo-250 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 placeholder:text-slate-400 font-medium shadow-2xs"
+                            />
+                            {workerRemarks[wrk.id] ? (
+                              <span className="text-[11px] text-emerald-700 font-black shrink-0 bg-emerald-100 px-1.5 py-1 rounded border border-emerald-300" title="মন্তব্য সংৰক্ষিত (Saved)">
+                                ✓
+                              </span>
+                            ) : null}
+                          </div>
+                          {/* Quick Suggestion Chips */}
+                          <div className="flex items-center gap-1 text-[9px] flex-wrap justify-center text-slate-500">
+                            {['নিয়মিত', 'দেৰি', 'OT অনুমোদিত'].map((tag) => (
+                              <button
+                                key={tag}
+                                type="button"
+                                onClick={() => handleUpdateRemark(wrk.id, tag)}
+                                className="px-1.5 py-0.5 bg-white hover:bg-indigo-100 border border-slate-200 hover:border-indigo-300 rounded text-slate-600 hover:text-indigo-700 font-medium transition-colors cursor-pointer"
+                              >
+                                +{tag}
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       </td>
 
