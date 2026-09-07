@@ -557,12 +557,13 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
     | 'Form XXIV' 
     | 'Form V';
 
-  const [selectedClraForm, setSelectedClraForm] = useState<ClraFormType>('Form XIII');
+  const [selectedClraForm, setSelectedClraForm] = useState<ClraFormType>('Form XVI');
   const [activePrintClraForm, setActivePrintClraForm] = useState<ClraFormType | null>(null);
   const [clraViewMode, setClraViewMode] = useState<'all_single' | 'single_focus'>('all_single');
   const [clraIndustryFilter, setClraIndustryFilter] = useState<string>('ALL');
   const [clraWageSlipWorkerId, setClraWageSlipWorkerId] = useState<string>('wrk-1');
   const [clraSearchQuery, setClraSearchQuery] = useState<string>('');
+  const [inspectorContractorFilter, setInspectorContractorFilter] = useState<string>('ALL');
   
   // Custom states for Form XX (Deductions), Form XXI (Fines) & Form XXII (Advances) with digital localStorage persistence
   const [clraDeductions, setClraDeductions] = useState<{
@@ -2472,7 +2473,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
         <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0 border-slate-100">
           <div className="bg-slate-50 border border-slate-200 rounded-full px-4 py-1.5 text-xs text-slate-600 font-medium flex items-center gap-2">
             <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-            ₹1/Worker/Day Micro-fee: Active
+            CLRA Statutory Compliance: Active
           </div>
           
           <div className="flex items-center gap-2">
@@ -3208,29 +3209,42 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
             />
 
             {/* Daily Shift Attendance & Overtime Tracker */}
-            <div className="bg-white border border-slate-200 rounded-lg p-6 space-y-4">
-              <h4 className="font-bold text-slate-800 text-sm border-b border-slate-100 pb-3 flex items-center gap-1.5">
-                <Clock className="text-indigo-600 h-4 w-4" />
-                Shift Attendance & Overtime Timekeeper
-              </h4>
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 shadow-xs">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-3">
+                <div>
+                  <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                    <Clock className="text-indigo-600 h-4 w-4" />
+                    দৈনিক শিফট হাজিৰা আৰু অভাৰটাইম টাইমকীপাৰ (Shift Attendance & Overtime Timekeeper)
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    ছুপাৰভাইজাৰ দ্বাৰা গেটত লোৱা হাজিৰা, অতিৰিক্ত কাম (OT) আৰু মন্তব্য ইয়াত স্বয়ংক্ৰিয়ভাৱে প্ৰতিফলিত হৈছে।
+                  </p>
+                </div>
+                <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full border border-emerald-200 flex items-center gap-1.5 shrink-0">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  লাইভ ছুপাৰভাইজাৰ গেট এন্ট্ৰিৰ সৈতে সংযুক্ত (Live Gate Sync)
+                </span>
+              </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs text-slate-600">
                   <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] font-bold">
                     <tr>
-                      <th className="p-3">Date</th>
-                      <th className="p-3">Worker Name</th>
-                      <th className="p-3">Check-In</th>
-                      <th className="p-3">Check-Out</th>
+                      <th className="p-3">তাৰিখ (Date)</th>
+                      <th className="p-3">শ্ৰমিকৰ নাম (Worker)</th>
+                      <th className="p-3">প্ৰৱেশ (Check-In)</th>
+                      <th className="p-3">প্ৰস্থান (Check-Out)</th>
                       <th className="p-3">UIDAI Verif.</th>
-                      <th className="p-3 text-center">Regular (8h)</th>
-                      <th className="p-3 text-center">Overtime Hours</th>
-                      <th className="p-3">Contractor</th>
+                      <th className="p-3 text-center">নিয়মিত (8h)</th>
+                      <th className="p-3 text-center">অভাৰটাইম (OT)</th>
+                      <th className="p-3 min-w-[150px]">ছুপাৰভাইজাৰৰ মন্তব্য (Remarks)</th>
+                      <th className="p-3">ঠিকাদাৰ (Contractor)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {attendance.filter(att => att.industryId === selectedIndustryId).map(att => {
                       const cName = contractors.find(c => c.id === att.contractorId)?.name || 'Contractor';
+                      const currentRemark = workerRemarks[att.workerId] || att.notes;
                       return (
                         <tr key={att.id} className="hover:bg-slate-50/50">
                           <td className="p-3 font-medium text-slate-700">{att.date}</td>
@@ -3250,6 +3264,15 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                               </span>
                             ) : (
                               <span className="text-slate-400">0.00</span>
+                            )}
+                          </td>
+                          <td className="p-3">
+                            {currentRemark ? (
+                              <span className="bg-indigo-50 text-indigo-900 border border-indigo-200 text-[11px] font-medium px-2 py-0.5 rounded-lg inline-block">
+                                📝 {currentRemark}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 italic text-[11px]">কোনো টোকা নাই</span>
                             )}
                           </td>
                           <td className="p-3 text-slate-500 max-w-[150px] truncate">{cName}</td>
@@ -4912,7 +4935,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
             {/* ==================== STATUTORY CLRA COMPLIANCE REGISTERS (SINGLE-BY-SINGLE AUDIT READY) ==================== */}
             <div id="clra-registers-card" className="space-y-6">
               
-              {/* Top Banner & Control Deck */}
+              {/* Top Banner & Control Deck — Focused Exclusively on Form XVI (Muster Roll) */}
               <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-md border border-slate-800 space-y-5">
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-slate-800 pb-5">
                   <div className="space-y-1">
@@ -4921,48 +4944,40 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                         GOVT OF ASSAM & CENTRAL CLRA RULES 1971 COMPLIANT
                       </span>
                       <span className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full">
-                        INSPECTOR AUDIT READY
+                        RULE 78(1)(a)(i) — MUSTER ROLL
                       </span>
                     </div>
                     <h3 className="font-extrabold text-white text-lg sm:text-xl flex items-center gap-2">
                       <ShieldCheck className="text-emerald-400 h-6 w-6 shrink-0" />
-                      🔒 চৰকাৰী বিধিবদ্ধ পঞ্জীয়ন বহী (Government Statutory Forms & Registers)
+                      CLRA Form XVI: শ্ৰমিক উপস্থিতি আৰু হাজিৰা ৰোল (Muster Roll Ledger)
                     </h3>
                     <p className="text-xs text-slate-400 max-w-3xl leading-relaxed">
-                      চৰকাৰী শ্ৰম পৰিদৰ্শক (Govt. Labour Inspector)ৰ বাবে প্ৰতিটো বিধিবদ্ধ ফৰ্ম <span className="text-emerald-300 font-bold underline">একক একককৈ (Single-by-Single)</span> অডিট আৰু পৰিদৰ্শনৰ বাবে সাজু কৰা হৈছে। ঠিকাদাৰসকলে চৰকাৰী নিয়ম মতে প্ৰতিটো ফৰ্ম সুকীয়াকৈ পৰিদৰ্শন কৰাব পাৰিব আৰু স্বতন্ত্ৰভাৱে প্ৰিণ্ট বা CSV ফাইল সংগ্ৰহ কৰিব পাৰিব।
+                      চৰকাৰী শ্ৰম আইন (Contract Labour Central Rules 1971)ৰ Rule 78(1)(a)(i) অনুসৰি ঠিকাদাৰৰ অধীনস্থ প্ৰতিজন শ্ৰমিকৰ দৈনিক উপস্থিতি, অতিৰিক্ত সময় (OT) আৰু পৰিদৰ্শনযোগ্য বিধিবদ্ধ হাজিৰা ৰোল (Muster Roll)।
                     </p>
                   </div>
 
-                  {/* Dual Mode Switcher */}
-                  <div className="flex flex-wrap items-center gap-2 bg-slate-800/90 p-1.5 rounded-xl border border-slate-700">
+                  {/* Batch Action Buttons */}
+                  <div className="flex items-center gap-2">
                     <button
-                      id="clra-mode-all-single-btn"
-                      onClick={() => setClraViewMode('all_single')}
-                      className={`px-3 py-2 rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 ${
-                        clraViewMode === 'all_single'
-                          ? 'bg-emerald-600 text-white shadow-md'
-                          : 'text-slate-300 hover:text-white hover:bg-slate-700/60'
-                      }`}
+                      id="clra-print-package-btn"
+                      onClick={() => setActivePrintClraForm('Form XVI')}
+                      className="bg-white hover:bg-slate-100 text-slate-900 font-extrabold text-xs px-3.5 py-2 rounded-lg transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
                     >
-                      <FileSpreadsheet className="h-4 w-4" />
-                      সকলো ফৰ্ম একক একককৈ চাওক (All Single Deck)
+                      <Printer className="h-3.5 w-3.5 text-indigo-600" />
+                      Form XVI প্ৰিণ্ট / PDF
                     </button>
                     <button
-                      id="clra-mode-single-focus-btn"
-                      onClick={() => setClraViewMode('single_focus')}
-                      className={`px-3 py-2 rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 ${
-                        clraViewMode === 'single_focus'
-                          ? 'bg-indigo-600 text-white shadow-md'
-                          : 'text-slate-300 hover:text-white hover:bg-slate-700/60'
-                      }`}
+                      id="clra-download-all-csv-btn"
+                      onClick={() => downloadClraCsv('Form XVI')}
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs px-3.5 py-2 rounded-lg transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
                     >
-                      <Eye className="h-4 w-4" />
-                      নিৰ্দিষ্ট এটা ফৰ্ম বাচক (Single Focus Mode)
+                      <Download className="h-3.5 w-3.5" />
+                      Form XVI CSV ডাউনল’ড
                     </button>
                   </div>
                 </div>
 
-                {/* Filter and Quick Jump Strip */}
+                {/* Filter and Search Bar */}
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pt-1">
                   <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
                     {/* Industry Filter */}
@@ -5001,72 +5016,9 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                     </div>
                   </div>
 
-                  {/* Batch Action Buttons */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      id="clra-print-package-btn"
-                      onClick={() => setActivePrintClraForm(selectedClraForm)}
-                      className="bg-white hover:bg-slate-100 text-slate-900 font-extrabold text-xs px-3.5 py-2 rounded-lg transition-all flex items-center gap-1.5 shadow-sm"
-                    >
-                      <Printer className="h-3.5 w-3.5 text-indigo-600" />
-                      এই ফৰ্ম প্ৰিণ্ট / PDF
-                    </button>
-                    <button
-                      id="clra-download-all-csv-btn"
-                      onClick={() => downloadClraCsv(selectedClraForm)}
-                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs px-3.5 py-2 rounded-lg transition-all flex items-center gap-1.5 shadow-sm"
-                    >
-                      <Download className="h-3.5 w-3.5" />
-                      CSV ডাউনল’ড
-                    </button>
-                  </div>
-                </div>
-
-                {/* 10 Single Form Quick Jump Pills */}
-                <div className="space-y-1.5 pt-2 border-t border-slate-800/80">
-                  <div className="text-[11px] font-bold text-slate-400 flex items-center gap-1">
-                    <Briefcase className="h-3 w-3 text-indigo-400" />
-                    ১০ টা একক বিধিবদ্ধ ফৰ্ম সূচী (Quick Single Form Index — Click to view/jump):
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-1.5">
-                    {[
-                      { id: 'Form XIII' as ClraFormType, label: 'Form XIII', titleAssamese: 'শ্ৰমিক পঞ্জীয়ন', badge: 'Rule 75' },
-                      { id: 'Form XVI' as ClraFormType, label: 'Form XVI', titleAssamese: 'হাজিৰা ৰোল', badge: 'Rule 78(1)' },
-                      { id: 'Form XVII' as ClraFormType, label: 'Form XVII', titleAssamese: 'মজুৰি বহী', badge: 'Rule 78(1)' },
-                      { id: 'Form XIX' as ClraFormType, label: 'Form XIX', titleAssamese: 'মজুৰি স্লিপ', badge: 'Rule 78(1)(b)' },
-                      { id: 'Form XX' as ClraFormType, label: 'Form XX', titleAssamese: 'ক্ষতি কৰ্তন', badge: 'Rule 78(1)(a)' },
-                      { id: 'Form XXI' as ClraFormType, label: 'Form XXI', titleAssamese: 'জৰিমনা বহী', badge: 'Rule 78(1)(a)' },
-                      { id: 'Form XXII' as ClraFormType, label: 'Form XXII', titleAssamese: 'অগ্ৰিম বহী', badge: 'Rule 78(1)(a)' },
-                      { id: 'Form XXIII' as ClraFormType, label: 'Form XXIII', titleAssamese: 'অভাৰটাইম', badge: 'Rule 78(1)(a)' },
-                      { id: 'Form XXIV' as ClraFormType, label: 'Form XXIV', titleAssamese: 'অৰ্ধবাৰ্ষিক ৰিটাৰ্ন', badge: 'Rule 82(1)' },
-                      { id: 'Form V' as ClraFormType, label: 'Form V', titleAssamese: 'নিয়োগকৰ্তা পত্ৰ', badge: 'Rule 21(2)' }
-                    ].map(f => {
-                      const isSelected = selectedClraForm === f.id;
-                      return (
-                        <button
-                          key={f.id}
-                          id={`clra-jump-btn-${f.id.toLowerCase().replace(/\s+/g, '-')}`}
-                          onClick={() => {
-                            setSelectedClraForm(f.id);
-                            if (clraViewMode === 'all_single') {
-                              const el = document.getElementById(`single-form-card-${f.id.toLowerCase().replace(/\s+/g, '-')}`);
-                              if (el) {
-                                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                              }
-                            }
-                          }}
-                          className={`p-2 rounded-lg text-left transition-all border ${
-                            isSelected
-                              ? 'bg-emerald-500/20 border-emerald-400 text-white font-extrabold ring-1 ring-emerald-400'
-                              : 'bg-slate-800/80 border-slate-700/80 text-slate-300 hover:bg-slate-700 hover:text-white'
-                          }`}
-                        >
-                          <span className="block font-black text-[11px] leading-tight text-emerald-300">{f.label}</span>
-                          <span className="block text-[9px] text-slate-300 truncate">{f.titleAssamese}</span>
-                          <span className="block text-[8px] font-mono text-slate-400 mt-0.5">{f.badge}</span>
-                        </button>
-                      );
-                    })}
+                  <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
+                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>সক্ৰিয় শ্ৰমিক: <strong className="text-white font-bold">{workers.filter(w => w.contractorId === selectedContractorId).length}</strong> জন</span>
                   </div>
                 </div>
               </div>
@@ -5800,21 +5752,10 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                   );
                 };
 
-                // ALL SINGLE DECK MODE: Render all 10 forms in sequential single-by-single standalone cards
-                if (clraViewMode === 'all_single') {
-                  return (
-                    <div className="space-y-8">
-                      {(['Form XIII', 'Form XVI', 'Form XVII', 'Form XIX', 'Form XX', 'Form XXI', 'Form XXII', 'Form XXIII', 'Form XXIV', 'Form V'] as ClraFormType[]).map(f => (
-                        renderSingleFormCard(f)
-                      ))}
-                    </div>
-                  );
-                }
-
-                // SINGLE FOCUS MODE: Render only the chosen single form
+                // Render exclusively Form XVI (Muster Roll) as requested
                 return (
                   <div className="space-y-4">
-                    {renderSingleFormCard(selectedClraForm)}
+                    {renderSingleFormCard('Form XVI')}
                   </div>
                 );
               })()}
@@ -6256,7 +6197,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                   Labour Inspector & Statutory Auditor Portal
                 </h3>
                 <p className="text-xs text-slate-500">
-                  Government panel to audit factory registrations, contractor statutory compliance records, minimum wages, and platform micro-revenue accruals.
+                  Government panel to audit factory registrations, contractor statutory compliance records, and minimum wages compliance.
                 </p>
               </div>
 
@@ -6277,79 +6218,165 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              
-              {/* Inspection Audit Logs & Finding Certificates */}
-              <div className="lg:col-span-2 bg-white border border-slate-200 rounded-lg p-6 space-y-6">
-                <h4 className="font-bold text-slate-800 text-sm border-b border-slate-100 pb-3">
-                  Filed Audit Inspection Certificates (Form VI Compliant)
+            {/* Inspection Audit Logs & Finding Certificates */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-5 shadow-xs">
+              <div className="border-b border-slate-100 pb-3">
+                <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                  <ShieldCheck className="text-indigo-600 h-4 w-4" />
+                  দাখিল কৰা পৰিদৰ্শন প্ৰমাণপত্ৰসমূহ (Filed Audit Inspection Certificates - Form VI Compliant)
                 </h4>
-
-                <div className="space-y-4">
-                  {auditLogs.map(audit => (
-                    <div key={audit.id} className="border border-slate-150 rounded-lg p-4 bg-slate-50/50 space-y-2 text-xs">
-                      <div className="flex justify-between items-center">
-                        <span className="font-bold text-slate-800">{audit.inspectorName}</span>
-                        <span className={`font-bold px-2 py-0.5 rounded text-[10px] ${
-                          audit.status === 'Clean' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
-                          audit.status === 'Minor-Observations' ? 'bg-amber-50 text-amber-800 border border-amber-200' :
-                          'bg-rose-50 text-rose-800 border border-rose-200'
-                        }`}>
-                          {audit.status}
-                        </span>
-                      </div>
-
-                      <div className="text-slate-500">
-                        Inspected Entity: <strong className="text-slate-700">{audit.entityName} ({audit.inspectedEntity})</strong>
-                      </div>
-
-                      <p className="text-slate-600 italic leading-relaxed bg-white border border-slate-100 p-2.5 rounded">
-                        "{audit.findings}"
-                      </p>
-
-                      <div className="text-[10px] text-slate-400">
-                        Date of Audit: {audit.timestamp}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  আইনী অডিটৰ আৰু চৰকাৰী শ্ৰম পৰিদৰ্শকৰ দ্বাৰা দাখিল কৰা পৰিদৰ্শন প্ৰতিবেদন।
+                </p>
               </div>
 
-              {/* Real-time SaaS Platform Revenue & Micro-Fee Ledger */}
-              <div className="lg:col-span-1 bg-white border border-slate-200 rounded-lg p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {auditLogs.map(audit => (
+                  <div key={audit.id} className="border border-slate-200 rounded-xl p-4 bg-slate-50/50 space-y-2.5 text-xs hover:border-indigo-200 transition-colors">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-slate-900 text-sm">{audit.inspectorName}</span>
+                      <span className={`font-bold px-2.5 py-0.5 rounded text-[10px] ${
+                        audit.status === 'Clean' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
+                        audit.status === 'Minor-Observations' ? 'bg-amber-50 text-amber-800 border border-amber-200' :
+                        'bg-rose-50 text-rose-800 border border-rose-200'
+                      }`}>
+                        {audit.status}
+                      </span>
+                    </div>
+
+                    <div className="text-slate-500">
+                      পৰিদৰ্শন কৰা প্ৰতিষ্ঠান: <strong className="text-slate-800">{audit.entityName} ({audit.inspectedEntity})</strong>
+                    </div>
+
+                    <p className="text-slate-600 italic leading-relaxed bg-white border border-slate-200/80 p-3 rounded-lg">
+                      "{audit.findings}"
+                    </p>
+
+                    <div className="text-[10px] text-slate-400 flex items-center justify-between border-t border-slate-100 pt-2">
+                      <span>পৰিদৰ্শনৰ তাৰিখ: {audit.timestamp}</span>
+                      <span className="text-indigo-600 font-semibold flex items-center gap-1">
+                        <CheckCircle className="h-3 w-3 text-indigo-600" />
+                        চৰকাৰী অডিট সম্পন্ন
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Real-time CLRA Form XVI (Muster Roll) & Gate Attendance Audit Desk */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 shadow-xs">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
                 <div>
-                  <h4 className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
-                    <IndianRupee className="text-emerald-600 h-4 w-4" />
-                    SaaS Platform Micro-Billing Tracker
+                  <div className="flex items-center gap-2">
+                    <span className="bg-indigo-600 text-white text-[10px] font-mono font-bold px-2 py-0.5 rounded">
+                      RULE 78(1)(a)(i)
+                    </span>
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                      Statutory CLRA Live Audit Desk
+                    </span>
+                  </div>
+                  <h4 className="font-bold text-slate-900 text-base flex items-center gap-2 mt-1">
+                    <FileSpreadsheet className="text-indigo-600 h-5 w-5" />
+                    পৰিদৰ্শনযোগ্য লাইভ Form XVI (Muster Roll) আৰু ছুপাৰভাইজাৰ হাজিৰা অডিট লেজাৰ
                   </h4>
-                  <p className="text-[10px] text-slate-400 mt-1">
-                    Accumulating micro-fees of ₹1 per marked present worker-day, settled monthly.
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    কাৰখানাৰ গেটত ছুপাৰভাইজাৰে দিয়া দৈনিক উপস্থিতি, অভাৰটাইম (OT) আৰু মন্তব্যৰ ওপৰত ভিত্তি কৰি স্বয়ংক্ৰিয়ভাৱে প্ৰস্তুত হোৱা চৰকাৰী অডিট বহী।
                   </p>
                 </div>
 
-                <div className="space-y-3">
-                  {revenueLogs.map(rev => (
-                    <div key={rev.id} className="bg-slate-50 border border-slate-100 rounded p-3 text-xs flex justify-between items-center">
-                      <div>
-                        <span className="font-bold text-slate-800 block">{rev.date}</span>
-                        <span className="text-[10px] text-slate-400 block mt-0.5">{rev.workerCount} Compliant Present Logs</span>
-                      </div>
-                      <div className="text-right">
-                        <span className="font-bold text-emerald-700 block">₹{rev.feeAmount}</span>
-                        <span className="text-[9px] text-slate-400 uppercase tracking-wide">Accrued SaaS Fee</span>
-                      </div>
-                    </div>
-                  ))}
-
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 text-xs font-semibold text-emerald-900 flex justify-between items-center">
-                    <span>Platform Revenue Accrued:</span>
-                    <span className="text-base font-extrabold text-emerald-800">
-                      ₹{revenueLogs.reduce((acc, curr) => acc + curr.feeAmount, 0)} INR
-                    </span>
+                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                  <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg text-xs">
+                    <span className="font-bold text-slate-500">ঠিকাদাৰ বাছক:</span>
+                    <select
+                      value={inspectorContractorFilter}
+                      onChange={(e) => setInspectorContractorFilter(e.target.value)}
+                      className="bg-white border border-slate-200 rounded px-2 py-1 outline-none font-semibold text-slate-700 focus:border-indigo-500"
+                    >
+                      <option value="ALL">সকলো ঠিকাদাৰ (All Contractors)</option>
+                      {contractors.map(c => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
                   </div>
+                  <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2.5 py-1.5 rounded-lg border border-emerald-200 flex items-center gap-1.5 shrink-0">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    লাইভ ছিংক (Live Synced)
+                  </span>
                 </div>
               </div>
 
+              <div className="overflow-x-auto text-xs">
+                <table className="w-full text-left text-slate-600">
+                  <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] font-bold">
+                    <tr>
+                      <th className="p-3">শ্ৰমিকৰ নাম আৰু UAN</th>
+                      <th className="p-3">ঠিকাদাৰ প্ৰতিষ্ঠান</th>
+                      <th className="p-3">কাৰখানা / স্থান</th>
+                      <th className="p-3 text-center">মুঠ কৰ্মদিন (Shifts)</th>
+                      <th className="p-3 text-center">অভাৰটাইম (OT Hours)</th>
+                      <th className="p-3 text-right">মজুৰি নিৰিখ (Rate)</th>
+                      <th className="p-3 min-w-[150px]">ছুপাৰভাইজাৰৰ মন্তব্য (Remarks)</th>
+                      <th className="p-3 text-center">CLRA অডিট স্থিতি</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {workers
+                      .filter(w => inspectorContractorFilter === 'ALL' || w.contractorId === inspectorContractorFilter)
+                      .map(w => {
+                        const contractor = contractors.find(c => c.id === w.contractorId);
+                        const wrkAttendance = attendance.filter(a => a.workerId === w.id && a.status === 'Present');
+                        const shiftsCount = wrkAttendance.length;
+                        const otHours = wrkAttendance.reduce((sum, curr) => sum + (curr.overtimeHours || 0), 0);
+                        const assignedIndId = assignments.find(a => a.workerId === w.id && a.status === 'Active')?.industryId || wrkAttendance[0]?.industryId;
+                        const industry = industries.find(i => i.id === assignedIndId);
+                        const remark = workerRemarks[w.id] || wrkAttendance[0]?.notes;
+
+                        return (
+                          <tr key={w.id} className="hover:bg-slate-50/50">
+                            <td className="p-3 font-semibold text-slate-800">
+                              {w.name}
+                              <span className="block text-[10px] text-slate-400 font-mono font-normal">UAN: {getWorkerUAN(w)}</span>
+                            </td>
+                            <td className="p-3 text-slate-600 font-medium">{contractor?.name}</td>
+                            <td className="p-3 text-slate-600 font-medium">{industry?.name || 'Assigned Plant'}</td>
+                            <td className="p-3 text-center font-bold text-slate-800">
+                              <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-mono">
+                                {shiftsCount} দিন
+                              </span>
+                            </td>
+                            <td className="p-3 text-center">
+                              {otHours > 0 ? (
+                                <span className="bg-amber-100 text-amber-900 px-2 py-0.5 rounded font-bold font-mono">
+                                  +{otHours}h OT
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 font-mono">0h</span>
+                              )}
+                            </td>
+                            <td className="p-3 text-right font-mono font-semibold text-slate-700">
+                              ₹{w.dailyWageRate}/দিন
+                            </td>
+                            <td className="p-3">
+                              {remark ? (
+                                <span className="bg-indigo-50 text-indigo-900 border border-indigo-200 text-[11px] font-medium px-2 py-0.5 rounded-lg inline-block">
+                                  📝 {remark}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 italic text-[11px]">কোনো টোকা নাই</span>
+                              )}
+                            </td>
+                            <td className="p-3 text-center">
+                              <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                                <CheckCircle className="h-3 w-3 text-emerald-600" /> Form XVI Verified
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {/* Master Roster Audit (Factory / Contractor Cross Verifications) */}
