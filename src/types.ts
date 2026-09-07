@@ -1,4 +1,4 @@
-export type UserRole = 'industry_admin' | 'contractor' | 'worker' | 'government_inspector';
+export type UserRole = 'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector';
 
 export interface Industry {
   id: string;

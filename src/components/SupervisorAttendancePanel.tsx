@@ -15,7 +15,8 @@ import {
   Layers,
   ChevronRight,
   ShieldCheck,
-  Flame
+  Flame,
+  LogOut
 } from 'lucide-react';
 import { Worker, Contractor, Industry, Attendance, Supervisor } from '../types';
 
@@ -37,6 +38,7 @@ interface SupervisorAttendancePanelProps {
     status: 'Present' | 'Absent';
   }[]) => void;
   onNavigateToFormXVI?: () => void;
+  onLogout?: () => void;
   showNotice: (msg: string, type: 'info' | 'success' | 'error') => void;
 }
 
@@ -50,6 +52,7 @@ export const SupervisorAttendancePanel: React.FC<SupervisorAttendancePanelProps>
   attendance,
   onMarkAttendance,
   onNavigateToFormXVI,
+  onLogout,
   showNotice
 }) => {
   // Active selected supervisor (defaults to currentSupervisor or first active supervisor)
@@ -245,6 +248,16 @@ export const SupervisorAttendancePanel: React.FC<SupervisorAttendancePanelProps>
                 Form XVI খতিয়ান চাওক
               </button>
             )}
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                className="bg-rose-600 hover:bg-rose-500 text-white font-black text-xs px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
+                title="লগ আউট কৰক (Log Out)"
+              >
+                <LogOut className="h-4 w-4" />
+                লগ আউট (Log Out)
+              </button>
+            )}
           </div>
         </div>
 
@@ -302,6 +315,16 @@ export const SupervisorAttendancePanel: React.FC<SupervisorAttendancePanelProps>
             >
               ৰিষ্ট কৰক (Reset)
             </button>
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/70 font-bold text-xs px-3 py-2 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer"
+                title="লগ আউট কৰক (Log Out)"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                লগ আউট (Log Out)
+              </button>
+            )}
           </div>
         </div>
 

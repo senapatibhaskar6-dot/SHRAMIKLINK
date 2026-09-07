@@ -345,7 +345,7 @@ app.post("/api/bills/submit", requireAuth, async (req: any, res: any) => {
       serviceCharge: Number(serviceCharge),
       gstAmount: Number(gstAmount),
       totalAmount: Number(totalAmount),
-      status: "Submitted",
+      status: req.body.status || "Submitted",
       submittedAt: new Date().toLocaleString(),
       reviewedAt: null,
       remarks: billRemarks,
@@ -365,12 +365,36 @@ app.post("/api/bills/submit", requireAuth, async (req: any, res: any) => {
         profitPercentage: Number(profitPercentage) || 10,
         subtotalAmount: Number(subtotalAmount) || (Number(baseAmount) + Number(serviceCharge)),
         gstPercentage: Number(gstPercentage) || 18,
+        status: newBill[0].status,
         complianceDocIds: complianceDocIds || [] 
       } 
     });
   } catch (error: any) {
     console.error("Error submitting bill:", error);
     res.status(500).json({ error: "Failed to submit bill" });
+  }
+});
+
+// 8b. Update contractor bill status (e.g. from Draft to Submitted)
+app.post("/api/bills/update-status", requireAuth, async (req: any, res: any) => {
+  const { billId, status } = req.body;
+  if (!billId || !status) {
+    return res.status(400).json({ error: "Missing parameters for bill status update" });
+  }
+
+  try {
+    const updatedBill = await db.update(bills)
+      .set({
+        status,
+        submittedAt: status === "Submitted" ? new Date().toLocaleString() : undefined
+      })
+      .where(eq(bills.id, billId))
+      .returning();
+
+    res.json({ success: true, bill: updatedBill[0] });
+  } catch (error: any) {
+    console.error("Error updating bill status:", error);
+    res.status(500).json({ error: "Failed to update bill status" });
   }
 });
 

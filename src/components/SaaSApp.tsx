@@ -35,7 +35,9 @@ import {
   Briefcase,
   Calculator,
   ArrowRight,
-  Percent
+  Percent,
+  Calendar,
+  Save
 } from 'lucide-react';
 import { 
   Industry, 
@@ -93,6 +95,13 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
   };
   const t = TRANSLATIONS[currentLang];
 
+  const t_supervisor = currentLang === 'as' ? 'কাৰখানা ছুপাৰভাইজাৰ (Factory Supervisor)' :
+                       currentLang === 'hi' ? 'कारखाना पर्यवेक्षक (Factory Supervisor)' :
+                       'Factory Supervisor';
+  const t_supervisorDesc = currentLang === 'as' ? 'গেটৰ হাজিৰা লিখক, বায়’মেট্ৰিক পৰীক্ষা কৰক আৰু অভাৰটাইম ট্ৰেক কৰক।' :
+                           currentLang === 'hi' ? 'गेट उपस्थिति दर्ज करें, बायोमेट्रिक सत्यापित करें और ओवरटाइम ट्रैक करें।' :
+                           'Mark gate attendance, verify biometric check-ins, and track overtime.';
+
   // Global State (persisted/synchronized to Postgres Cloud SQL)
   const [industries, setIndustries] = useState<Industry[]>(initialIndustries);
   const [contractors, setContractors] = useState<Contractor[]>(initialContractors);
@@ -105,6 +114,24 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
   const [verificationLogs, setVerificationLogs] = useState<AadhaarVerificationLog[]>(initialVerificationLogs);
   const [auditLogs, setAuditLogs] = useState<GovernmentAuditLog[]>(initialAuditLogs);
   const [revenueLogs, setRevenueLogs] = useState<RevenueLog[]>(initialRevenueLogs);
+  const [workerRemarks, setWorkerRemarks] = useState<Record<string, string>>(() => {
+    try {
+      const saved = localStorage.getItem('s_worker_remarks');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      return {};
+    }
+  });
+
+  const handleUpdateRemark = (workerId: string, remark: string) => {
+    setWorkerRemarks(prev => {
+      const updated = { ...prev, [workerId]: remark };
+      try {
+        localStorage.setItem('s_worker_remarks', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+  };
 
   // Auth/Session State
   const [user, setUser] = useState<User | null>(null);
@@ -113,7 +140,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
     return localStorage.getItem('s_is_logged_in') === 'true';
   });
-  const [currentRole, setCurrentRole] = useState<'industry_admin' | 'contractor' | 'worker' | 'government_inspector'>(() => {
+  const [currentRole, setCurrentRole] = useState<'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector'>(() => {
     const saved = localStorage.getItem('s_current_role');
     return (saved as any) || 'industry_admin';
   });
@@ -128,7 +155,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
   const [registerName, setRegisterName] = useState<string>('');
   const [registerEmailOrPhone, setRegisterEmailOrPhone] = useState<string>('');
   const [registerPassword, setRegisterPassword] = useState<string>('');
-  const [registerRole, setRegisterRole] = useState<'industry_admin' | 'contractor' | 'worker' | 'government_inspector'>('industry_admin');
+  const [registerRole, setRegisterRole] = useState<'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector'>('industry_admin');
   
   const [otpStep, setOtpStep] = useState<boolean>(false);
   const [simulatedOtpCode, setSimulatedOtpCode] = useState<string>('');
@@ -139,7 +166,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
     name: string;
     emailOrPhone: string;
     passwordHash: string;
-    role: 'industry_admin' | 'contractor' | 'worker' | 'government_inspector';
+    role: 'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector';
   }
 
   const [credentialUsers, setCredentialUsers] = useState<CredentialUser[]>(() => {
@@ -155,35 +182,38 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
 
     const defaults: CredentialUser[] = [
       { name: 'Tata Motors HR (Industry)', emailOrPhone: 'admin@shramiklink.com', passwordHash: 'admin', role: 'industry_admin' },
-      { name: 'Ramesh Kalita (Supervisor)', emailOrPhone: 'ramesh.kalita@industry.com', passwordHash: 'admin', role: 'industry_admin' },
+      { name: 'Ramesh Kalita (Supervisor)', emailOrPhone: 'ramesh.kalita@industry.com', passwordHash: 'admin', role: 'supervisor' },
       { name: 'Apex Solutions (Contractor)', emailOrPhone: 'contractor@shramiklink.com', passwordHash: 'admin', role: 'contractor' },
       { name: 'Gopal Kumar (Worker)', emailOrPhone: 'worker@shramiklink.com', passwordHash: 'admin', role: 'worker' },
       { name: 'Bhaskar Senapati (Government)', emailOrPhone: 'inspector@shramiklink.com', passwordHash: 'admin', role: 'government_inspector' },
       { name: 'Demo Admin Phone', emailOrPhone: '9876543210', passwordHash: 'admin', role: 'industry_admin' },
-      { name: 'Demo Supervisor Phone', emailOrPhone: '9876543220', passwordHash: 'admin', role: 'industry_admin' },
+      { name: 'Demo Supervisor Phone', emailOrPhone: '9876543220', passwordHash: 'admin', role: 'supervisor' },
       { name: 'Demo Contractor Phone', emailOrPhone: '9876543211', passwordHash: 'admin', role: 'contractor' },
       { name: 'Demo Worker Phone', emailOrPhone: '9876543212', passwordHash: 'admin', role: 'worker' },
       { name: 'Demo Inspector Phone', emailOrPhone: '9876543213', passwordHash: 'admin', role: 'government_inspector' },
     ];
 
-    if (parsed) {
-      // Map existing users to have 'admin' as their password if they match our standard emails/phones
-      const updated = parsed.map(user => {
-        const standardEmailsOrPhones = [
-          'admin@shramiklink.com', 'ramesh.kalita@industry.com', 'contractor@shramiklink.com', 'worker@shramiklink.com', 'inspector@shramiklink.com',
-          '9876543210', '9876543220', '9876543211', '9876543212', '9876543213'
-        ];
-        if (standardEmailsOrPhones.includes(user.emailOrPhone.trim().toLowerCase())) {
-          return { ...user, passwordHash: 'admin' };
-        }
-        return user;
-      });
-      localStorage.setItem('s_credential_users', JSON.stringify(updated));
-      return updated;
+    let finalUsers = defaults;
+    if (parsed && Array.isArray(parsed)) {
+      const existingEmails = new Set(parsed.map(u => u.emailOrPhone.trim().toLowerCase()));
+      const missingDefaults = defaults.filter(d => !existingEmails.has(d.emailOrPhone.trim().toLowerCase()));
+      finalUsers = [...parsed, ...missingDefaults];
     }
 
-    localStorage.setItem('s_credential_users', JSON.stringify(defaults));
-    return defaults;
+    const standardEmailsOrPhones = [
+      'admin@shramiklink.com', 'ramesh.kalita@industry.com', 'contractor@shramiklink.com', 'worker@shramiklink.com', 'inspector@shramiklink.com',
+      '9876543210', '9876543220', '9876543211', '9876543212', '9876543213'
+    ];
+
+    finalUsers = finalUsers.map(user => {
+      if (standardEmailsOrPhones.includes(user.emailOrPhone.trim().toLowerCase())) {
+        return { ...user, passwordHash: 'admin', role: user.role };
+      }
+      return user;
+    });
+
+    localStorage.setItem('s_credential_users', JSON.stringify(finalUsers));
+    return finalUsers;
   });
 
   const handleCredentialsLogin = (e: React.FormEvent) => {
@@ -352,7 +382,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
   };
 
   // Instant sandbox / demo login without requiring external popup window
-  const handleDemoLogin = (role: 'industry_admin' | 'contractor' | 'worker' | 'government_inspector') => {
+  const handleDemoLogin = (role: 'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector') => {
     setCurrentRole(role);
     localStorage.setItem('s_current_role', role);
     setIsLoggedIn(true);
@@ -379,6 +409,11 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
   const [selectedIndustryId, setSelectedIndustryId] = useState<string>('ind-1'); // Tata Motors Pune
   const [selectedContractorId, setSelectedContractorId] = useState<string>('con-1'); // Apex solutions
   const [selectedWorkerId, setSelectedWorkerId] = useState<string>('wrk-4'); // Idle worker
+
+  // Dashboard navigation tabs
+  const [contractorTab, setContractorTab] = useState<'work' | 'deployment' | 'billing' | 'requisitions'>('work');
+  const [activeSummaryIndustryId, setActiveSummaryIndustryId] = useState<string | null>(null);
+  const [industryTab, setIndustryTab] = useState<'allotments' | 'requisitions' | 'timekeeper' | 'billing' | 'clra' | 'supervisor'>('allotments');
 
   // Interactive Form Dialog states
   const [isRequirementModalOpen, setIsRequirementModalOpen] = useState(false);
@@ -730,8 +765,8 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
         {
           name: `${supData.name} (Supervisor)`,
           emailOrPhone: supData.phone,
-          passwordHash: 'supervisor',
-          role: 'industry_admin' as const
+          passwordHash: 'admin',
+          role: 'supervisor' as const
         }
       ];
       localStorage.setItem('s_credential_users', JSON.stringify(updated));
@@ -1399,7 +1434,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
   };
 
   // Submit Bill with Custom Profit %, GST %, Labour Salary, and Custom Bill Number
-  const handleSubmitBill = async (e: React.FormEvent) => {
+  const handleSubmitBill = async (e: React.FormEvent, forceStatus?: 'Draft' | 'Submitted') => {
     e.preventDefault();
     const compliance = checkContractorCompliance(selectedContractorId, 'July 2026');
     if (!compliance.compliant) {
@@ -1407,6 +1442,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
       return;
     }
 
+    const billStatus = forceStatus || 'Submitted';
     const activeContractor = contractors.find(c => c.id === selectedContractorId) || contractors[0];
     const targetInd = industries.find(i => i.id === billTargetIndustry) || industries[0];
     const currentBillingBreakdown = getIndustryBillingBreakdown(selectedContractorId, billTargetIndustry, billMonth);
@@ -1453,8 +1489,8 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
       gstPercentage: billGstPct,
       gstAmount: gst,
       totalAmount: total,
-      status: 'Submitted',
-      submittedAt: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      status: billStatus,
+      submittedAt: billStatus === 'Submitted' ? new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : null,
       reviewedAt: null,
       remarks: `বিল নং ${formattedBillNo} | কণ্ট্ৰেক্টৰ: ${activeContractor.name} | শ্ৰমিকৰ সংখ্যা/দিন: ${effectiveLabourCount} | লাভ: ${billCommissionPct}% | জিএছটি: ${billGstPct}%`,
       complianceDocIds: complianceDocs.filter(d => d.contractorId === selectedContractorId && d.month === 'July 2026').map(d => d.id)
@@ -1488,6 +1524,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
           gstPercentage: billGstPct,
           gstAmount: gst,
           totalAmount: total,
+          status: billStatus,
           complianceDocIds: newLocalBill.complianceDocIds,
           remarks: newLocalBill.remarks
         })
@@ -1505,13 +1542,56 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
         setBills(prev => [newLocalBill, ...prev.filter(b => b.id !== newLocalBill.id)]);
       }
 
-      showNotice(`বিল নং ${formattedBillNo} (${activeContractor.name}) সফলতাৰে তৈয়াৰ কৰা হ’ল (₹${total.toLocaleString()}) আৰু ইণ্ডাষ্ট্ৰীলৈ দাখিল কৰা হ’ল!`, 'success');
+      if (billStatus === 'Draft') {
+        showNotice(`বিল নং ${formattedBillNo} খচৰা (Draft) হিচাপে সফলতাৰে সংৰক্ষণ কৰা হ’ল। আপুনি ইয়াক পৰীক্ষা কৰি যিকোনো সময়তে HR লৈ প্ৰেৰণ কৰিব পাৰিব।`, 'success');
+      } else {
+        showNotice(`বিল নং ${formattedBillNo} (${activeContractor.name}) সফলতাৰে তৈয়াৰ কৰা হ’ল (₹${total.toLocaleString()}) আৰু ইণ্ডাষ্ট্ৰীৰ এইচ.আৰ (HR) বিভাগলৈ দাখিল কৰা হ’ল!`, 'success');
+      }
       refreshData();
     } catch (err) {
       console.error(err);
       // Still persist locally so user workflow is uninterrupted
       setBills(prev => [newLocalBill, ...prev.filter(b => b.id !== newLocalBill.id)]);
-      showNotice(`বিল নং ${formattedBillNo} সৃষ্টি হৈছে (₹${total.toLocaleString()})!`, 'success');
+      if (billStatus === 'Draft') {
+        showNotice(`বিল নং ${formattedBillNo} খচৰা হিচাপে সংৰক্ষণ কৰা হ’ল!`, 'success');
+      } else {
+        showNotice(`বিল নং ${formattedBillNo} সৃষ্টি হৈছে (₹${total.toLocaleString()})!`, 'success');
+      }
+    }
+  };
+
+  // Submit/Publish a saved draft bill directly to HR department
+  const handlePublishDraftBill = async (billId: string) => {
+    try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch('/api/bills/update-status', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          billId,
+          status: 'Submitted'
+        })
+      });
+
+      if (response.ok) {
+        setBills(prev => prev.map(b => b.id === billId ? { ...b, status: 'Submitted', submittedAt: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) } : b));
+        showNotice('বিলখন সফলতাৰে ইণ্ডাষ্ট্ৰীৰ এইচ.আৰ. (HR) বিভাগলৈ প্ৰেৰণ কৰা হৈছে!', 'success');
+        refreshData();
+      } else {
+        // Fallback locally
+        setBills(prev => prev.map(b => b.id === billId ? { ...b, status: 'Submitted', submittedAt: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) } : b));
+        showNotice('বিলখন সফলতাৰে ইণ্ডাষ্ট্ৰীৰ এইচ.আৰ. (HR) বিভাগলৈ প্ৰেৰণ কৰা হৈছে!', 'success');
+      }
+    } catch (err) {
+      console.error(err);
+      setBills(prev => prev.map(b => b.id === billId ? { ...b, status: 'Submitted', submittedAt: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) } : b));
+      showNotice('বিলখন সফলতাৰে ইণ্ডাষ্ট্ৰীৰ এইচ.আৰ. (HR) বিভাগলৈ প্ৰেৰণ কৰা হৈছে!', 'success');
     }
   };
 
@@ -2216,7 +2296,8 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                         onChange={(e: any) => setRegisterRole(e.target.value)}
                         className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-500"
                       >
-                        <option value="industry_admin">🏭 Industry Admin (ইণ্ডাষ্ট্ৰী এডমিন)</option>
+                        <option value="industry_admin">🏭 Industry HR (ইণ্ডাষ্ট্ৰী এইচ.আৰ.)</option>
+                        <option value="supervisor">👷 Factory Supervisor (কাৰখানা ছুপাৰভাইজাৰ)</option>
                         <option value="contractor">🏢 Labor Contractor (লেবাৰ কন্ট্ৰেক্টৰ)</option>
                         <option value="worker">👷 Contract Worker (চুক্তিভিত্তিক শ্ৰমিক)</option>
                         <option value="government_inspector">⚖️ Government Inspector (চৰকাৰী পৰিদৰ্শক)</option>
@@ -2254,11 +2335,11 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
 
               <div className="space-y-2.5">
                 {[
-                  { label: '🏭 Industry Principal', email: 'admin@shramiklink.com', pass: 'admin', phone: '9876543210' },
+                  { label: '🏭 Industry HR', email: 'admin@shramiklink.com', pass: 'admin', phone: '9876543210' },
                   { label: '👷 Factory Supervisor (Gate Attendance)', email: 'ramesh.kalita@industry.com', pass: 'admin', phone: '9876543220' },
-                  { label: '🏢 Licensed Contractor', email: 'contractor@shramiklink.com', pass: 'contractor', phone: '9876543211' },
-                  { label: '👷 Contract Worker', email: 'worker@shramiklink.com', pass: 'worker', phone: '9876543212' },
-                  { label: '⚖️ Government Inspector', email: 'inspector@shramiklink.com', pass: 'inspector', phone: '9876543213' }
+                  { label: '🏢 Licensed Contractor', email: 'contractor@shramiklink.com', pass: 'admin', phone: '9876543211' },
+                  { label: '👷 Contract Worker', email: 'worker@shramiklink.com', pass: 'admin', phone: '9876543212' },
+                  { label: '⚖️ Government Inspector', email: 'inspector@shramiklink.com', pass: 'admin', phone: '9876543213' }
                 ].map((cred, idx) => (
                   <button
                     key={idx}
@@ -2421,6 +2502,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
               🔒 SECURE CLRA SESSION: ACTIVE 
               <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-mono font-bold uppercase tracking-wide">
                 {currentRole === 'industry_admin' ? t.industryAdmin :
+                 currentRole === 'supervisor' ? t_supervisor :
                  currentRole === 'contractor' ? t.contractor :
                  currentRole === 'worker' ? t.worker :
                  t.inspector}
@@ -2428,6 +2510,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
             </h3>
             <p className="text-[11px] text-slate-400">
               {currentRole === 'industry_admin' && t.industryAdminDesc}
+              {currentRole === 'supervisor' && t_supervisorDesc}
               {currentRole === 'contractor' && t.contractorDesc}
               {currentRole === 'worker' && t.workerDesc}
               {currentRole === 'government_inspector' && t.inspectorDesc}
@@ -2686,12 +2769,12 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                 </h4>
 
                 <div className="space-y-4">
-                  {bills.filter(b => b.industryId === selectedIndustryId).length === 0 ? (
+                  {bills.filter(b => b.industryId === selectedIndustryId && b.status !== 'Draft').length === 0 ? (
                     <div className="text-center py-12 text-slate-400 text-xs">
                       No invoices submitted for compliance inspection.
                     </div>
                   ) : (
-                    bills.filter(b => b.industryId === selectedIndustryId).map(bill => {
+                    bills.filter(b => b.industryId === selectedIndustryId && b.status !== 'Draft').map(bill => {
                       const contractorName = contractors.find(c => c.id === bill.contractorId)?.name || 'Contractor';
                       const compliance = checkContractorCompliance(bill.contractorId, 'July 2026');
 
@@ -3050,6 +3133,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
               industries={industries}
               attendance={attendance}
               onMarkAttendance={handleBatchSupervisorAttendance}
+              onLogout={handleLogout}
               onNavigateToFormXVI={() => {
                 setCurrentRole('contractor');
                 setSelectedClraForm('Form XVI');
@@ -3200,6 +3284,59 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
           </div>
         )}
 
+        {/* ==================== 1.5. SUPERVISOR DASHBOARD ==================== */}
+        {currentRole === 'supervisor' && (
+          <div className="space-y-6 animate-fadeIn">
+            {/* Top Selector & Meta for Supervisor */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white border border-slate-200 p-5 rounded-2xl shadow-xs">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="bg-indigo-100 text-indigo-800 text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full">
+                    Active Desk: Factory Supervisor
+                  </span>
+                  <span className="text-emerald-600 text-xs font-semibold flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span> লাইভ গেট উপস্থিতি (Live Gate Attendance)
+                  </span>
+                </div>
+                <h2 className="text-xl font-black text-slate-900 mt-1">
+                  👷 ইণ্ডাষ্ট্ৰী ছুপাৰভাইজাৰ পেনেল (Factory Supervisor Desk)
+                </h2>
+                <p className="text-xs text-slate-500">
+                  CLRA Form XVI Muster Roll আৰু শিফ্ট ভিত্তিক শ্ৰমিক উপস্থিতি পৰিচালনা
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+                <button 
+                  onClick={handleLogout}
+                  className="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-xl text-xs font-bold tracking-wide transition-all flex items-center gap-1.5 self-stretch md:self-auto justify-center shrink-0 cursor-pointer shadow-xs"
+                >
+                  <LogOut className="h-4 w-4 shrink-0" />
+                  লগ আউট কৰক (Log Out)
+                </button>
+              </div>
+            </div>
+
+            {/* Dedicated Supervisor Attendance Panel */}
+            <SupervisorAttendancePanel 
+              supervisors={supervisors}
+              onAddSupervisor={handleAddSupervisor}
+              workers={workers}
+              contractors={contractors}
+              industries={industries}
+              attendance={attendance}
+              onMarkAttendance={handleBatchSupervisorAttendance}
+              onLogout={handleLogout}
+              onNavigateToFormXVI={() => {
+                setCurrentRole('contractor');
+                setSelectedClraForm('Form XVI');
+                showNotice('CLRA Form XVI (Muster Roll) লৈ লৈ যোৱা হৈছে।', 'info');
+              }}
+              showNotice={showNotice}
+            />
+          </div>
+        )}
+
         {/* ==================== 2. CONTRACTOR DASHBOARD ==================== */}
         {currentRole === 'contractor' && (
           <div className="space-y-8 animate-fadeIn">
@@ -3247,8 +3384,62 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
               </button>
             </div>
 
-            {/* CONTRACTOR'S INDUSTRY-WISE WORK & DEPLOYMENT SUMMARY */}
-            <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-5 shadow-xs">
+            {/* Contractor Dashboard Horizontal Navigation Tabs */}
+            <div className="flex border-b border-slate-200 gap-1 overflow-x-auto pb-px">
+              <button
+                onClick={() => setContractorTab('work')}
+                className={`py-3 px-5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+                  contractorTab === 'work' 
+                    ? 'border-indigo-600 text-indigo-600 font-extrabold' 
+                    : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+                }`}
+              >
+                <Factory className="h-4 w-4" />
+                📊 খতিয়ান আৰু চালান (Work & Challans)
+              </button>
+
+              <button
+                onClick={() => setContractorTab('deployment')}
+                className={`py-3 px-5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+                  contractorTab === 'deployment' 
+                    ? 'border-indigo-600 text-indigo-600 font-extrabold' 
+                    : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+                }`}
+              >
+                <Users className="h-4 w-4" />
+                👷 নিয়োজন বোৰ্ড (Deployment Board)
+              </button>
+
+              <button
+                onClick={() => setContractorTab('billing')}
+                className={`py-3 px-5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+                  contractorTab === 'billing' 
+                    ? 'border-indigo-600 text-indigo-600 font-extrabold' 
+                    : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+                }`}
+              >
+                <Calculator className="h-4 w-4" />
+                ⚡ স্বয়ংক্ৰিয় বিলিং ইঞ্জিন (Automatic Billing Engine)
+              </button>
+
+              <button
+                onClick={() => setContractorTab('requisitions')}
+                className={`py-3 px-5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+                  contractorTab === 'requisitions' 
+                    ? 'border-indigo-600 text-indigo-600 font-extrabold' 
+                    : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+                }`}
+              >
+                <Briefcase className="h-4 w-4" />
+                📋 শ্ৰমিক চাহিদা (Requisitions)
+              </button>
+            </div>
+
+            {/* CONTRACTOR TAB CONTENTS */}
+            {contractorTab === 'work' && (
+              <>
+                {/* CONTRACTOR'S INDUSTRY-WISE WORK & DEPLOYMENT SUMMARY */}
+                <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-5 shadow-xs">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
                 <div>
                   <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
@@ -3287,76 +3478,215 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
 
               {/* Cards for each Industry */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {getContractorIndustrySummary(selectedContractorId).map(summary => (
-                  <div key={summary.industry.id} className="border border-slate-200 rounded-xl p-4 bg-slate-50/50 hover:bg-white hover:border-indigo-300 transition-all space-y-3 shadow-2xs">
-                    <div className="flex justify-between items-start gap-2">
-                      <div>
-                        <span className="font-bold text-xs text-slate-800 block flex items-center gap-1">
-                          <Building2 className="h-3.5 w-3.5 text-indigo-600" />
-                          {summary.industry.name}
+                {getContractorIndustrySummary(selectedContractorId).map(summary => {
+                  const isActive = (activeSummaryIndustryId === summary.industry.id) || 
+                    (!activeSummaryIndustryId && getContractorIndustrySummary(selectedContractorId)[0]?.industry.id === summary.industry.id);
+
+                  return (
+                    <div 
+                      key={summary.industry.id} 
+                      onClick={() => setActiveSummaryIndustryId(summary.industry.id)}
+                      className={`border rounded-xl p-4 transition-all space-y-3 shadow-2xs cursor-pointer relative ${
+                        isActive 
+                          ? 'border-indigo-600 ring-2 ring-indigo-500 bg-white' 
+                          : 'border-slate-200 bg-slate-50/50 hover:bg-white hover:border-indigo-350'
+                      }`}
+                    >
+                      {isActive && (
+                        <span className="absolute -top-2.5 -right-2 bg-indigo-600 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full shadow-xs">
+                          নিৰ্বাচিত (Selected)
                         </span>
-                        <span className="text-[10px] text-slate-500">{summary.industry.location} • LIN: {summary.industry.lin}</span>
+                      )}
+
+                      <div className="flex justify-between items-start gap-2">
+                        <div>
+                          <span className="font-bold text-xs text-slate-800 block flex items-center gap-1">
+                            <Building2 className="h-3.5 w-3.5 text-indigo-600" />
+                            {summary.industry.name}
+                          </span>
+                          <span className="text-[10px] text-slate-500">{summary.industry.location} • LIN: {summary.industry.lin}</span>
+                        </div>
+                        <span className="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded border border-indigo-100">
+                          {summary.assignedCount} জন শ্ৰমিক
+                        </span>
                       </div>
-                      <span className="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded border border-indigo-100">
-                        {summary.assignedCount} জন শ্ৰমিক
+
+                      <div className="grid grid-cols-3 gap-2 py-2 border-y border-slate-200/60 text-center">
+                        <div>
+                          <span className="text-[9px] text-slate-400 font-bold uppercase block">মুঠ কৰ্মদিন</span>
+                          <span className="text-sm font-extrabold text-slate-800">{summary.totalManDays} Shifts</span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] text-slate-400 font-bold uppercase block">কামৰ ঘণ্টা / OT</span>
+                          <span className="text-sm font-extrabold text-slate-800">{summary.totalStdHours}h {summary.totalOtHours > 0 ? `+${summary.totalOtHours}h` : ''}</span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] text-slate-400 font-bold uppercase block">উপাৰ্জিত মজুৰি</span>
+                          <span className="text-sm font-extrabold text-emerald-700">₹{summary.totalWages.toLocaleString()}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <div className="text-[10px]">
+                          <span className="text-slate-400">বিল স্থিতি: </span>
+                          {summary.bill ? (
+                            <span className={`font-bold ${summary.bill.status === 'Approved' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                              {summary.bill.status}
+                            </span>
+                          ) : (
+                            <span className="text-slate-500 font-medium">Ready to Bill</span>
+                          )}
+                        </div>
+
+                        <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
+                          <button 
+                            onClick={() => {
+                              setSummaryTargetIndustry(summary.industry.id);
+                              setIsWorkSummaryModalOpen(true);
+                            }}
+                            title="View & Print Statement"
+                            className="text-[11px] font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-2 py-1 rounded hover:bg-slate-100 transition-all flex items-center gap-1 cursor-pointer"
+                          >
+                            <Printer className="h-3 w-3" /> খতিয়ান
+                          </button>
+                          <button 
+                            onClick={() => {
+                              setChallanTargetIndustry(summary.industry.id);
+                              setIsChallanModalOpen(true);
+                            }}
+                            className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 border border-indigo-200 px-2 py-1 rounded hover:bg-indigo-100 transition-all flex items-center gap-1 cursor-pointer"
+                          >
+                            <FileSpreadsheet className="h-3 w-3" /> PF/ESI চালান
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Detailed Breakdown for Selected Industry */}
+              {(() => {
+                const summaries = getContractorIndustrySummary(selectedContractorId);
+                const currentActiveId = activeSummaryIndustryId || (summaries[0]?.industry.id);
+                if (!currentActiveId) return null;
+
+                const activeSummary = summaries.find(s => s.industry.id === currentActiveId);
+                if (!activeSummary) return null;
+
+                const indWorkers = workers.filter(w => w.contractorId === selectedContractorId && 
+                  (assignments.some(a => a.workerId === w.id && a.industryId === currentActiveId && a.status === 'Active') ||
+                   attendance.some(att => att.workerId === w.id && att.industryId === currentActiveId && att.status === 'Present'))
+                );
+
+                return (
+                  <div className="bg-slate-50 border border-slate-250 rounded-xl p-5 space-y-4 shadow-2xs mt-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-200 pb-3">
+                      <div>
+                        <span className="text-[10px] text-indigo-600 font-extrabold uppercase tracking-widest font-mono block">
+                          Internal Detailed Work Ledger • ভিতৰৰ কামৰ সবিশেষ খতিয়ান
+                        </span>
+                        <h4 className="font-extrabold text-slate-900 text-sm flex items-center gap-1.5 mt-0.5">
+                          <Building2 className="h-4 w-4 text-indigo-600" />
+                          {activeSummary.industry.name} — শ্ৰমিকভিত্তিক কৰ্ম আৰু হাজিৰা সবিশেষ:
+                        </h4>
+                      </div>
+                      <span className="text-xs bg-indigo-100 text-indigo-800 px-3 py-1 rounded-lg font-bold border border-indigo-200">
+                        {indWorkers.length} জন শ্ৰমিকৰ তথ্য পোৱা গৈছে
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 py-2 border-y border-slate-200/60 text-center">
-                      <div>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase block">মুঠ কৰ্মদিন</span>
-                        <span className="text-sm font-extrabold text-slate-800">{summary.totalManDays} Shifts</span>
+                    {indWorkers.length === 0 ? (
+                      <div className="text-center py-6 text-slate-400 text-xs italic">
+                        এই উদ্যোগত এতিয়ালৈকে কোনো সক্ৰিয় শ্ৰমিক নিয়োজিত বা কোনো হাজিৰা নাই।
                       </div>
-                      <div>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase block">কামৰ ঘণ্টা / OT</span>
-                        <span className="text-sm font-extrabold text-slate-800">{summary.totalStdHours}h {summary.totalOtHours > 0 ? `+${summary.totalOtHours}h` : ''}</span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase block">উপাৰ্জিত মজুৰি</span>
-                        <span className="text-sm font-extrabold text-emerald-700">₹{summary.totalWages.toLocaleString()}</span>
-                      </div>
-                    </div>
+                    ) : (
+                      <div className="overflow-x-auto border border-slate-200 rounded-lg bg-white">
+                        <table className="w-full text-left text-xs text-slate-600">
+                          <thead className="bg-slate-100 text-slate-700 uppercase tracking-wider text-[10px] font-bold border-b border-slate-200">
+                            <tr>
+                              <th className="p-3">শ্ৰমিকৰ নাম</th>
+                              <th className="p-3 text-center">শ্ৰেণী (Skill)</th>
+                              <th className="p-3 text-right">মজুৰি নিৰিখ (Rate)</th>
+                              <th className="p-3 text-center">উপস্থিতি (Shifts)</th>
+                              <th className="p-3 text-center">মুঠ ঘণ্টা</th>
+                              <th className="p-3 text-center">অভাৰটাইম ঘণ্টা</th>
+                              <th className="p-3 text-right text-emerald-700 font-bold">মুঠ মজুৰি (₹)</th>
+                              <th className="p-3 text-center min-w-[170px]">মন্তব্য (Remarks)</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 font-mono">
+                            {indWorkers.map(w => {
+                              const wrkAttendance = attendance.filter(a => a.workerId === w.id && a.industryId === currentActiveId && a.status === 'Present');
+                              const shiftsCount = wrkAttendance.length;
+                              const otHours = wrkAttendance.reduce((sum, curr) => sum + (curr.overtimeHours || 0), 0);
+                              const baseWages = shiftsCount * w.dailyWageRate;
+                              const otPay = otHours * (w.dailyWageRate / 8) * 2;
+                              const grossWages = baseWages + otPay;
 
-                    <div className="flex items-center justify-between pt-1">
-                      <div className="text-[10px]">
-                        <span className="text-slate-400">বিল স্থিতি: </span>
-                        {summary.bill ? (
-                          <span className={`font-bold ${summary.bill.status === 'Approved' ? 'text-emerald-600' : 'text-amber-600'}`}>
-                            {summary.bill.status}
-                          </span>
-                        ) : (
-                          <span className="text-slate-500 font-medium">Ready to Bill</span>
-                        )}
+                              return (
+                                <tr key={w.id} className="hover:bg-slate-50/50">
+                                  <td className="p-3 font-semibold text-slate-800 font-sans">
+                                    {w.name}
+                                    <span className="block text-[10px] text-slate-400 font-mono font-normal">UAN: {getWorkerUAN(w)}</span>
+                                  </td>
+                                  <td className="p-3 text-center font-sans">
+                                    <span className="bg-slate-100 text-slate-700 text-[10px] font-medium px-2 py-0.5 rounded-full border border-slate-200">
+                                      {w.skillType}
+                                    </span>
+                                  </td>
+                                  <td className="p-3 text-right text-slate-700">
+                                    ₹{w.dailyWageRate}/দিন
+                                  </td>
+                                  <td className="p-3 text-center text-slate-800 font-bold">
+                                    {shiftsCount} দিন
+                                  </td>
+                                  <td className="p-3 text-center text-slate-600">
+                                    {shiftsCount * 8}h
+                                  </td>
+                                  <td className="p-3 text-center">
+                                    {otHours > 0 ? (
+                                      <span className="bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded font-bold">
+                                        +{otHours}h
+                                      </span>
+                                    ) : (
+                                      <span className="text-slate-400">0h</span>
+                                    )}
+                                  </td>
+                                  <td className="p-3 text-right text-emerald-700 font-extrabold text-sm">
+                                    ₹{Math.round(grossWages).toLocaleString()}
+                                  </td>
+                                  <td className="p-2 text-center font-sans">
+                                    <div className="flex items-center gap-1.5 justify-center">
+                                      <input 
+                                        type="text"
+                                        value={workerRemarks[w.id] ?? ''}
+                                        onChange={(e) => handleUpdateRemark(w.id, e.target.value)}
+                                        placeholder="মন্তব্য লিখক (Remark)..."
+                                        className="w-36 text-[11px] px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-1.5 focus:ring-indigo-500 text-slate-800 placeholder:text-slate-400 placeholder:italic transition-all shadow-2xs font-medium"
+                                      />
+                                      {workerRemarks[w.id] ? (
+                                        <span className="text-[10px] text-emerald-600 font-bold shrink-0 bg-emerald-50 px-1 py-0.5 rounded border border-emerald-200" title="মন্তব্য সংৰক্ষিত (Saved)">
+                                          ✓
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
                       </div>
-
-                      <div className="flex gap-1.5">
-                        <button 
-                          onClick={() => {
-                            setSummaryTargetIndustry(summary.industry.id);
-                            setIsWorkSummaryModalOpen(true);
-                          }}
-                          title="View & Print Statement"
-                          className="text-[11px] font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-2 py-1 rounded hover:bg-slate-100 transition-all flex items-center gap-1"
-                        >
-                          <Printer className="h-3 w-3" /> খতিয়ান
-                        </button>
-                        <button 
-                          onClick={() => {
-                            setChallanTargetIndustry(summary.industry.id);
-                            setIsChallanModalOpen(true);
-                          }}
-                          className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 border border-indigo-200 px-2 py-1 rounded hover:bg-indigo-100 transition-all flex items-center gap-1"
-                        >
-                          <FileSpreadsheet className="h-3 w-3" /> PF/ESI চালান
-                        </button>
-                      </div>
-                    </div>
+                    )}
                   </div>
-                ))}
-              </div>
+                );
+              })()}
             </div>
+            </>)}
 
             {/* DAILY LABOUR REQUISITIONS FOR CONTRACTOR */}
+            {contractorTab === 'requisitions' && (
             <div className="bg-white border border-slate-200 rounded-lg p-6 space-y-6">
               <div className="border-b border-slate-100 pb-3 flex justify-between items-center">
                 <div>
@@ -3458,8 +3788,10 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                 );
               })()}
             </div>
+            )}
 
             {/* CRUCIAL FEATURE: MULTI-INDUSTRY LIVE TRACKING & DEPLOYMENT MODULE */}
+            {contractorTab === 'deployment' && (
             <div id="deployment-board" className="bg-white border border-slate-200 rounded-lg p-6 space-y-6">
               <div className="border-b border-slate-100 pb-3 flex justify-between items-center">
                 <div>
@@ -3611,8 +3943,10 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
 
               </div>
             </div>
+            )}
 
             {/* MANDATORY STATUTORY BILL-LOCKING SYSTEM PANEL */}
+            {contractorTab === 'billing' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               
               {/* Compliance-Locked Invoice Generation */}
@@ -4143,11 +4477,21 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                             </button>
 
                             <button 
-                              type="submit" 
+                              type="button"
+                              onClick={(e) => handleSubmitBill(e, 'Draft')}
+                              className="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+                            >
+                              <Save className="h-4 w-4" />
+                              💾 খচৰা হিচাপে সংৰক্ষণ কৰক (Save Draft)
+                            </button>
+
+                            <button 
+                              type="button"
+                              onClick={(e) => handleSubmitBill(e, 'Submitted')}
                               className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
                             >
                               <CheckCircle className="h-4 w-4" />
-                              🚀 বিল জেনেৰেট কৰি ইণ্ডাষ্ট্ৰীলৈ দাখিল কৰক (Submit Bill)
+                              🚀 HR লৈ দাখিল কৰক (Submit to HR)
                             </button>
                           </div>
                         </form>
@@ -4219,22 +4563,39 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                                             bill.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
                                             bill.status === 'Rejected' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
-                                            'bg-amber-50 text-amber-700 border border-amber-200'
+                                            bill.status === 'Draft' ? 'bg-slate-100 text-slate-700 border border-slate-300' :
+                                            'bg-indigo-50 text-indigo-700 border border-indigo-200'
                                           }`}>
-                                            {bill.status === 'Approved' ? '✓ Approved' : bill.status}
+                                            {bill.status === 'Approved' ? '✓ Approved' : 
+                                             bill.status === 'Draft' ? 'Draft (খচৰা)' : 
+                                             bill.status === 'Submitted' ? 'Submitted (দাখিল হ’ল)' : 
+                                             bill.status}
                                           </span>
                                         </td>
-                                        <td className="p-3 text-right font-sans">
-                                          <button
-                                            type="button"
-                                            onClick={() => {
-                                              setSelectedInvoiceBill(bill);
-                                              setIsInvoicePreviewOpen(true);
-                                            }}
-                                            className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[11px] px-2.5 py-1.5 rounded-lg transition-all inline-flex items-center gap-1"
-                                          >
-                                            <Printer className="h-3.5 w-3.5" /> ইনভয়েচ
-                                          </button>
+                                        <td className="p-3 text-right font-sans whitespace-nowrap">
+                                          <div className="flex gap-1.5 justify-end">
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setSelectedInvoiceBill(bill);
+                                                setIsInvoicePreviewOpen(true);
+                                              }}
+                                              className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[11px] px-2.5 py-1.5 rounded-lg transition-all inline-flex items-center gap-1 cursor-pointer"
+                                            >
+                                              <Printer className="h-3.5 w-3.5" /> ইনভয়েচ
+                                            </button>
+
+                                            {bill.status === 'Draft' && (
+                                              <button
+                                                type="button"
+                                                onClick={() => handlePublishDraftBill(bill.id)}
+                                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] px-2.5 py-1.5 rounded-lg transition-all inline-flex items-center gap-1 cursor-pointer shadow-2xs"
+                                                title="ইণ্ডাষ্ট্ৰীৰ এইচ.আৰ (HR) বিভাগলৈ এই বিলখন প্ৰেৰণ কৰক"
+                                              >
+                                                <CheckCircle className="h-3.5 w-3.5" /> HR লৈ পঠাওক
+                                              </button>
+                                            )}
+                                          </div>
                                         </td>
                                       </tr>
                                     );
@@ -4248,9 +4609,14 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                     );
                   })()}
               </div>
+            </div>
+            )}
 
-              {/* Uploaded Documents Tracker */}
-              <div className="bg-white border border-slate-200 rounded-lg p-6 space-y-6">
+            {/* WORK TAB SECONDARY SECTIONS */}
+            {contractorTab === 'work' && (
+              <>
+                {/* Uploaded Documents Tracker */}
+                <div className="bg-white border border-slate-200 rounded-lg p-6 space-y-6">
                 <h3 className="font-bold text-slate-900 text-base border-b border-slate-100 pb-3 flex items-center gap-1.5">
                   <FileText className="text-indigo-600 h-5 w-5" />
                   Statutory Records & Challans Archive
@@ -4286,8 +4652,6 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                   ))}
                 </div>
               </div>
-
-            </div>
 
             {/* Contractor's Industry-Wise Attendance Register */}
             <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-4 shadow-xs">
@@ -5392,6 +5756,8 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
 
             </div>
 
+            </>
+            )}
           </div>
         )}
 

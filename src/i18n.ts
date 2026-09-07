@@ -157,7 +157,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationDictionary> = {
     sandboxNotice: 'বাস্তৱ ভূমিকা অনুসৰি সুৰক্ষিত। আপুনি যিকোনো সময়ত লগআউট কৰি অন্য ভূমিকা বাছিব পাৰে।',
     restoreData: 'চেণ্ডবক্স ডেটা পুনৰুদ্ধাৰ কৰক',
 
-    industryAdmin: 'উদ্যোগ প্ৰধান নিয়োগকৰ্তা (Industry Admin)',
+    industryAdmin: 'উদ্যোগ এইচ.আৰ. (Industry HR)',
     industryAdminDesc: 'কাৰখানা পৰিচালনা, শ্ৰমিকৰ চাহিদা আৰু কণ্ট্ৰেক্টৰৰ বিল অনুমোদন।',
     contractor: 'লেবাৰ কণ্ট্ৰেক্টৰ (Labour Contractor)',
     contractorDesc: 'শ্ৰমিক যোগান, বিভিন্ন কাৰখানাৰ উপস্থিতি, PF/ESI চালান আৰু স্বয়ংক্ৰিয় বিল সৃষ্টি।',
@@ -257,7 +257,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationDictionary> = {
     sandboxNotice: 'भूमिका अलगाव सक्रिय है। आप किसी भी समय लॉग आउट कर सकते हैं।',
     restoreData: 'सैंडबॉक्स डेटा रीसेट करें',
 
-    industryAdmin: 'उद्योग प्रधान नियोक्ता (Industry Admin)',
+    industryAdmin: 'उद्योग एचआर (Industry HR)',
     industryAdminDesc: 'कारखाना संचालन, जनशक्ति आवश्यकता और ठेकेदार बिल सत्यापन।',
     contractor: 'श्रम ठेकेदार (Labour Contractor)',
     contractorDesc: 'श्रमिक आपूर्ति, विभिन्न उद्योगों में उपस्थिति, पीएफ/ईएसआई चालान और स्वचालित बिलिंग।',
@@ -357,7 +357,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationDictionary> = {
     sandboxNotice: 'Role isolation is active. You can log out anytime to switch personas.',
     restoreData: 'Restore Sandbox Data',
 
-    industryAdmin: 'Industry Principal Employer (Industry Admin)',
+    industryAdmin: 'Industry HR (Principal Employer)',
     industryAdminDesc: 'Plant operations, manpower requisitioning, and contractor bill verification.',
     contractor: 'Labour Contractor',
     contractorDesc: 'Worker deployment across factories, attendance logs, PF/ESI challans, and auto-billing.',
@@ -457,7 +457,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationDictionary> = {
     sandboxNotice: 'ভূমিকা সুরক্ষা সক্রিয় রয়েছে। আপনি যেকোনো সময় লগআউট করতে পারেন।',
     restoreData: 'স্যান্ডবক্স ডেটা রিসেট করুন',
 
-    industryAdmin: 'শিল্প প্রধান নিয়োগকর্তা (Industry Admin)',
+    industryAdmin: 'শিল্প এইচআর (Industry HR)',
     industryAdminDesc: 'কারখানা পরিচালনা, শ্রমিকের চাহিদা এবং ঠিকাদার বিল অনুমোদন।',
     contractor: 'শ্রমিক ঠিকাদার (Labour Contractor)',
     contractorDesc: 'শ্রমিক সরবরাহ, কারখানায় হাজিরা, পিএফ/ইএসআই চালান ও স্বয়ংক্রিয় বিলিং।',
@@ -557,7 +557,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationDictionary> = {
     sandboxNotice: 'भूमिका अलगाव सक्रिय आहे. आपण कधीही लॉग आउट करू शकता.',
     restoreData: 'सँडबॉक्स डेटा पूर्ववत करा',
 
-    industryAdmin: 'उद्योग मुख्य नियोक्ता (Industry Admin)',
+    industryAdmin: 'उद्योग एचआर (Industry HR)',
     industryAdminDesc: 'कारखाना कामकाज, मनुष्यबळ आवश्यकता आणि कंत्राटदार बिल मंजुरी.',
     contractor: 'कामगार कंत्राटदार (Labour Contractor)',
     contractorDesc: 'कामगार पुरवठा, कारखान्यांमधील हजेरी, पीएफ/ईएसआय चलन आणि स्वयंचलित बिलिंग.',
@@ -657,7 +657,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationDictionary> = {
     sandboxNotice: 'பாதுகாப்பு முறை செயலில் உள்ளது. நீங்கள் எப்போது வேண்டுமானாலும் வெளியேறலாம்.',
     restoreData: 'தரவை மீட்டமைக்கவும்',
 
-    industryAdmin: 'தொழிற்சாலை முதன்மை நிர்வாகி (Industry Admin)',
+    industryAdmin: 'தொழிற்சாலை எச்ஆர் (Industry HR)',
     industryAdminDesc: 'தொழிற்சாலை இயக்கம், தொழிலாளர் தேவை மற்றும் ஒப்பந்ததாரர் பில் ஒப்புதல்.',
     contractor: 'தொழிலாளர் ஒப்பந்ததாரர் (Labour Contractor)',
     contractorDesc: 'தொழிலாளர் விநியோகம், வருகை பதிவு, பிஎஃப்/இஎஸ்ஐ சலான் மற்றும் தானியங்கி பில்லிங்.',
@@ -757,7 +757,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationDictionary> = {
     sandboxNotice: 'పాత్ర భద్రత యాక్టివ్‌గా ఉంది. మీరు ఎప్పుడైనా లాగ్ అవుట్ చేయవచ్చు.',
     restoreData: 'శాండ్‌బాక్స్ డేటాను పునరుద్ధరించండి',
 
-    industryAdmin: 'పరిశ్రమ ప్రధాన యజమాని (Industry Admin)',
+    industryAdmin: 'పరిశ్రమ హెచ్ఆర్ (Industry HR)',
     industryAdminDesc: 'ఫ్యాక్టరీ నిర్వహణ, కార్మికుల అవసరాలు మరియు కాంట్రాక్టర్ బిల్లుల ఆమోదం.',
     contractor: 'లేబర్ కాంట్రాక్టర్ (Labour Contractor)',
     contractorDesc: 'కార్మికుల సరఫరా, కర్మాగారాల్లో హాజరు, పీఎఫ్/ఈఎస్ఐ చలానాలు మరియు ఆటోమేటెడ్ బిల్లింగ్.',
@@ -857,7 +857,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationDictionary> = {
     sandboxNotice: 'ભૂમિકા સુરક્ષા સક્રિય છે. તમે ગમે ત્યારે લૉગ આઉટ કરી શકો છો.',
     restoreData: 'સેન્ડબોક્સ ડેટા રીસેટ કરો',
 
-    industryAdmin: 'ઉદ્યોગ મુખ્ય માલિક (Industry Admin)',
+    industryAdmin: 'ઉદ્યોગ એચઆર (Industry HR)',
     industryAdminDesc: 'કારખાનાનું સંચાલન, શ્રમિકોની જરૂરિયાત અને કોન્ટ્રાક્ટર બિલ મંજૂરી.',
     contractor: 'લેબર કોન્ટ્રાક્ટર (Labour Contractor)',
     contractorDesc: 'શ્રમિક પુરવઠો, કારખાનામાં હાજરી, પીએફ/ઇએસઆઈ ચલાન અને સ્વચાલિત બિલિંગ.',
