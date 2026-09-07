@@ -158,11 +158,20 @@ export const initialBills: Bill[] = [
   // Apex August Bill for Tata Motors (Compliant, pre-existing proof and approved)
   {
     id: 'bill-1',
+    billNumber: 'INV-2026-08-001',
     contractorId: 'con-1',
+    contractorName: 'Apex Solutions',
     industryId: 'ind-1',
+    industryName: 'Tata Motors Manufacturing Plant',
     month: 'August 2026',
+    totalWorkers: 4,
+    totalDaysWorked: 26,
+    dailyWageRate: 650,
     baseAmount: 185000,
+    profitPercentage: 10,
     serviceCharge: 18500, // 10%
+    subtotalAmount: 203500, // 185000 + 18500
+    gstPercentage: 18,
     gstAmount: 36630, // 18% on total (base + service)
     totalAmount: 240130,
     status: 'Approved',
@@ -174,11 +183,20 @@ export const initialBills: Bill[] = [
   // Jai Hind August Bill for JSW Steel (Submitted, pending review)
   {
     id: 'bill-2',
+    billNumber: 'INV-2026-08-002',
     contractorId: 'con-2',
+    contractorName: 'Jai Hind Labour Logistics',
     industryId: 'ind-2',
+    industryName: 'JSW Steel Complex',
     month: 'August 2026',
+    totalWorkers: 3,
+    totalDaysWorked: 20,
+    dailyWageRate: 600,
     baseAmount: 120000,
+    profitPercentage: 10,
     serviceCharge: 12000,
+    subtotalAmount: 132000,
+    gstPercentage: 18,
     gstAmount: 23760,
     totalAmount: 155760,
     status: 'Submitted',

@@ -310,10 +310,32 @@ app.post("/api/compliance/upload-missing", requireAuth, async (req: any, res: an
 
 // 8. Submit contractor bill
 app.post("/api/bills/submit", requireAuth, async (req: any, res: any) => {
-  const { contractorId, industryId, month, baseAmount, serviceCharge, gstAmount, totalAmount, complianceDocIds } = req.body;
+  const { 
+    billNumber,
+    contractorId, 
+    contractorName,
+    industryId, 
+    industryName,
+    month, 
+    totalWorkers,
+    totalDaysWorked,
+    dailyWageRate,
+    baseAmount, 
+    profitPercentage,
+    serviceCharge, 
+    subtotalAmount,
+    gstPercentage,
+    gstAmount, 
+    totalAmount, 
+    complianceDocIds,
+    remarks 
+  } = req.body;
 
   try {
     const billId = "bill-" + Date.now();
+    const formattedBillNo = billNumber || `INV-${Date.now().toString().slice(-6)}`;
+    const billRemarks = remarks || `Bill #${formattedBillNo} | Contractor Profit: ${profitPercentage || 10}% | GST: ${gstPercentage || 18}%`;
+
     const newBill = await db.insert(bills).values({
       id: billId,
       contractorId,
@@ -326,11 +348,26 @@ app.post("/api/bills/submit", requireAuth, async (req: any, res: any) => {
       status: "Submitted",
       submittedAt: new Date().toLocaleString(),
       reviewedAt: null,
-      remarks: "Awaiting Industry Admin verification of statutory challans.",
-      complianceDocIds: JSON.stringify(complianceDocIds)
+      remarks: billRemarks,
+      complianceDocIds: JSON.stringify(complianceDocIds || [])
     }).returning();
 
-    res.json({ success: true, bill: { ...newBill[0], complianceDocIds } });
+    res.json({ 
+      success: true, 
+      bill: { 
+        ...newBill[0], 
+        billNumber: formattedBillNo,
+        contractorName,
+        industryName,
+        totalWorkers: Number(totalWorkers) || 0,
+        totalDaysWorked: Number(totalDaysWorked) || 0,
+        dailyWageRate: Number(dailyWageRate) || 0,
+        profitPercentage: Number(profitPercentage) || 10,
+        subtotalAmount: Number(subtotalAmount) || (Number(baseAmount) + Number(serviceCharge)),
+        gstPercentage: Number(gstPercentage) || 18,
+        complianceDocIds: complianceDocIds || [] 
+      } 
+    });
   } catch (error: any) {
     console.error("Error submitting bill:", error);
     res.status(500).json({ error: "Failed to submit bill" });

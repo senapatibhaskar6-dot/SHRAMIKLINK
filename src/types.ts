@@ -67,10 +67,11 @@ export interface Attendance {
   checkIn: string; // ISO / Time string
   checkOut: string | null;
   aadhaarVerified: boolean;
-  verificationMethod: 'Aadhaar-OTP' | 'Biometric-Face';
+  verificationMethod: 'Aadhaar-OTP' | 'Biometric-Face' | 'Supervisor-Gate' | 'Quick-Batch';
   hoursWorked: number;
   overtimeHours: number; // hours exceeding 8
   status: 'Present' | 'Absent' | 'Pending-Verification';
+  markedBySupervisor?: string; // Supervisor name
 }
 
 export interface ComplianceDocument {
@@ -88,13 +89,22 @@ export interface ComplianceDocument {
 
 export interface Bill {
   id: string;
+  billNumber?: string; // Auto-generated or manually entered by contractor
   contractorId: string;
+  contractorName?: string;
   industryId: string;
+  industryName?: string;
   month: string; // e.g. "August 2026"
-  baseAmount: number; // Worker salaries
-  serviceCharge: number; // Contractor margin
-  gstAmount: number;
-  totalAmount: number;
+  totalWorkers?: number;
+  totalDaysWorked?: number;
+  dailyWageRate?: number;
+  baseAmount: number; // Worker salaries (Total Labour Mandays × Daily Wage Rate)
+  profitPercentage?: number; // Contractor profit percentage (e.g. 10%, 12%, 15%)
+  serviceCharge: number; // Contractor margin = baseAmount * profitPercentage / 100
+  subtotalAmount?: number; // baseAmount + serviceCharge (Subtotal before GST)
+  gstPercentage?: number; // GST percentage (e.g. 18%, 12%, 5%)
+  gstAmount: number; // Subtotal * gstPercentage / 100
+  totalAmount: number; // Subtotal + gstAmount
   status: 'Locked' | 'Draft' | 'Submitted' | 'Approved' | 'Rejected';
   submittedAt: string | null;
   reviewedAt: string | null;
@@ -129,4 +139,26 @@ export interface RevenueLog {
   workerCount: number;
   feeAmount: number; // ₹1 per worker
   status: 'Accrued' | 'Invoiced' | 'Paid';
+}
+
+export interface Supervisor {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  industryId: string;
+  department: string;
+  active: boolean;
+  assignedContractorIds?: string[];
+  createdAt: string;
+}
+
+export interface AppFeedback {
+  id: string;
+  authorName: string;
+  authorRole: 'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector';
+  rating: number; // 1 to 5
+  category: 'Attendance System' | 'CLRA Forms' | 'Bill Audit' | 'Speed & Performance' | 'General Feedback';
+  feedbackText: string;
+  createdAt: string;
 }
