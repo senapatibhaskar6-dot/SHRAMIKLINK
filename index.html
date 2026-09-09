@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no" />
-    <title>ShramikLink</title>
+    <title>ShramikLinks</title>
     
     <!-- App Description & Theme -->
     <meta name="description" content="Manufacturing industry and labor contractor compliance and management platform." />
@@ -12,7 +12,7 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="ShramikLink" />
+    <meta name="apple-mobile-web-app-title" content="ShramikLinks" />
 
     <!-- Web App Manifest Link -->
     <link rel="manifest" href="/manifest.json" />
@@ -21,7 +21,7 @@
     <link rel="icon" type="image/png" href="/pwa-192x192.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     
-    <meta property="og:title" content="ShramikLink" />
+    <meta property="og:title" content="ShramikLinks" />
     <meta property="og:description" content="Manufacturing industry and labor contractor compliance and management platform." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
@@ -34,10 +34,10 @@
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js')
             .then((reg) => {
-              console.log('ShramikLink Service Worker registered successfully:', reg.scope);
+              console.log('ShramikLinks Service Worker registered successfully:', reg.scope);
             })
             .catch((err) => {
-              console.error('ShramikLink Service Worker registration failed:', err);
+              console.error('ShramikLinks Service Worker registration failed:', err);
             });
         });
       }

@@ -38,11 +38,30 @@ export default function App() {
         
         {/* Modern Persistent Top Navigation Bar (Placed ABOVE the "AD" header) */}
         <nav className="bg-slate-900 text-white flex justify-between items-center h-14 shrink-0 z-40 border-b border-slate-800 shadow-sm px-3 md:px-5">
-          <div className="flex items-center space-x-1 sm:space-x-2 h-full flex-1">
+          {/* Brand Logo & Name */}
+          <div className="flex items-center gap-2.5 mr-2 sm:mr-6 shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-white p-0.5 flex items-center justify-center shadow-xs border border-white/20">
+              <img 
+                src="/src/assets/images/shramiklink_logo_1788402038953.jpg" 
+                alt="ShramikLinks Logo" 
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-black tracking-tight text-white flex items-center">
+                Shramik<span className="text-orange-500">Links</span>
+              </span>
+              <span className="text-[9px] text-emerald-400 font-bold tracking-wider uppercase hidden sm:inline">
+                CLRA Compliance
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-1 sm:space-x-2 h-full flex-1 overflow-x-auto">
             <button
               id="tab-app-btn"
               onClick={() => setActiveTab('app')}
-              className={`flex items-center justify-center space-x-2 px-3 md:px-5 h-full transition-all relative cursor-pointer ${
+              className={`flex items-center justify-center space-x-2 px-3 md:px-4 h-full transition-all relative cursor-pointer whitespace-nowrap ${
                 activeTab === 'app'
                   ? 'text-emerald-400 font-bold'
                   : 'text-slate-400 hover:text-white'
@@ -58,7 +77,7 @@ export default function App() {
             <button
               id="tab-arch-btn"
               onClick={() => setActiveTab('architecture')}
-              className={`flex items-center justify-center space-x-2 px-3 md:px-5 h-full transition-all relative cursor-pointer ${
+              className={`flex items-center justify-center space-x-2 px-3 md:px-4 h-full transition-all relative cursor-pointer whitespace-nowrap ${
                 activeTab === 'architecture'
                   ? 'text-emerald-400 font-bold'
                   : 'text-slate-400 hover:text-white'
@@ -74,7 +93,7 @@ export default function App() {
             <button
               id="tab-roadmap-btn"
               onClick={() => setActiveTab('roadmap')}
-              className={`flex items-center justify-center space-x-2 px-3 md:px-5 h-full transition-all relative cursor-pointer ${
+              className={`flex items-center justify-center space-x-2 px-3 md:px-4 h-full transition-all relative cursor-pointer whitespace-nowrap ${
                 activeTab === 'roadmap'
                   ? 'text-emerald-400 font-bold'
                   : 'text-slate-400 hover:text-white'
@@ -125,7 +144,7 @@ export default function App() {
 
           {/* Inline Micro Footer */}
           <footer className="border-t border-slate-200 pt-6 text-[11px] text-slate-400 flex flex-col md:flex-row justify-between items-center gap-4">
-            <span>&copy; 2026 ShramikLink compliance platform. Designed for Indian Manufacturing and Labor Regulations.</span>
+            <span>&copy; 2026 ShramikLinks compliance platform. Designed for Indian Manufacturing and Labor Regulations.</span>
             <div className="flex gap-4">
               <span className="hover:text-slate-600 cursor-pointer">Security Standards</span>
               <span>&bull;</span>

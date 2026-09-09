@@ -2077,7 +2077,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
           <div className="absolute right-0 top-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
           <div className="absolute left-1/3 bottom-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
 
-          {/* Top Row: Logo (Left), ShramikLink (Center), Pill (Right) */}
+          {/* Top Row: Logo (Left), ShramikLinks (Center), Pill (Right) */}
           <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-2 border-b border-slate-800/30 pb-2.5">
             
             {/* Logo (Left side) */}
@@ -2085,17 +2085,17 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
               <div className="relative group w-9 h-9 md:w-11 md:h-11 bg-white p-1 rounded-xl flex items-center justify-center border border-white shadow-md hover:scale-105 transition-transform duration-300">
                 <TransparentImage 
                   src={logoUrl} 
-                  alt="ShramikLink Official Logo" 
+                  alt="ShramikLinks Official Logo" 
                   className="w-full h-full object-contain"
                   threshold={195}
                 />
               </div>
             </div>
 
-            {/* ShramikLink (Center) */}
+            {/* ShramikLinks (Center) */}
             <div className="flex-1 flex justify-center text-center">
               <h2 className="text-lg md:text-xl font-black tracking-tight text-white select-none">
-                <span className="text-orange-500">ShramikLink</span>
+                <span className="text-white">Shramik</span><span className="text-orange-500">Links</span>
               </h2>
             </div>
 
@@ -2707,17 +2707,17 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
       {/* Role Gate Bar (Bento-style Header Card) */}
       <div className="bg-slate-900 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl shadow-sm border border-slate-800">
         <div className="flex items-center gap-3">
-          <div className="relative group w-11 h-11 bg-slate-950/20 p-0.5 rounded-xl text-slate-950 flex items-center justify-center shrink-0 border border-slate-800">
+          <div className="relative group w-11 h-11 bg-white p-0.5 rounded-xl text-slate-950 flex items-center justify-center shrink-0 border border-slate-700 shadow-sm">
             <TransparentImage 
               src={logoUrl} 
-              alt="ShramikLink Logo" 
+              alt="ShramikLinks Logo" 
               className="w-full h-full object-contain"
               threshold={195}
             />
             {currentRole === 'industry_admin' && (
               <a 
                 href={logoUrl} 
-                download="shramiklink_logo.png" 
+                download="shramiklinks_logo.png" 
                 className="absolute -bottom-1 -right-1 bg-slate-900 text-emerald-400 hover:text-emerald-300 p-0.5 rounded-md border border-slate-800 shadow-md cursor-pointer hover:scale-105 transition-all flex items-center justify-center"
                 title="Download Logo"
               >
@@ -2726,6 +2726,12 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
             )}
           </div>
           <div>
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="text-xs font-black tracking-tight text-white flex items-center">
+                Shramik<span className="text-orange-500">Links</span>
+              </span>
+              <span className="text-[10px] text-slate-400 font-mono">B2B Compliance</span>
+            </div>
             <h3 className="font-bold text-white text-sm tracking-tight flex items-center gap-2">
               🔒 SECURE CLRA SESSION: ACTIVE 
               <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-mono font-bold uppercase tracking-wide">

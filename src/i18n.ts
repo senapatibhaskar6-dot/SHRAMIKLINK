@@ -1,5 +1,5 @@
 /**
- * ShramikLink Multi-Language Localization System (Pan-India)
+ * ShramikLinks Multi-Language Localization System (Pan-India)
  * Supports: English, Assamese, Hindi, Bengali, Marathi, Tamil, Telugu, Gujarati
  * 
  * Statutory Rule Enforced:
@@ -138,7 +138,7 @@ export interface TranslationDictionary {
 export const TRANSLATIONS: Record<AppLanguage, TranslationDictionary> = {
   // 1. ASSAMESE (অসমীয়া)
   as: {
-    appName: 'ShramikLink',
+    appName: 'ShramikLinks',
     tagline: 'ভাৰতীয় উদ্যোগ আৰু লেবাৰ কণ্ট্ৰেক্টৰৰ বাবে আইনী শ্ৰম নিয়োজন, বায়’মেট্ৰিক আৰু স্বয়ংক্ৰিয় বিলিং প্লেটফৰ্ম।',
     selectLanguageTitle: 'আপুনি আপোনাৰ সুবিধা অনুযায়ী ভাষা নিৰ্বাচন কৰক',
     selectLanguageSub: 'ভাৰতৰ সকলো ৰাজ্যৰ উদ্যোগ, কণ্ট্ৰেক্টৰ আৰু শ্ৰমিকৰ সুবিধাৰ্থে সমগ্ৰ ব্যৱস্থাটো আপোনাৰ নিজৰ ভাষাত উপলব্ধ।',
@@ -238,7 +238,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationDictionary> = {
 
   // 2. HINDI (हिन्दी)
   hi: {
-    appName: 'ShramikLink',
+    appName: 'ShramikLinks',
     tagline: 'भारतीय विनिर्माण उद्योगों और श्रम ठेकेदारों के लिए सीएलआरए अनुपालन, बायोमेट्रिक और स्वचालित बिलिंग प्लेटफॉर्म।',
     selectLanguageTitle: 'कृपया अपनी पसंदीदा भाषा चुनें',
     selectLanguageSub: 'अखिल भारतीय स्तर पर विनिर्माण संयंत्रों, ठेकेदारों और श्रमिकों के लिए आपकी अपनी भाषा में उपलब्ध।',
@@ -338,7 +338,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationDictionary> = {
 
   // 3. ENGLISH (Pan-India / Official)
   en: {
-    appName: 'ShramikLink',
+    appName: 'ShramikLinks',
     tagline: 'Double-locking CLRA compliance, biometric attendance, and automated billing SaaS for Indian manufacturing industries.',
     selectLanguageTitle: 'Select Your Preferred Language',
     selectLanguageSub: 'Available across all industrial belts in India to ensure every contractor, plant manager, and worker can operate seamlessly.',
@@ -438,7 +438,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationDictionary> = {
 
   // 4. BENGALI (বাংলা)
   bn: {
-    appName: 'ShramikLink',
+    appName: 'ShramikLinks',
     tagline: 'ভারতের শিল্প কলকারখানা ও শ্রমিক ঠিকাদারদের জন্য আইনসম্মত শ্রমিক সরবরাহ, বায়োমেট্রিক ও স্বয়ংক্রিয় বিলিং ব্যবস্থা।',
     selectLanguageTitle: 'অনুগ্রহ করে আপনার পছন্দসই ভাষা নির্বাচন করুন',
     selectLanguageSub: 'সমগ্র ভারতে কারখানা কর্তৃপক্ষ, ঠিকাদার ও শ্রমিকদের সুবিধার্থে আপনার নিজস্ব ভাষায় প্রস্তুত।',
@@ -538,7 +538,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationDictionary> = {
 
   // 5. MARATHI (मराठी)
   mr: {
-    appName: 'ShramikLink',
+    appName: 'ShramikLinks',
     tagline: 'भारतीय विनिर्माण उद्योग आणि कामगार कंत्राटदारांसाठी सीएलआरए अनुपालन, बायोमेट्रिक आणि स्वयंचलित बिलिंग प्लॅटफॉर्म.',
     selectLanguageTitle: 'कृपया आपली पसंतीची भाषा निवडा',
     selectLanguageSub: 'महाराष्ट्र एमआयडीसी आणि संपूर्ण भारतातील कारखाने, कंत्राटदार आणि कामगारांसाठी आपल्या भाषेत उपलब्ध.',
@@ -638,7 +638,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationDictionary> = {
 
   // 6. TAMIL (தமிழ்)
   ta: {
-    appName: 'ShramikLink',
+    appName: 'ShramikLinks',
     tagline: 'இந்திய உற்பத்தி தொழிலகங்கள் மற்றும் ஒப்பந்ததாரர்களுக்கான சி.எல்.ஆர்.ஏ சட்டம், பயோமெட்ரிக் மற்றும் தானியங்கி பில்லிங் தளம்.',
     selectLanguageTitle: 'உங்கள் விருப்ப மொழியைத் தேர்ந்தெடுக்கவும்',
     selectLanguageSub: 'இந்தியா முழுவதும் உள்ள தொழிற்சாலைகள், ஒப்பந்ததாரர்கள் மற்றும் தொழிலாளர்களுக்காக உங்கள் தாய்மொழியில் வழங்கப்படுகிறது.',
@@ -738,7 +738,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationDictionary> = {
 
   // 7. TELUGU (తెలుగు)
   te: {
-    appName: 'ShramikLink',
+    appName: 'ShramikLinks',
     tagline: 'భారతీయ తయారీ పరిశ్రమలు మరియు లేబర్ కాంట్రాక్టర్ల కోసం సీఎల్ఆర్ఏ చట్టం, బయోమెట్రిక్ మరియు ఆటోమేటెడ్ బిల్లింగ్ వేదిక.',
     selectLanguageTitle: 'దయచేసి మీ ప్రాధాన్య భాషను ఎంచుకోండి',
     selectLanguageSub: 'భారతదేశ వ్యాప్తంగా పరిశ్రమలు, కాంట్రాక్టర్లు మరియు కార్మికుల సౌలభ్యం కోసం మీ సొంత భాషలో అందుబాటులో ఉంది.',
@@ -838,7 +838,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationDictionary> = {
 
   // 8. GUJARATI (ગુજરાતી)
   gu: {
-    appName: 'ShramikLink',
+    appName: 'ShramikLinks',
     tagline: 'ભારતીય ઉત્પાદન ઉદ્યોગો અને લેબર કોન્ટ્રાક્ટરો માટે સીએલઆરએ કાયદાનું પાલન, બાયોમેટ્રિક અને સ્વચાલિત બિલિંગ પ્લેટફોર્મ.',
     selectLanguageTitle: 'કૃપા કરીને તમારી પસંદગીની ભાષા પસંદ કરો',
     selectLanguageSub: 'ગુજરાત ઔદ્યોગિક પટ્ટા અને સમગ્ર ભારતના કારખાનાઓ, કોન્ટ્રાક્ટરો અને શ્રમિકો માટે તમારી પોતાની ભાષામાં ઉપલબ્ધ.',
