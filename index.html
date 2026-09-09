@@ -30,16 +30,35 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
+      // Handle Service Worker & caching
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then((reg) => {
-              console.log('ShramikLinks Service Worker registered successfully:', reg.scope);
-            })
-            .catch((err) => {
-              console.error('ShramikLinks Service Worker registration failed:', err);
+        if (window.self !== window.top) {
+          // Inside preview iframe (AI Studio): Unregister SW and purge old cache so live preview updates immediately
+          navigator.serviceWorker.getRegistrations().then((registrations) => {
+            for (const reg of registrations) {
+              reg.unregister();
+            }
+          });
+          if ('caches' in window) {
+            caches.keys().then((keys) => {
+              for (const key of keys) {
+                caches.delete(key);
+              }
             });
-        });
+          }
+        } else {
+          // Standalone app / direct tab: Register Service Worker with auto-update
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+              .then((reg) => {
+                console.log('ShramikLinks Service Worker registered:', reg.scope);
+                reg.update();
+              })
+              .catch((err) => {
+                console.error('ShramikLinks Service Worker registration failed:', err);
+              });
+          });
+        }
       }
     </script>
   </body>

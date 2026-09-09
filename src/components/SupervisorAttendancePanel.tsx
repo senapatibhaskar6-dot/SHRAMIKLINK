@@ -437,18 +437,6 @@ export const SupervisorAttendancePanel: React.FC<SupervisorAttendancePanelProps>
                 ? `🏢 কণ্ট্ৰেক্টৰ ছুপাৰভাইজাৰ ডেস্ক: ${activeContractor?.name || 'Labour Contractor Agency'}` 
                 : '🏭 ইণ্ডাষ্ট্ৰী এইচ.আৰ আৰু ফেক্টৰী গেট ছুপাৰভাইজাৰ পেনেল'}
             </h2>
-
-            <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
-              {deskMode === 'contractor' ? (
-                <>
-                  এণ্ড্ৰইড ফোন নথকা সাধাৰণ শ্ৰমিকসকলক কণ্ট্ৰেক্টৰৰ ছুপাৰভাইজাৰে পোনপটীয়াকৈ নিজৰ পেনেলৰ পৰা নামভৰ্তি কৰাব পাৰে। দৈনিক উপস্থিতি মাৰ্ক কৰাৰ পিছত চিষ্টেমৰ পৰা পোনে পোনে <strong>মাহেকীয়া হাজিৰা বহী (Monthly Attendance PDF)</strong> প্ৰিণ্ট কৰি উলিয়াব পাৰি। এই এন্ট্ৰি চৰকাৰী Form XVI ত পোনে পোনে নোসোমোৱাৰ বাবে ইণ্ডাষ্ট্ৰী এইচ.আৰৰ গেট এন্ট্ৰিৰ সৈতে কোনো সংঘাত (Conflict/Collision) নহয়।
-                </>
-              ) : (
-                <>
-                  কাৰখানাৰ ভিতৰত শ্ৰমিক প্ৰৱেশৰ সময়ত কোনো ধৰণৰ সময় অপচয় নকৰাকৈ ছুপাৰভাইজাৰসকলে ১-ক্লিকত শ্ৰমিকৰ হাজিৰা আৰু অভাৰটাইম প্ৰবিষ্ট কৰিব পাৰে। এই এন্ট্ৰিৰ পৰা স্বয়ংক্ৰিয়ভাৱে চৰকাৰী <strong>CLRA Form XVI (Muster Roll)</strong> আৰু Form XVII আপডেট হৈ যায়।
-                </>
-              )}
-            </p>
           </div>
 
           {/* Quick Action Buttons */}

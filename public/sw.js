@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shramiklink-v1';
+const CACHE_NAME = 'shramiklinks-v3';
 const ASSETS = [
   '/',
   '/index.html',
@@ -8,14 +8,14 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS).catch((err) => {
-        console.warn('Error during caching assets:', err);
+        console.warn('Cache addAll non-fatal error:', err);
       });
     })
   );
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
@@ -24,39 +24,55 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
+            console.log('Purging old Service Worker cache:', key);
             return caches.delete(key);
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
+// Network-First strategy: Always fetch fresh code from the server first
 self.addEventListener('fetch', (event) => {
-  // Only handle GET requests and avoid chrome-extension or external tracking requests
+  // Only handle GET requests from the same origin
   if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
     return;
   }
 
+  // Never cache API calls or Vite dev server requests
+  if (
+    event.request.url.includes('/api/') || 
+    event.request.url.includes('/@vite/') || 
+    event.request.url.includes('/@react-refresh') ||
+    event.request.url.includes('/node_modules/')
+  ) {
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(event.request).then((response) => {
-        if (!response || response.status !== 200 || response.type !== 'basic') {
-          return response;
+    fetch(event.request)
+      .then((response) => {
+        // If network returns valid response, clone and update cache
+        if (response && response.status === 200 && response.type === 'basic') {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
         }
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
         return response;
-      }).catch(() => {
-        // Fallback for offline mode
-        return caches.match('/');
-      });
-    })
+      })
+      .catch(() => {
+        // Fallback to cache ONLY when completely offline
+        return caches.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          if (event.request.mode === 'navigate') {
+            return caches.match('/') || caches.match('/index.html');
+          }
+        });
+      })
   );
 });
+

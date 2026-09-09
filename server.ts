@@ -30,6 +30,7 @@ app.get(["/manifest.json", "/manifest.webmanifest"], (req: any, res: any) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   res.setHeader("Content-Type", "application/manifest+json");
+  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
   res.sendFile(path.join(process.cwd(), "public", "manifest.json"));
 });
 
@@ -37,6 +38,7 @@ app.get("/sw.js", (req: any, res: any) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   res.setHeader("Content-Type", "application/javascript");
+  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
   res.sendFile(path.join(process.cwd(), "public", "sw.js"));
 });
 
