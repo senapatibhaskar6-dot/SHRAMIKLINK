@@ -146,11 +146,29 @@ export interface Supervisor {
   name: string;
   phone: string;
   email: string;
+  supervisorType?: 'industry' | 'contractor'; // 'industry' = Factory Gate HR, 'contractor' = Labour Agency Supervisor
+  contractorId?: string; // If supervisorType === 'contractor'
+  contractorName?: string;
   industryId: string;
   department: string;
   active: boolean;
   assignedContractorIds?: string[];
   createdAt: string;
+}
+
+export interface ContractorAttendanceRecord {
+  id: string;
+  contractorId: string;
+  supervisorId: string;
+  supervisorName: string;
+  workerId: string;
+  workerName: string;
+  date: string; // YYYY-MM-DD
+  status: 'Present' | 'Absent' | 'Half-Day';
+  hoursWorked: number;
+  overtimeHours: number;
+  shift?: string;
+  remarks?: string;
 }
 
 export interface AppFeedback {
