@@ -13,7 +13,8 @@ import {
   HelpCircle,
   FileText,
   Sprout,
-  Smartphone
+  Smartphone,
+  LogOut
 } from 'lucide-react';
 import SaaSApp from './components/SaaSApp';
 import ArchitectureDocs from './components/ArchitectureDocs';
@@ -197,6 +198,19 @@ export default function App() {
               <Smartphone className="h-3.5 w-3.5 text-emerald-400" />
               <span className="hidden sm:inline">মোবাইল ভিউ</span>
               <span className="sm:hidden">মোবাইল</span>
+            </button>
+
+            <button
+              id="header-logout-btn"
+              onClick={() => {
+                handleTabChange('app');
+                window.dispatchEvent(new CustomEvent('shramiklink-logout'));
+              }}
+              title="লগইন পেজ / নতুন প্ৰৱেশদ্বাৰ (Login Page / Switch User)"
+              className="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white font-bold px-2.5 py-1.5 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 transition-all"
+            >
+              <LogOut className="h-3.5 w-3.5 text-rose-400" />
+              <span className="hidden md:inline">লগইন পেজ</span>
             </button>
 
             <LanguageSelector 

@@ -955,7 +955,7 @@ export default function TeaGardenWorkflow() {
                 </h3>
               </div>
               <p className="text-xs text-slate-300 leading-relaxed max-w-4xl">
-                ShramikLink প্লেটফৰ্মে সাধাৰণ উৎপাদন কাৰখানা আৰু অসমৰ চাহ বাগিচাসমূহৰ মাজত থকা আইনী পাৰ্থক্য বুজি দুয়োটা খণ্ডৰ বাবে পৃথক আৰু সঠিক নিয়ম প্ৰয়োগ কৰে।
+                ShramikLinks প্লেটফৰ্মে সাধাৰণ উৎপাদন কাৰখানা আৰু অসমৰ চাহ বাগিচাসমূহৰ মাজত থকা আইনী পাৰ্থক্য বুজি দুয়োটা খণ্ডৰ বাবে পৃথক আৰু সঠিক নিয়ম প্ৰয়োগ কৰে।
               </p>
 
               {/* Sector Selector */}

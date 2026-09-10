@@ -37,7 +37,11 @@ import {
   ArrowRight,
   Percent,
   Calendar,
-  Save
+  Save,
+  Key,
+  Smartphone,
+  Sparkles,
+  CheckCircle2
 } from 'lucide-react';
 import { 
   Industry, 
@@ -79,6 +83,8 @@ import SupervisorAttendancePanel from './SupervisorAttendancePanel';
 import { ContractorMonthlyAttendanceModal } from './ContractorMonthlyAttendanceModal';
 import AppFeedbackModal from './AppFeedbackModal';
 import TeaGardenWorkflow from './TeaGardenWorkflow';
+import { PublicMobileLogin } from './PublicMobileLogin';
+import { AdminMasterKeyModal } from './AdminMasterKeyModal';
 
 interface SaaSAppProps {
   externalLang?: AppLanguage;
@@ -185,6 +191,23 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
   const [simulatedOtpCode, setSimulatedOtpCode] = useState<string>('');
   const [enteredOtpCode, setEnteredOtpCode] = useState<string>('');
   const [showSimulatedSms, setShowSimulatedSms] = useState<string | null>(null);
+
+  // Admin Master Key & Mobile OTP Mode State (Hidden Admin Mode, Public sees only Phone + OTP)
+  const [adminModeUnlocked, setAdminModeUnlocked] = useState<boolean>(() => {
+    return sessionStorage.getItem('s_admin_mode_unlocked') === 'true';
+  });
+  const [showMasterKeyModal, setShowMasterKeyModal] = useState<boolean>(false);
+  const [masterKeyInput, setMasterKeyInput] = useState<string>('');
+  const [masterKeyError, setMasterKeyError] = useState<string>('');
+
+  // Dedicated Mobile Login State for Public Users
+  const [mobileLoginPhone, setMobileLoginPhone] = useState<string>('');
+  const [mobileOtpSent, setMobileOtpSent] = useState<boolean>(false);
+  const [mobileOtpCode, setMobileOtpCode] = useState<string>('');
+  const [mobileOtpInput, setMobileOtpInput] = useState<string>('');
+  const [mobileDetectedName, setMobileDetectedName] = useState<string | null>(null);
+  const [mobileSelectedRole, setMobileSelectedRole] = useState<'tea_garden' | 'contractor' | 'supervisor' | 'worker'>('tea_garden');
+  const [mobileOtpSmsBanner, setMobileOtpSmsBanner] = useState<string | null>(null);
 
   interface CredentialUser {
     name: string;
@@ -329,6 +352,96 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
 
   const handleVerifyRegisterOtp = (e: React.FormEvent) => {
     e.preventDefault();
+  };
+
+  // Mobile OTP Login Handlers (Clean Public Login)
+  const handleSendMobileOtp = (e?: React.FormEvent, directPhone?: string) => {
+    if (e) e.preventDefault();
+    const phone = (directPhone || mobileLoginPhone).trim().replace(/\D/g, '');
+    if (phone.length < 10) {
+      showNotice('অনুগ্ৰহ কৰি সঠিক ১০-ডিজিটৰ মোবাইল নম্বৰ প্ৰবিষ্ট কৰক। (Please enter valid 10-digit mobile number)', 'error');
+      return;
+    }
+    if (directPhone) {
+      setMobileLoginPhone(directPhone);
+    }
+    const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    setMobileOtpCode(generatedOtp);
+    setMobileOtpSent(true);
+    setMobileOtpInput('');
+
+    // Check if phone matches any registered user
+    const matched = credentialUsers.find(u => {
+      const uPhone = u.emailOrPhone.replace(/\D/g, '');
+      return uPhone === phone || uPhone.endsWith(phone) || phone.endsWith(uPhone);
+    });
+
+    if (matched) {
+      setMobileDetectedName(matched.name);
+      setMobileSelectedRole(matched.role as any);
+    } else {
+      setMobileDetectedName(null);
+    }
+
+    const bannerText = `[ShramikLinks SMS] আপোনাৰ সুৰক্ষিত এক্সেছ অ’টিপি ক’ড হৈছে: ${generatedOtp}। নিৰাপত্তাৰ স্বাৰ্থত কাৰো সৈতে ভাগ-বতৰা নকৰিব।`;
+    setMobileOtpSmsBanner(bannerText);
+    showNotice(`📱 SMS প্ৰেৰণ কৰা হৈছে: OTP ক’ড হৈছে ${generatedOtp}`, 'info');
+  };
+
+  const handleVerifyMobileOtp = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mobileOtpInput || mobileOtpInput.trim() !== mobileOtpCode.trim()) {
+      showNotice('ভুল অ’টিপি ক’ড! অনুগ্ৰহ কৰি সঠিক ৬-ডিজিটৰ OTP প্ৰবিষ্ট কৰক। (Invalid OTP code)', 'error');
+      return;
+    }
+
+    const phone = mobileLoginPhone.trim().replace(/\D/g, '');
+    const matched = credentialUsers.find(u => {
+      const uPhone = u.emailOrPhone.replace(/\D/g, '');
+      return uPhone === phone || uPhone.endsWith(phone) || phone.endsWith(uPhone);
+    });
+
+    let finalRole: 'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector' | 'tea_garden' = 
+      matched ? matched.role : mobileSelectedRole;
+    let userName = matched ? matched.name : `শ্ৰমিকলিংক ব্যৱহাৰকাৰী (+91 ${phone.slice(-4)})`;
+
+    setCurrentRole(finalRole);
+    localStorage.setItem('s_current_role', finalRole);
+    setIsLoggedIn(true);
+    localStorage.setItem('s_is_logged_in', 'true');
+
+    if (finalRole === 'tea_garden') {
+      localStorage.setItem('shramiklink_active_tab', 'tea_garden');
+      window.dispatchEvent(new CustomEvent('open-tea-garden'));
+      showNotice(`🍃 স্বাগতম ${userName}! চাহ বাগিচা আৰু চৰ্দাৰ পেনেল সক্ৰিয় হৈছে।`, 'success');
+    } else {
+      showNotice(`সুৰক্ষিত প্ৰৱেশ সফল হৈছে! স্বাগতম ${userName}!`, 'success');
+    }
+
+    setMobileOtpSent(false);
+    setMobileOtpSmsBanner(null);
+    refreshData();
+  };
+
+  const handleUnlockMasterKey = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const key = masterKeyInput.trim().toLowerCase();
+    if (key === 'admin' || key === '1234' || key === 'shramik' || key === 'master' || key === 'bhaskar') {
+      setAdminModeUnlocked(true);
+      sessionStorage.setItem('s_admin_mode_unlocked', 'true');
+      setShowMasterKeyModal(false);
+      setMasterKeyInput('');
+      setMasterKeyError('');
+      showNotice('👑 এডমিন মাষ্টাৰ মোড আনলক কৰা হ’ল! (Admin Master Mode Unlocked)', 'success');
+    } else {
+      setMasterKeyError('ভুল মাষ্টাৰ কি! (টিপছ: পৰীক্ষাৰ বাবে "admin" বা "1234" ব্যৱহাৰ কৰক)');
+    }
+  };
+
+  const handleLockAdminMode = () => {
+    setAdminModeUnlocked(false);
+    sessionStorage.removeItem('s_admin_mode_unlocked');
+    showNotice('🔒 এডমিন মোড বন্ধ কৰা হ’ল। সাধাৰণ মোবাইল লগইন দৃশ্যমান।', 'info');
   };
 
   // Load database tables from full-stack backend
@@ -2166,7 +2279,61 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
           </div>
         </div>
 
-        {/* SMS / Email Simulated Banner */}
+        {/* Clean Public Mobile Number & OTP Portal (Active by default for ordinary users) */}
+        {!adminModeUnlocked ? (
+          <PublicMobileLogin
+            mobileLoginPhone={mobileLoginPhone}
+            setMobileLoginPhone={setMobileLoginPhone}
+            mobileOtpSent={mobileOtpSent}
+            setMobileOtpSent={setMobileOtpSent}
+            mobileOtpCode={mobileOtpCode}
+            mobileOtpInput={mobileOtpInput}
+            setMobileOtpInput={setMobileOtpInput}
+            mobileDetectedName={mobileDetectedName}
+            mobileSelectedRole={mobileSelectedRole}
+            setMobileSelectedRole={setMobileSelectedRole}
+            mobileOtpSmsBanner={mobileOtpSmsBanner}
+            setMobileOtpSmsBanner={setMobileOtpSmsBanner}
+            handleSendMobileOtp={handleSendMobileOtp}
+            handleVerifyMobileOtp={handleVerifyMobileOtp}
+            onOpenMasterKey={() => {
+              setShowMasterKeyModal(true);
+              setMasterKeyError('');
+              setMasterKeyInput('');
+            }}
+            showNotice={showNotice}
+          />
+        ) : (
+          <div className="space-y-6 animate-fadeIn">
+            {/* Master Mode Golden Banner with Exit Button */}
+            <div className="bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-slate-900 border-2 border-amber-500/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">👑</span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black text-amber-400 uppercase tracking-wider block">
+                      এডমিন / ডেভলপাৰ মাষ্টাৰ মোড সক্ৰিয় (Admin Master Mode Unlocked)
+                    </span>
+                    <span className="px-2 py-0.5 bg-amber-500 text-slate-950 font-black text-[9px] rounded-full uppercase">
+                      Admin Access
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-slate-300">
+                    সকলো ভূমিকাৰ বাবে ১-ক্লিক ডেমো বাইপাছ, টেষ্টাৰ চীট-শ্বীট আৰু ইমেইল/পাছৱৰ্ড লগইন সক্ৰিয় কৰা হৈছে।
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleLockAdminMode}
+                className="bg-slate-950 hover:bg-slate-900 text-amber-300 border border-amber-500/60 hover:border-amber-400 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap active:scale-95 transition-all"
+              >
+                <Lock className="h-3.5 w-3.5 text-amber-400" />
+                <span>গোপন মোড বন্ধ কৰক (Exit Admin Mode)</span>
+              </button>
+            </div>
+
+            {/* SMS / Email Simulated Banner */}
         {showSimulatedSms && (
           <div className="bg-slate-900 border-2 border-amber-500/80 text-amber-300 px-5 py-4 rounded-2xl text-xs font-mono font-bold flex flex-col md:flex-row justify-between items-start md:items-center gap-3 shadow-lg animate-pulse">
             <div className="flex items-center gap-2.5">
@@ -2899,6 +3066,20 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
             <RefreshCw className="h-3.5 w-3.5" /> Restore Sandbox Data
           </button>
         </div>
+
+          </div>
+        )}
+
+        {/* Admin Master Key Unlock Modal */}
+        <AdminMasterKeyModal
+          isOpen={showMasterKeyModal}
+          onClose={() => setShowMasterKeyModal(false)}
+          masterKeyInput={masterKeyInput}
+          setMasterKeyInput={setMasterKeyInput}
+          masterKeyError={masterKeyError}
+          setMasterKeyError={setMasterKeyError}
+          onUnlock={handleUnlockMasterKey}
+        />
       </div>
     );
   }
