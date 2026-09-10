@@ -78,6 +78,7 @@ import { LanguageSelector } from './LanguageSelector';
 import SupervisorAttendancePanel from './SupervisorAttendancePanel';
 import { ContractorMonthlyAttendanceModal } from './ContractorMonthlyAttendanceModal';
 import AppFeedbackModal from './AppFeedbackModal';
+import TeaGardenWorkflow from './TeaGardenWorkflow';
 
 interface SaaSAppProps {
   externalLang?: AppLanguage;
@@ -157,7 +158,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
     // Default to true for seamless sandbox preview access without getting blocked
     return saved !== 'false';
   });
-  const [currentRole, setCurrentRole] = useState<'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector'>(() => {
+  const [currentRole, setCurrentRole] = useState<'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector' | 'tea_garden'>(() => {
     const saved = localStorage.getItem('s_current_role');
     return (saved as any) || 'contractor';
   });
@@ -172,7 +173,13 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
   const [registerName, setRegisterName] = useState<string>('');
   const [registerEmailOrPhone, setRegisterEmailOrPhone] = useState<string>('');
   const [registerPassword, setRegisterPassword] = useState<string>('');
-  const [registerRole, setRegisterRole] = useState<'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector'>('industry_admin');
+  const [registerSector, setRegisterSector] = useState<'tea_garden' | 'industry'>('tea_garden');
+  const [registerRole, setRegisterRole] = useState<'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector' | 'tea_garden'>('tea_garden');
+  const [registerTeaEstate, setRegisterTeaEstate] = useState<string>('Mornoi Tea Estate (মৰনৈ চাহ বাগিচা)');
+  const [registerTeaSection, setRegisterTeaSection] = useState<string>('Section 4A (North Plucking Section)');
+  const [registerTeaSardarGang, setRegisterTeaSardarGang] = useState<string>('Gang #04 (Birsa Tanti)');
+  const [registerTeaHaziraTarget, setRegisterTeaHaziraTarget] = useState<number>(24);
+  const [registerTeaRoleCategory, setRegisterTeaRoleCategory] = useState<'estate_admin' | 'sardar' | 'supervisor' | 'worker'>('sardar');
   
   const [otpStep, setOtpStep] = useState<boolean>(false);
   const [simulatedOtpCode, setSimulatedOtpCode] = useState<string>('');
@@ -183,7 +190,14 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
     name: string;
     emailOrPhone: string;
     passwordHash: string;
-    role: 'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector';
+    role: 'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector' | 'tea_garden';
+    teaGardenDetails?: {
+      estateName?: string;
+      section?: string;
+      gangNo?: string;
+      haziraTargetKg?: number;
+      category?: string;
+    };
   }
 
   const [credentialUsers, setCredentialUsers] = useState<CredentialUser[]>(() => {
@@ -203,11 +217,13 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
       { name: 'Apex Solutions (Contractor)', emailOrPhone: 'contractor@shramiklink.com', passwordHash: 'admin', role: 'contractor' },
       { name: 'Gopal Kumar (Worker)', emailOrPhone: 'worker@shramiklink.com', passwordHash: 'admin', role: 'worker' },
       { name: 'Bhaskar Senapati (Government)', emailOrPhone: 'inspector@shramiklink.com', passwordHash: 'admin', role: 'government_inspector' },
+      { name: 'Mornoi Tea Estate / Sardar Mina Munda', emailOrPhone: 'teagarden@shramiklink.com', passwordHash: 'admin', role: 'tea_garden' },
       { name: 'Demo Admin Phone', emailOrPhone: '9876543210', passwordHash: 'admin', role: 'industry_admin' },
       { name: 'Demo Supervisor Phone', emailOrPhone: '9876543220', passwordHash: 'admin', role: 'supervisor' },
       { name: 'Demo Contractor Phone', emailOrPhone: '9876543211', passwordHash: 'admin', role: 'contractor' },
       { name: 'Demo Worker Phone', emailOrPhone: '9876543212', passwordHash: 'admin', role: 'worker' },
       { name: 'Demo Inspector Phone', emailOrPhone: '9876543213', passwordHash: 'admin', role: 'government_inspector' },
+      { name: 'Demo Tea Garden Phone', emailOrPhone: '9876543214', passwordHash: 'admin', role: 'tea_garden' },
     ];
 
     let finalUsers = defaults;
@@ -219,7 +235,8 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
 
     const standardEmailsOrPhones = [
       'admin@shramiklink.com', 'ramesh.kalita@industry.com', 'contractor@shramiklink.com', 'worker@shramiklink.com', 'inspector@shramiklink.com',
-      '9876543210', '9876543220', '9876543211', '9876543212', '9876543213'
+      'teagarden@shramiklink.com',
+      '9876543210', '9876543220', '9876543211', '9876543212', '9876543213', '9876543214'
     ];
 
     finalUsers = finalUsers.map(user => {
@@ -267,27 +284,46 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
       return;
     }
 
+    const finalRole: 'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector' | 'tea_garden' = 
+      registerSector === 'tea_garden' ? 'tea_garden' : registerRole;
+
     const newUser: CredentialUser = {
       name: registerName,
       emailOrPhone: registerEmailOrPhone.trim().toLowerCase(),
       passwordHash: registerPassword,
-      role: registerRole
+      role: finalRole,
+      teaGardenDetails: registerSector === 'tea_garden' ? {
+        estateName: registerTeaEstate,
+        section: registerTeaSection,
+        gangNo: registerTeaSardarGang,
+        haziraTargetKg: registerTeaHaziraTarget,
+        category: registerTeaRoleCategory
+      } : undefined
     };
     
     const updated = [...credentialUsers, newUser];
     setCredentialUsers(updated);
     localStorage.setItem('s_credential_users', JSON.stringify(updated));
 
-    setCurrentRole(registerRole);
-    localStorage.setItem('s_current_role', registerRole);
+    setCurrentRole(finalRole);
+    localStorage.setItem('s_current_role', finalRole);
     setIsLoggedIn(true);
     localStorage.setItem('s_is_logged_in', 'true');
+    
+    if (finalRole === 'tea_garden') {
+      localStorage.setItem('shramiklink_active_tab', 'tea_garden');
+      window.dispatchEvent(new CustomEvent('open-tea-garden'));
+    }
     
     setRegisterName('');
     setRegisterEmailOrPhone('');
     setRegisterPassword('');
     
-    showNotice(`পঞ্জীয়ন আৰু লগইন সফল হৈছে! স্বাগতম ${newUser.name}! (Registration & Login Successful!)`, 'success');
+    if (finalRole === 'tea_garden') {
+      showNotice(`🍃 স্বাগতম ${newUser.name}! চাহ বাগিচা আৰু চৰ্দাৰ সুকীয়া পঞ্জীয়ন সফল হৈছে! (Tea Garden Desk Activated)`, 'success');
+    } else {
+      showNotice(`পঞ্জীয়ন আৰু লগইন সফল হৈছে! স্বাগতম ${newUser.name}! (Registration & Login Successful!)`, 'success');
+    }
     refreshData();
   };
 
@@ -403,12 +439,18 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
   };
 
   // Instant sandbox / demo login without requiring external popup window
-  const handleDemoLogin = (role: 'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector') => {
+  const handleDemoLogin = (role: 'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector' | 'tea_garden') => {
     setCurrentRole(role);
     localStorage.setItem('s_current_role', role);
     setIsLoggedIn(true);
     localStorage.setItem('s_is_logged_in', 'true');
-    showNotice(`Sandbox Demo: Entered as ${role.replace('_', ' ').toUpperCase()}`, 'success');
+    if (role === 'tea_garden') {
+      localStorage.setItem('shramiklink_active_tab', 'tea_garden');
+      window.dispatchEvent(new CustomEvent('open-tea-garden'));
+      showNotice('🍃 চাহ বাগান আৰু চৰ্দাৰ বিশেষ পেনেল মুকলি কৰা হ’ল (Tea Garden Desk Activated)', 'success');
+    } else {
+      showNotice(`Sandbox Demo: Entered as ${role.replace('_', ' ').toUpperCase()}`, 'success');
+    }
     refreshData(token || undefined);
   };
 
@@ -425,6 +467,14 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
       showNotice('Logged out of secure CLRA compliance session.', 'info');
     }
   };
+
+  useEffect(() => {
+    const handleGlobalLogoutEvent = () => {
+      handleLogout();
+    };
+    window.addEventListener('shramiklink-logout', handleGlobalLogoutEvent);
+    return () => window.removeEventListener('shramiklink-logout', handleGlobalLogoutEvent);
+  }, []);
   
   // Selected Actor Sub-states
   const [selectedIndustryId, setSelectedIndustryId] = useState<string>('ind-1'); // Tata Motors Pune
@@ -2350,7 +2400,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                     </span>
                     <span className="text-[10px] font-bold text-emerald-600">কোনো পাছৱৰ্ড নালাগে</span>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <button
                       type="button"
                       onClick={() => {
@@ -2362,9 +2412,9 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                         localStorage.setItem('s_current_role', 'contractor');
                         showNotice('কণ্ট্ৰেক্টৰ পেনেল খোলক (Contractor Desk Activated)', 'success');
                       }}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[11px] py-2 px-2.5 rounded-lg flex items-center justify-center gap-1 cursor-pointer shadow-xs"
                     >
-                      🏢 কণ্ট্ৰেক্টৰ পেনেল খোলক
+                      🏢 কণ্ট্ৰেক্টৰ পেনেল
                     </button>
                     <button
                       type="button"
@@ -2376,9 +2426,25 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                         localStorage.setItem('s_current_role', 'supervisor');
                         showNotice('ছুপাৰভাইজাৰ পেনেল খোলক (Supervisor Desk Activated)', 'success');
                       }}
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-black text-[11px] py-2 px-2.5 rounded-lg flex items-center justify-center gap-1 cursor-pointer shadow-xs"
                     >
-                      👷 ছুপাৰভাইজাৰ পেনেল খোলক
+                      👷 ছুপাৰভাইজাৰ
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setResetStep('none');
+                        setCurrentRole('tea_garden');
+                        setIsLoggedIn(true);
+                        localStorage.setItem('s_is_logged_in', 'true');
+                        localStorage.setItem('s_current_role', 'tea_garden');
+                        localStorage.setItem('shramiklink_active_tab', 'tea_garden');
+                        window.dispatchEvent(new CustomEvent('open-tea-garden'));
+                        showNotice('🍃 চাহ বাগান আৰু চৰ্দাৰ পেনেল খোলক (Tea Garden Desk Activated)', 'success');
+                      }}
+                      className="bg-emerald-800 hover:bg-emerald-900 text-emerald-200 border border-emerald-500/80 font-black text-[11px] py-2 px-2.5 rounded-lg flex items-center justify-center gap-1 cursor-pointer shadow-xs"
+                    >
+                      🍃 চাহ বাগান / চৰ্দাৰ
                     </button>
                   </div>
                 </div>
@@ -2419,7 +2485,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                     <div className="space-y-1">
                       <div className="flex justify-between items-center">
                         <label className="block text-[10px] font-bold text-slate-500 uppercase">পাছৱৰ্ড (Password)</label>
-                        <span className="text-[9px] text-slate-400">Default is the role name</span>
+                        <span className="text-[9px] text-slate-400">Default is admin</span>
                       </div>
                       <input 
                         type="password"
@@ -2455,13 +2521,13 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                       <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider text-center">
                         ১-ক্লিকত প্ৰত্যক্ষ প্ৰৱেশ (1-Click Fast Preview Access):
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <button
                           type="button"
                           onClick={() => handleDemoLogin('supervisor')}
-                          className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 py-2 px-2.5 rounded-lg text-[11px] font-black transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                          className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 py-2 px-2 rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
                         >
-                          <span>👷 ছুপাৰভাইজাৰ পেনেল (Supervisor)</span>
+                          <span>👷 ছুপাৰভাইজাৰ</span>
                         </button>
                         <button
                           type="button"
@@ -2469,24 +2535,98 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                             handleDemoLogin('contractor');
                             setContractorTab('supervisors_attendance');
                           }}
-                          className="bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-300 py-2 px-2.5 rounded-lg text-[11px] font-black transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                          className="bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-300 py-2 px-2 rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
                         >
-                          <span>🏢 কণ্ট্ৰেক্টৰ হাজিৰা বহী (Contractor)</span>
+                          <span>🏢 কণ্ট্ৰেক্টৰ</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDemoLogin('tea_garden')}
+                          className="bg-emerald-100 hover:bg-emerald-200 text-emerald-950 border border-emerald-400 py-2 px-2 rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                        >
+                          <span>🍃 চাহ বাগান</span>
                         </button>
                       </div>
                     </div>
                   </form>
                 )}
 
-                {/* Form: REGISTER */}
+                {/* Form: REGISTER (Dedicated Tea Garden vs Industry Registration Flow) */}
                 {authTab === 'register' && (
-                  <form onSubmit={handleRequestOtp} className="space-y-3">
+                  <form onSubmit={handleRequestOtp} className="space-y-3.5">
+                    
+                    {/* Sector Switcher Header */}
+                    <div className="bg-slate-100 p-1.5 rounded-xl border border-slate-200 space-y-1">
+                      <div className="flex items-center justify-between px-1">
+                        <span className="text-[10px] font-black uppercase text-slate-600 tracking-wider">
+                          পঞ্জীয়ন বিভাগ নিৰ্বাচন কৰক (Select Sector)
+                        </span>
+                        <span className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded uppercase ${
+                          registerSector === 'tea_garden' ? 'bg-emerald-200 text-emerald-900' : 'bg-indigo-200 text-indigo-900'
+                        }`}>
+                          {registerSector === 'tea_garden' ? '🍃 চাহ বাগান শাখা' : '🏭 ইণ্ডাষ্ট্ৰী শাখা'}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRegisterSector('tea_garden');
+                            setRegisterRole('tea_garden');
+                          }}
+                          className={`py-2 px-2.5 rounded-lg text-[11px] font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                            registerSector === 'tea_garden'
+                              ? 'bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-400'
+                              : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
+                          }`}
+                        >
+                          <span>🍃 চাহ বাগিচা সুকীয়া পঞ্জীয়ন</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRegisterSector('industry');
+                            setRegisterRole('industry_admin');
+                          }}
+                          className={`py-2 px-2.5 rounded-lg text-[11px] font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                            registerSector === 'industry'
+                              ? 'bg-indigo-600 text-white shadow-xs ring-2 ring-indigo-400'
+                              : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
+                          }`}
+                        >
+                          <span>🏭 ইণ্ডাষ্ট্ৰী / কাৰখানা পঞ্জীয়ন</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Sector Banner Note */}
+                    {registerSector === 'tea_garden' ? (
+                      <div className="bg-emerald-50/90 border border-emerald-300 p-2.5 rounded-xl text-emerald-950 text-[11px] space-y-1">
+                        <div className="font-extrabold flex items-center gap-1 text-emerald-800">
+                          <span>🍃 অসম চাহ বাগিচা বিশেষ পঞ্জীয়ন (Plantations Labour Act, 1951)</span>
+                        </div>
+                        <p className="text-[10px] text-emerald-700 leading-snug">
+                          চাহ বাগিচা মেনেজমেন্ট, লেবাৰ চৰ্দাৰ (গেং লিডাৰ), ফিল্ড ছুপাৰভাইজাৰ আৰু পাত তোলা শ্ৰমিকৰ বাবে সুকীয়া হাজিৰা বহী ডিজিটাইজেচন ডেক্স।
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="bg-indigo-50/90 border border-indigo-300 p-2.5 rounded-xl text-indigo-950 text-[11px] space-y-1">
+                        <div className="font-extrabold flex items-center gap-1 text-indigo-800">
+                          <span>🏭 ইণ্ডাষ্ট্ৰী আৰু কাৰখানা পঞ্জীয়ন (CLRA Act & Factories Act)</span>
+                        </div>
+                        <p className="text-[10px] text-indigo-700 leading-snug">
+                          কাৰখানা প্ৰশাসন, অনুজ্ঞাপ্ৰাপ্ত ঠিকাদাৰ, গেট ছুপাৰভাইজাৰ আৰু চুক্তিভিত্তিক শ্ৰমিকৰ বাবে বিধিসন্মত পঞ্জীয়ন।
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Common Fields */}
                     <div className="space-y-1">
                       <label className="block text-[10px] font-bold text-slate-500 uppercase">পূৰ্ণ নাম (Full Name)</label>
                       <input 
                         type="text"
                         required
-                        placeholder="E.g., Bhaskar Senapati"
+                        placeholder={registerSector === 'tea_garden' ? 'যেনে: বিৰছা তাঁতী / মীনা মুণ্ডা (Sardar or Plucker)' : 'E.g., Bhaskar Senapati'}
                         value={registerName}
                         onChange={(e) => setRegisterName(e.target.value)}
                         className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:bg-white focus:border-indigo-500"
@@ -2498,7 +2638,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                       <input 
                         type="text"
                         required
-                        placeholder="E.g., b_senapati@gmail.com or 8876543210"
+                        placeholder="E.g., 9435188201 or sardar@monabarie.com"
                         value={registerEmailOrPhone}
                         onChange={(e) => setRegisterEmailOrPhone(e.target.value)}
                         className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:bg-white focus:border-indigo-500"
@@ -2517,26 +2657,117 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                       />
                     </div>
 
-                    <div className="space-y-1">
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase">প্ৰৱেশাধিকাৰ পদবী (Select System Role)</label>
-                      <select
-                        value={registerRole}
-                        onChange={(e: any) => setRegisterRole(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-500"
-                      >
-                        <option value="industry_admin">🏭 Industry HR (ইণ্ডাষ্ট্ৰী এইচ.আৰ.)</option>
-                        <option value="supervisor">👷 Factory Supervisor (কাৰখানা ছুপাৰভাইজাৰ)</option>
-                        <option value="contractor">🏢 Labor Contractor (লেবাৰ কন্ট্ৰেক্টৰ)</option>
-                        <option value="worker">👷 Contract Worker (চুক্তিভিত্তিক শ্ৰমিক)</option>
-                        <option value="government_inspector">⚖️ Government Inspector (চৰকাৰী পৰিদৰ্শক)</option>
-                      </select>
-                    </div>
+                    {/* TEA GARDEN SPECIFIC REGISTRATION FIELDS */}
+                    {registerSector === 'tea_garden' ? (
+                      <div className="space-y-3 bg-emerald-50/50 p-3 rounded-xl border border-emerald-200">
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-bold text-emerald-900 uppercase">
+                            চাহ বাগিচাৰ পদবী বা ভূমিকা (Tea Garden Role)
+                          </label>
+                          <select
+                            value={registerTeaRoleCategory}
+                            onChange={(e: any) => setRegisterTeaRoleCategory(e.target.value)}
+                            className="w-full bg-white border border-emerald-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:ring-1 focus:ring-emerald-500"
+                          >
+                            <option value="sardar">🌿 চাহ বাগিচা চৰ্দাৰ / গেং লিডাৰ (Sardar / Hazira Bahi Gang Manager)</option>
+                            <option value="estate_admin">🍃 চাহ বাগিচা মেনেজমেন্ট / HR (Tea Estate HR & Management)</option>
+                            <option value="supervisor">👷 বাগিচা ছুপাৰভাইজাৰ / মোহৰাৰ (Field Supervisor / Mohorer)</option>
+                            <option value="worker">🍃 চাহ পাত তোলা শ্ৰমিক (Tea Plucker / Plantation Shramik)</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-bold text-emerald-900 uppercase">
+                            চাহ বাগিচাৰ নাম (Tea Garden / Estate)
+                          </label>
+                          <select
+                            value={registerTeaEstate}
+                            onChange={(e) => setRegisterTeaEstate(e.target.value)}
+                            className="w-full bg-white border border-emerald-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:ring-1 focus:ring-emerald-500"
+                          >
+                            <option value="Mornoi Tea Estate (মৰনৈ চাহ বাগিচা)">Mornoi Tea Estate (মৰনৈ চাহ বাগিচা - Kokrajhar/Dhubri)</option>
+                            <option value="Monabarie Tea Estate (মনাবাৰী চাহ বাগিচা)">Monabarie Tea Estate (মনাবাৰী চাহ বাগিচা - Biswanath)</option>
+                            <option value="Hathikuli Organic Estate (হাতীখুলী চাহ বাগিচা)">Hathikuli Organic Estate (হাতীখুলী চাহ বাগিচা - Kaziranga)</option>
+                            <option value="Borjuli Tea Estate (বৰজুলি চাহ বাগিচা)">Borjuli Tea Estate (বৰজুলি চাহ বাগিচা - Sonitpur)</option>
+                            <option value="Doomdooma Tea Division (ডুমডুমা চাহ বাগিচা)">Doomdooma Tea Division (ডুমডুমা চাহ বাগিচা - Tinsukia)</option>
+                          </select>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2.5">
+                          <div className="space-y-1">
+                            <label className="block text-[10px] font-bold text-emerald-900 uppercase">
+                              লাইন / ছেকচন (Section)
+                            </label>
+                            <input 
+                              type="text"
+                              value={registerTeaSection}
+                              onChange={(e) => setRegisterTeaSection(e.target.value)}
+                              placeholder="যেনে: Section 4A / Line 7"
+                              className="w-full bg-white border border-emerald-300 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 outline-none"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="block text-[10px] font-bold text-emerald-900 uppercase">
+                              চৰ্দাৰ / গেং নম্বৰ (Gang)
+                            </label>
+                            <input 
+                              type="text"
+                              value={registerTeaSardarGang}
+                              onChange={(e) => setRegisterTeaSardarGang(e.target.value)}
+                              placeholder="যেনে: Gang #04 (Birsa Tanti)"
+                              className="w-full bg-white border border-emerald-300 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <label className="block text-[10px] font-bold text-emerald-900 uppercase">
+                              দৈনিক সেউজ পাত হাজিৰা নিৰিখ (Target Leaf Hazira)
+                            </label>
+                            <span className="text-[10px] font-mono font-bold text-emerald-700">
+                              {registerTeaHaziraTarget} KG / দিন (Day)
+                            </span>
+                          </div>
+                          <input 
+                            type="number"
+                            min={10}
+                            max={50}
+                            value={registerTeaHaziraTarget}
+                            onChange={(e) => setRegisterTeaHaziraTarget(Number(e.target.value))}
+                            className="w-full bg-white border border-emerald-300 rounded-lg px-2.5 py-1.5 text-xs font-mono font-bold text-slate-800 outline-none"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      /* INDUSTRY SPECIFIC ROLE SELECTOR */
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase">প্ৰৱেশাধিকাৰ পদবী (Select Industry Role)</label>
+                        <select
+                          value={registerRole}
+                          onChange={(e: any) => setRegisterRole(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-500"
+                        >
+                          <option value="industry_admin">🏭 Industry HR (ইণ্ডাষ্ট্ৰী এইচ.আৰ. - Principal Employer)</option>
+                          <option value="supervisor">👷 Factory Supervisor (কাৰখানা ছুপাৰভাইজাৰ - Gate Attendance)</option>
+                          <option value="contractor">🏢 Labor Contractor (লেবাৰ কন্ট্ৰেক্টৰ - Manpower Agency)</option>
+                          <option value="worker">👷 Contract Worker (চুক্তিভিত্তিক কাৰখানা শ্ৰমিক)</option>
+                          <option value="government_inspector">⚖️ Government Inspector (চৰকাৰী পৰিদৰ্শক)</option>
+                        </select>
+                      </div>
+                    )}
 
                     <button
                       type="submit"
-                      className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all shadow-xs cursor-pointer text-center mt-1"
+                      className={`w-full py-2.5 rounded-lg text-xs font-black tracking-wider uppercase transition-all shadow-xs cursor-pointer text-center mt-1 ${
+                        registerSector === 'tea_garden'
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                          : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                      }`}
                     >
-                      পঞ্জীয়ন সম্পূৰ্ণ কৰক (Complete Registration)
+                      {registerSector === 'tea_garden' 
+                        ? '🍃 চাহ বাগিচা পঞ্জীয়ন সম্পন্ন কৰক (Complete Tea Garden Registration)' 
+                        : '🏭 ইণ্ডাষ্ট্ৰী পঞ্জীয়ন সম্পন্ন কৰক (Complete Industry Registration)'}
                     </button>
                   </form>
                 )}
@@ -2563,6 +2794,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
 
               <div className="space-y-2.5">
                 {[
+                  { label: '🍃 Tea Garden (Estate & Sardar)', email: 'teagarden@shramiklink.com', pass: 'admin', phone: '9876543214', isHighlight: true },
                   { label: '🏭 Industry HR', email: 'admin@shramiklink.com', pass: 'admin', phone: '9876543210' },
                   { label: '👷 Factory Supervisor (Gate Attendance)', email: 'ramesh.kalita@industry.com', pass: 'admin', phone: '9876543220' },
                   { label: '🏢 Licensed Contractor', email: 'contractor@shramiklink.com', pass: 'admin', phone: '9876543211' },
@@ -2578,10 +2810,16 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                       setLoginPassword(cred.pass);
                       showNotice(`Autofilled ${cred.label} credentials! Click Login to enter.`, 'info');
                     }}
-                    className="w-full text-left bg-slate-950/60 hover:bg-slate-950 border border-slate-800/80 p-3 rounded-2xl hover:border-slate-700/80 transition-all flex justify-between items-center group cursor-pointer"
+                    className={`w-full text-left p-3 rounded-2xl transition-all flex justify-between items-center group cursor-pointer border ${
+                      cred.isHighlight
+                        ? 'bg-emerald-950/60 border-emerald-500/80 hover:bg-emerald-900/80'
+                        : 'bg-slate-950/60 hover:bg-slate-950 border-slate-800/80 hover:border-slate-700/80'
+                    }`}
                   >
                     <div className="space-y-1">
-                      <span className="text-[10px] text-indigo-400 font-bold block">{cred.label}</span>
+                      <span className={`text-[10px] font-bold block ${cred.isHighlight ? 'text-emerald-400' : 'text-indigo-400'}`}>
+                        {cred.label}
+                      </span>
                       <div className="text-[11px] text-slate-300 font-mono flex flex-col">
                         <span>Mail: {cred.email}</span>
                         <span>Phone: {cred.phone}</span>
@@ -2589,7 +2827,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                     </div>
                     <div className="text-right space-y-1.5 shrink-0">
                       <span className="text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded font-mono block">Pass: {cred.pass}</span>
-                      <span className="text-[9px] text-slate-500 group-hover:text-indigo-400 transition-colors block">Use Mail/Phone →</span>
+                      <span className="text-[9px] text-slate-500 group-hover:text-emerald-400 transition-colors block">Use Mail/Phone →</span>
                     </div>
                   </button>
                 ))}
@@ -2692,14 +2930,25 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
             CLRA Statutory Compliance: Active
           </div>
           
-          <div className="flex items-center gap-2">
-            <div className="text-right">
-              <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Active Operator</span>
-              <span className="text-xs font-bold text-slate-700">Administrator</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <div className="text-right">
+                <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Active Operator</span>
+                <span className="text-xs font-bold text-slate-700">Administrator</span>
+              </div>
+              <div className="w-9 h-9 rounded-full bg-slate-900 flex items-center justify-center text-white text-sm font-black font-mono shadow-sm">
+                AD
+              </div>
             </div>
-            <div className="w-9 h-9 rounded-full bg-slate-900 flex items-center justify-center text-white text-sm font-black font-mono shadow-sm">
-              AD
-            </div>
+
+            <button
+              onClick={handleLogout}
+              title="লগ আউট কৰক (Log Out)"
+              className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-xs border border-rose-500 active:scale-95 shrink-0"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span>লগ আউট (Log Out)</span>
+            </button>
           </div>
         </div>
       </div>
@@ -2800,10 +3049,11 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
           </span>
           {[
             { role: 'industry_admin', label: '🏭 ইণ্ডাষ্ট্ৰী এডমিন (Admin)', desc: 'ফেক্টৰী প্ৰশাসন' },
-            { role: 'supervisor', label: '👷 ছুপাৰভাইজাৰ পেনেল (Supervisor Desk)', desc: 'গেট হাজিৰা আৰু মন্তব্য', isPrimary: true },
+            { role: 'supervisor', label: '👷 ছুপাৰভাইজাৰ পেনেল (Supervisor)', desc: 'গেট হাজিৰা আৰু মন্তব্য', isPrimary: true },
             { role: 'contractor', label: '🏢 ঠিকাদাৰ ডেস্ক (Contractor)', desc: 'লেবাৰ বিল আৰু খতিয়ান' },
             { role: 'worker', label: '👤 শ্ৰমিক ডেস্ক (Worker)', desc: 'প্ৰফাইল আৰু পাছবুক' },
             { role: 'government_inspector', label: '⚖️ চৰকাৰী পৰিদৰ্শক (Inspector)', desc: 'CLRA নিৰীক্ষণ' },
+            { role: 'tea_garden', label: '🍃 চাহ বাগিচা ও চৰ্দাৰ (Tea Garden)', desc: 'সেউজীয়া পাত আৰু হাজিৰা বহী', isSpecial: true },
           ].map((item) => {
             const isActive = currentRole === item.role;
             return (
@@ -2817,12 +3067,19 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                 className={`px-3 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
                   isActive
                     ? 'bg-emerald-500 text-slate-950 shadow-md ring-2 ring-emerald-300'
+                    : item.isSpecial
+                    ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/60 hover:bg-emerald-900 shadow-xs'
                     : item.isPrimary
                     ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs border border-indigo-400/40'
                     : 'bg-slate-800 hover:bg-slate-700 text-slate-200'
                 }`}
               >
                 <span>{item.label}</span>
+                {item.isSpecial && !isActive && (
+                  <span className="text-[9px] bg-emerald-400 text-slate-950 px-1.5 py-0.2 rounded-full font-black animate-pulse">
+                    Assam PLA
+                  </span>
+                )}
                 {item.isPrimary && !isActive && (
                   <span className="text-[9px] bg-emerald-400 text-slate-950 px-1.5 py-0.2 rounded-full font-black">
                     হাজিৰা & মন্তব্য
@@ -2833,7 +3090,19 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
           })}
         </div>
 
-        <div className="flex items-center gap-2 w-full lg:w-auto justify-end shrink-0">
+        <div className="flex items-center gap-2 w-full lg:w-auto justify-end shrink-0 flex-wrap sm:flex-nowrap">
+          <button
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent('open-tea-garden'));
+              showNotice("চাহ বাগিচা বিশেষ চৰ্দাৰ আৰু ছুপাৰভাইজাৰ পেনেল মুকলি কৰা হ'ল", 'success');
+            }}
+            className="bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-md ring-2 ring-emerald-300/60"
+            title="চাহ বাগিচা বিশেষ পেনেল আৰু চৰ্দাৰ এন্ট্ৰি (Tea Garden Labor Entry & Sardar Panel)"
+          >
+            <span className="text-sm">🍃</span>
+            <span>চাহ বাগিচা এন্ট্ৰি (Tea Garden)</span>
+          </button>
+
           <button
             onClick={handleLogout}
             className="bg-rose-600 hover:bg-rose-700 text-white font-black text-xs px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
@@ -2861,6 +3130,46 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
           </button>
         </div>
       )}
+
+      {/* Special Tea Garden & Sardar Workflow Direct Access Banner */}
+      <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-900 border-2 border-emerald-400/60 rounded-2xl p-4 text-white shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="bg-emerald-400 text-slate-950 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full animate-pulse flex items-center gap-1">
+              <span>🍃</span> লাইভ অসম চাহ বাগিচা মডিউল (Assam Tea Garden Module)
+            </span>
+            <span className="text-xs text-emerald-300 font-bold">
+              চৰ্দাৰ দলীয় হাজিৰা, সেউজীয়া পাতৰ ওজন আৰু পূজা বোনাছ চুক্তি
+            </span>
+          </div>
+          <p className="text-[11px] text-emerald-100 max-w-3xl leading-relaxed">
+            পৰম্পৰাগত কাগজৰ "হাজিৰা বহী" ডিজিটেলাইজেশ্যন: চৰ্দাৰৰ দলভিত্তিক পাত তোলা (Plucking 24kg Hazira + Ticca ₹4.50/kg), কলম কৰা (Pruning) আৰু ছুপাৰভাইজাৰৰ মাষ্টাৰ ৰোল সত্যাপন।
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+          <button
+            onClick={() => {
+              setCurrentRole('tea_garden');
+              localStorage.setItem('s_current_role', 'tea_garden');
+              showNotice('🍃 চাহ বাগিচা ও চৰ্দাৰ পেনেল মুকলি কৰা হ\'ল', 'success');
+            }}
+            className="bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-lg cursor-pointer hover:scale-105 ring-2 ring-emerald-300/80"
+          >
+            <span className="text-sm">🍃</span>
+            <span>চৰ্দাৰ বহী খোলক (Open Tea Garden Desk)</span>
+          </button>
+
+          <button
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent('open-tea-garden'));
+            }}
+            className="bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-400/50 font-bold text-xs px-3.5 py-2.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <span>ফুলস্ক্ৰিন ভিউ (Full View)</span>
+          </button>
+        </div>
+      </div>
 
       {/* Quick Navigation Banner for Newly Added Contractor Supervisor & Monthly Attendance */}
       <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 border-2 border-emerald-500/40 rounded-2xl p-4 text-white shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
@@ -6992,6 +7301,13 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ==================== 6. TEA GARDEN SARDAR & PLUCKING WORKFLOW ==================== */}
+        {currentRole === 'tea_garden' && (
+          <div className="space-y-6 animate-fadeIn">
+            <TeaGardenWorkflow />
           </div>
         )}
 

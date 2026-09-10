@@ -30,35 +30,49 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      // Handle Service Worker & caching
-      if ('serviceWorker' in navigator) {
-        if (window.self !== window.top) {
-          // Inside preview iframe (AI Studio): Unregister SW and purge old cache so live preview updates immediately
-          navigator.serviceWorker.getRegistrations().then((registrations) => {
-            for (const reg of registrations) {
-              reg.unregister();
+      // Safe Service Worker & Android WebView/PWA lifecycle handling
+      try {
+        if ('serviceWorker' in navigator) {
+          var isIframe = false;
+          try {
+            isIframe = window.self !== window.top;
+          } catch (e) {
+            isIframe = true;
+          }
+          var isCloudDevOrPreview = window.location.hostname.includes('run.app') || window.location.hostname === 'localhost';
+
+          if (isIframe || isCloudDevOrPreview) {
+            // Inside preview iframe or cloud dev preview: Unregister SW and purge old cache so live preview updates immediately
+            if (navigator.serviceWorker.getRegistrations) {
+              navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for (var i = 0; i < registrations.length; i++) {
+                  registrations[i].unregister();
+                }
+              }).catch(function() {});
             }
-          });
-          if ('caches' in window) {
-            caches.keys().then((keys) => {
-              for (const key of keys) {
-                caches.delete(key);
-              }
+            if ('caches' in window) {
+              caches.keys().then(function(keys) {
+                for (var i = 0; i < keys.length; i++) {
+                  caches.delete(keys[i]);
+                }
+              }).catch(function() {});
+            }
+          } else {
+            // Standalone production PWA / Android APK WebView
+            window.addEventListener('load', function() {
+              navigator.serviceWorker.register('/sw.js')
+                .then(function(reg) {
+                  console.log('ShramikLinks Service Worker active:', reg.scope);
+                  if (reg.update) reg.update();
+                })
+                .catch(function(err) {
+                  console.warn('SW registration skipped (common in local APK webviews):', err);
+                });
             });
           }
-        } else {
-          // Standalone app / direct tab: Register Service Worker with auto-update
-          window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js')
-              .then((reg) => {
-                console.log('ShramikLinks Service Worker registered:', reg.scope);
-                reg.update();
-              })
-              .catch((err) => {
-                console.error('ShramikLinks Service Worker registration failed:', err);
-              });
-          });
         }
+      } catch (err) {
+        console.warn('SW initialization guard:', err);
       }
     </script>
   </body>

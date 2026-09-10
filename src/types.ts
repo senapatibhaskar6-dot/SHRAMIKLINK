@@ -1,4 +1,4 @@
-export type UserRole = 'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector';
+export type UserRole = 'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector' | 'tea_garden';
 
 export interface Industry {
   id: string;
@@ -180,3 +180,87 @@ export interface AppFeedback {
   feedbackText: string;
   createdAt: string;
 }
+
+export interface TeaGardenEstate {
+  id: string;
+  estateName: string;
+  district: string;
+  regNo: string;
+  totalAcreage: number;
+  pluckingSections: string[];
+}
+
+export interface TeaGardenSardar {
+  id: string;
+  name: string;
+  gangNo: string;
+  phone: string;
+  assignedSection: string;
+  estateId: string;
+  estateName: string;
+  workerCount: number;
+}
+
+export interface TeaGardenPluckingEntry {
+  id: string;
+  date: string;
+  estateId: string;
+  estateName: string;
+  sardarId: string;
+  sardarName: string;
+  gangNo: string;
+  section: string;
+  workerId: string;
+  workerName: string;
+  tokenNo: string;
+  taskType: 'Plucking' | 'Pruning' | 'Hoeing' | 'Factory-Processing';
+  grossLeafKg: number;
+  leafDeductionKg: number;
+  netLeafKg: number;
+  haziraBaseKg: number;
+  ticcaKg: number;
+  haziraWage: number;
+  ticcaRatePerKg: number;
+  ticcaEarned: number;
+  totalWageToday: number;
+  status: 'Logged-By-Sardar' | 'Approved-By-Supervisor' | 'Muster-Locked';
+  supervisorApprovedBy?: string;
+  approvedAt?: string;
+}
+
+export interface TeaGardenBonusAgreement {
+  year: number;
+  estateId: string;
+  estateName: string;
+  unionName: string;
+  tripartiteAgreementNo: string;
+  negotiatedBonusPercentage: number;
+  settlementDate: string;
+  effectiveFrom: string;
+  festivalType: 'Durga Puja Pre-Bonus' | 'Diwali Bonus' | 'Annual Statutory';
+  totalEligibleWorkers: number;
+  totalDisbursementAmount: number;
+  status: 'Agreed-Tripartite' | 'Disbursed';
+}
+
+export interface TeaGardenWorker {
+  id: string;
+  name: string;
+  tokenNo: string;
+  estateId: string;
+  estateName: string;
+  sardarId: string;
+  sardarName: string;
+  gangNo: string;
+  section: string;
+  phone?: string;
+  aadhaarHash?: string;
+  gender: 'Female' | 'Male';
+  taskCategory: 'Plucker' | 'Pruner' | 'Factory-Hand' | 'General';
+  dailyHaziraLeafKg: number;
+  haziraWageRate: number;
+  ticcaRatePerKg: number;
+  status: 'Active' | 'On-Leave';
+  joinedDate: string;
+}
+

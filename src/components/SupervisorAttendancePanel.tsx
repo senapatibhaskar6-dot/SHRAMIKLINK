@@ -463,6 +463,18 @@ export const SupervisorAttendancePanel: React.FC<SupervisorAttendancePanelProps>
               </>
             )}
 
+            {/* Tea Garden Sardar & Plucking Ledger Link */}
+            <button
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('open-tea-garden'));
+              }}
+              className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-bold text-xs px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
+              title="চাহ বাগিচা চৰ্দাৰ পেনেল আৰু ডিজিটেল হাজিৰা বহী"
+            >
+              <span>🍃</span>
+              <span>চাহ বাগিচা চৰ্দাৰ বহী (Tea Garden Ledger)</span>
+            </button>
+
             <button
               onClick={() => {
                 setNewSupType(deskMode === 'contractor' ? 'contractor' : 'industry');
