@@ -344,11 +344,11 @@ export default function MobileSingleView({
       {/* 1. Mobile App Top Header */}
       <header className="bg-slate-950 px-4 py-3 border-b border-slate-800 flex items-center justify-between sticky top-0 z-30 shadow-md">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-white p-0.5 flex items-center justify-center shadow-xs border border-white/20">
+          <div className="w-8 h-8 rounded-lg bg-slate-950 overflow-hidden flex items-center justify-center shadow-xs border border-emerald-500/40">
             <img 
               src={logoUrl} 
               alt="ShramikLinks" 
-              className="w-full h-full object-contain"
+              className="w-full h-full object-cover"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = '/shramiklinks_logo.jpg';
               }}

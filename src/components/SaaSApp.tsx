@@ -2245,12 +2245,14 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
             
             {/* Logo (Left side) */}
             <div className="flex-1 flex justify-center md:justify-start w-full md:w-auto">
-              <div className="relative group w-9 h-9 md:w-11 md:h-11 bg-white p-1 rounded-xl flex items-center justify-center border border-white shadow-md hover:scale-105 transition-transform duration-300">
-                <TransparentImage 
+              <div className="relative group w-10 h-10 md:w-12 md:h-12 bg-slate-950 rounded-xl overflow-hidden flex items-center justify-center border border-emerald-500/50 shadow-lg hover:scale-105 transition-transform duration-300">
+                <img 
                   src={logoUrl} 
                   alt="ShramikLinks Official Logo" 
-                  className="w-full h-full object-contain"
-                  threshold={195}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/shramiklinks_logo.jpg';
+                  }}
                 />
               </div>
             </div>

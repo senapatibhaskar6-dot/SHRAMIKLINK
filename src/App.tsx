@@ -96,11 +96,11 @@ export default function App() {
         <nav className="bg-slate-900 text-white flex justify-between items-center h-14 shrink-0 z-40 border-b border-slate-800 shadow-sm px-3 md:px-5">
           {/* Brand Logo & Name */}
           <div className="flex items-center gap-2.5 mr-2 sm:mr-6 shrink-0">
-            <div className="w-8 h-8 rounded-lg bg-white p-0.5 flex items-center justify-center shadow-xs border border-white/20">
+            <div className="w-8 h-8 rounded-lg bg-slate-950 overflow-hidden flex items-center justify-center shadow-xs border border-emerald-500/40">
               <img 
                 src={logoUrl} 
                 alt="ShramikLinks Logo" 
-                className="w-full h-full object-contain"
+                className="w-full h-full object-cover"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = '/shramiklinks_logo.jpg';
                 }}
