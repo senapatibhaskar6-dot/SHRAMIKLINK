@@ -1,10 +1,12 @@
-const CACHE_NAME = 'shramiklinks-v3';
+const CACHE_NAME = 'shramiklinks-v4';
 const ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/pwa-192x192.png',
-  '/pwa-512x512.png'
+  '/pwa-512x512.png',
+  '/pwa-maskable-512x512.png',
+  '/icon.png'
 ];
 
 self.addEventListener('install', (event) => {

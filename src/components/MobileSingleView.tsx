@@ -25,10 +25,12 @@ import {
   UserPlus,
   Phone,
   CreditCard,
-  Hash
+  Hash,
+  Scale
 } from 'lucide-react';
 import { AppLanguage, TRANSLATIONS } from '../i18n';
 import { LanguageSelector } from './LanguageSelector';
+import GovernmentSeparationModal from './GovernmentSeparationModal';
 import logoUrl from '../assets/images/shramiklink_logo_1788402038953.jpg';
 
 interface MobileSingleViewProps {
@@ -81,6 +83,7 @@ export default function MobileSingleView({
 
   // Sector Selection: Tea Garden vs Manufacturing Industry
   const [selectedSector, setSelectedSector] = useState<'tea_garden' | 'manufacturing'>('tea_garden');
+  const [isGovModalOpen, setIsGovModalOpen] = useState(false);
 
   // Active Role Tab: 'contractor' (Hajira/Plucking), 'register' (New Worker Onboarding), 'worker', 'supervisor', 'bonus'
   const [mobileTab, setMobileTab] = useState<'contractor' | 'register' | 'worker' | 'supervisor' | 'bonus'>('contractor');
@@ -341,26 +344,42 @@ export default function MobileSingleView({
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col font-sans max-w-md mx-auto relative shadow-2xl overflow-x-hidden pb-20">
       
-      {/* 1. Mobile App Top Header */}
-      <header className="bg-slate-950 px-4 py-3 border-b border-slate-800 flex items-center justify-between sticky top-0 z-30 shadow-md">
+      {/* 1. Mobile App Top Header (Displays Standalone App Name) */}
+      <header className={`px-4 py-3 border-b flex items-center justify-between sticky top-0 z-30 shadow-md transition-colors ${
+        selectedSector === 'tea_garden'
+          ? 'bg-emerald-950 border-emerald-800/80 text-emerald-100'
+          : 'bg-slate-950 border-indigo-900/60 text-indigo-100'
+      }`}>
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-slate-950 overflow-hidden flex items-center justify-center shadow-xs border border-emerald-500/40">
-            <img 
-              src={logoUrl} 
-              alt="ShramikLinks" 
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/shramiklinks_logo.jpg';
-              }}
-            />
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-xs border ${
+            selectedSector === 'tea_garden'
+              ? 'bg-emerald-900 border-emerald-400/50 text-emerald-300'
+              : 'bg-indigo-950 border-indigo-500/50 text-indigo-300'
+          }`}>
+            {selectedSector === 'tea_garden' ? (
+              <Sprout className="h-5 w-5 text-emerald-400" />
+            ) : (
+              <Factory className="h-5 w-5 text-indigo-400" />
+            )}
           </div>
           <div>
-            <div className="text-sm font-black text-white flex items-center gap-1">
-              Shramik<span className="text-orange-500">Links</span>
-              <span className="text-[9px] bg-emerald-500/20 text-emerald-300 font-bold px-1.5 py-0.2 rounded-full border border-emerald-500/30">মোবাইল</span>
+            <div className="text-sm font-black text-white flex items-center gap-1.5">
+              {selectedSector === 'tea_garden' ? (
+                <>
+                  <span>বাগান-লিংক</span>
+                  <span className="text-emerald-400 font-normal text-xs font-mono">BaganLink</span>
+                  <span className="text-[9px] bg-emerald-500/20 text-emerald-300 font-bold px-1.5 py-0.2 rounded-full border border-emerald-500/30">PLA</span>
+                </>
+              ) : (
+                <>
+                  <span>উদ্যোগ-লিংক</span>
+                  <span className="text-indigo-400 font-normal text-xs font-mono">UdyogLink</span>
+                  <span className="text-[9px] bg-indigo-500/20 text-indigo-300 font-bold px-1.5 py-0.2 rounded-full border border-indigo-500/30">CLRA</span>
+                </>
+              )}
             </div>
-            <div className="text-[10px] text-slate-400 font-medium">
-              {selectedSector === 'tea_garden' ? 'মৰনৈ চাহ বাগিচা (Mornoi TE)' : 'টাটা মটৰছ / কামৰূপ ইণ্ডাষ্ট্ৰীজ'}
+            <div className="text-[10px] text-slate-300 font-medium">
+              {selectedSector === 'tea_garden' ? 'মৰনৈ চাহ বাগিচা • ATPO/APF ব’ৰ্ড' : 'কামৰূপ কাৰখানা মণ্ডল • EPFO/ESIC'}
             </div>
           </div>
         </div>
@@ -385,8 +404,8 @@ export default function MobileSingleView({
       {/* 2. Dual Sector Toggle Bar (Chah Bagicha vs General Manufacturing) */}
       <div className="bg-slate-950 px-3.5 py-2.5 border-b border-slate-800">
         <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1.5 flex items-center justify-between">
-          <span>কাৰ্যক্ষেত্ৰ নিৰ্বাচন (Choose Sector):</span>
-          <span className="text-emerald-400 font-normal">২ টা সুকীয়া খণ্ড</span>
+          <span>দ্বৈত আইনগত পোৰ্টেল নিৰ্বাচন (Choose Autonomous Portal):</span>
+          <span className="text-emerald-400 font-mono text-[9px]">100% Isolated</span>
         </div>
 
         <div className="grid grid-cols-2 gap-2 bg-slate-900 p-1 rounded-2xl border border-slate-800">
@@ -395,14 +414,17 @@ export default function MobileSingleView({
               setSelectedSector('tea_garden');
               setRegisteredSuccessProfile(null);
             }}
-            className={`py-2 px-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            className={`py-2 px-2 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer ${
               selectedSector === 'tea_garden'
                 ? 'bg-emerald-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            <Sprout className="h-3.5 w-3.5" />
-            <span>🍃 চাহ বাগিচা (Tea)</span>
+            <div className="flex items-center gap-1.5">
+              <Sprout className="h-3.5 w-3.5" />
+              <span>🌿 বাগান-লিংক</span>
+            </div>
+            <span className="text-[9px] opacity-80 font-normal">Organised PLA 1951</span>
           </button>
 
           <button
@@ -410,16 +432,28 @@ export default function MobileSingleView({
               setSelectedSector('manufacturing');
               setRegisteredSuccessProfile(null);
             }}
-            className={`py-2 px-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            className={`py-2 px-2 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer ${
               selectedSector === 'manufacturing'
-                ? 'bg-emerald-600 text-white shadow-md'
+                ? 'bg-indigo-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            <Factory className="h-3.5 w-3.5" />
-            <span>🏭 কাৰখানা (Industry)</span>
+            <div className="flex items-center gap-1.5">
+              <Factory className="h-3.5 w-3.5" />
+              <span>🏭 উদ্যোগ-লিংক</span>
+            </div>
+            <span className="text-[9px] opacity-80 font-normal">Unorganised CLRA</span>
           </button>
         </div>
+
+        {/* Official Government Brief Button for Mobile */}
+        <button
+          onClick={() => setIsGovModalOpen(true)}
+          className="w-full mt-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 border border-amber-500/40 text-amber-300 font-bold py-1.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer"
+        >
+          <Scale className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+          <span>🏛️ চৰকাৰী অডিট ও আইনগত বিভাজন প্ৰতিবেদন</span>
+        </button>
       </div>
 
       {/* Toast Notification */}
@@ -1760,6 +1794,15 @@ export default function MobileSingleView({
           <span className="text-[9px]">বোনাছ</span>
         </button>
       </div>
+
+      {/* Official Government Separation Modal */}
+      <GovernmentSeparationModal 
+        isOpen={isGovModalOpen}
+        onClose={() => setIsGovModalOpen(false)}
+        onSelectPortal={(portal) => {
+          setSelectedSector(portal === 'tea_garden' ? 'tea_garden' : 'manufacturing');
+        }}
+      />
 
     </div>
   );

@@ -12,6 +12,64 @@ import {
 export default function ArchitectureDocs() {
   return (
     <div className="space-y-12">
+      {/* Dual Statutory Autonomous Suite Architecture (Government & Compliance Inspectorate Brief) */}
+      <section className="bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-2xl p-6 sm:p-8 border border-slate-800 shadow-xl space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="bg-emerald-500/20 text-emerald-400 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-500/30 uppercase tracking-wide">
+                Official Statutory Architecture
+              </span>
+              <span className="text-slate-400 text-xs font-mono">PLA 1951 vs CLRA 1970 Isolation</span>
+            </div>
+            <h3 className="text-xl sm:text-2xl font-black text-white mt-1.5 flex items-center gap-2">
+              <span>🏛️ দ্বৈত সুকীয়া আইনী সংৰচনা (Dual Statutory Autonomous Suites)</span>
+            </h3>
+          </div>
+          <div className="text-xs text-slate-400 bg-slate-800/80 px-3 py-2 rounded-xl border border-slate-700 font-mono">
+            Status: Zero Data Cross-Contamination
+          </div>
+        </div>
+
+        <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-4xl">
+          To comply strictly with the directives of the <strong>Labour Commissionerate and Plantation Inspectorates of Assam</strong>, ShramikLinks enforces strict <strong>operational, algorithmic, and database isolation</strong> between Organised Tea Plantation Labour and Unorganised / Floating Industrial Contract Labour.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* Suite 1 */}
+          <div className="bg-slate-900/90 border border-emerald-500/40 rounded-xl p-5 space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+              <span className="font-bold text-emerald-300 text-sm">🌿 ১. বাগান-লিংক (BaganLink - Organised Sector)</span>
+              <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-mono">Assam PLA</span>
+            </div>
+            <ul className="text-xs text-slate-300 space-y-1.5">
+              <li>• <strong>Statutory Act:</strong> Plantations Labour Act (PLA), 1951 & Assam Rules 1956.</li>
+              <li>• <strong>Workforce:</strong> Highly Organised Permanent & Basti Pluckers under ACMS / Garden Unions.</li>
+              <li>• <strong>Wage Metric:</strong> Green Leaf (Kg) + Daily Hazira Task + Ticca Over-Task rate.</li>
+              <li>• <strong>Provident Fund:</strong> <strong>ATPO / APF</strong> (Assam Tea Employees Provident Fund Organization, Guwahati).</li>
+              <li>• <strong>Annual Bonus:</strong> Pre-Puja Tripartite Agreement (Estate Management + ACMS + Labour Dept).</li>
+              <li>• <strong>Field Operations:</strong> Digital Mohori & Chah Sardar Gang Plucking Ledger ("Hajira Bahi").</li>
+            </ul>
+          </div>
+
+          {/* Suite 2 */}
+          <div className="bg-slate-900/90 border border-indigo-500/40 rounded-xl p-5 space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+              <span className="font-bold text-indigo-300 text-sm">🏭 ২. উদ্যোগ-লিংক (UdyogLink - Unorganised Sector)</span>
+              <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded font-mono">Central CLRA</span>
+            </div>
+            <ul className="text-xs text-slate-300 space-y-1.5">
+              <li>• <strong>Statutory Act:</strong> Factories Act, 1948 & CLRA Act, 1970.</li>
+              <li>• <strong>Workforce:</strong> Unorganised / Floating Contract Manpower supplied by Manpower Vendors.</li>
+              <li>• <strong>Wage Metric:</strong> 8-Hour Shift Hazira + 2x Overtime under Factories Act Section 59.</li>
+              <li>• <strong>Provident Fund & ESI:</strong> <strong>EPFO & ESIC</strong> (Central Ministry of Labour, New Delhi).</li>
+              <li>• <strong>Annual Bonus:</strong> Payment of Bonus Act, 1965 (8.33% to 20% on Balance Sheet).</li>
+              <li>• <strong>Compliance Lock:</strong> Zero-tolerance Vendor Invoice lock until EPFO/ESIC remittance verified.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
       {/* Executive Overview */}
       <section className="bg-slate-50 border border-slate-200/80 rounded-xl p-8 shadow-sm">
         <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center gap-2">

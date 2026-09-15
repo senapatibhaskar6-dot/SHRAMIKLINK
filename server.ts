@@ -43,13 +43,16 @@ app.get("/sw.js", (req: any, res: any) => {
 });
 
 // Enable CORS for all PWA icons to allow external scanners like PWABuilder to download them safely
-app.get(["/pwa-192x192.png", "/pwa-512x512.png", "/apple-touch-icon.png", "/icon.png", "/favicon.ico"], (req: any, res: any) => {
+app.get(["/pwa-192x192.png", "/pwa-512x512.png", "/pwa-maskable-512x512.png", "/apple-touch-icon.png", "/icon.png", "/favicon.ico"], (req: any, res: any) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   const filename = path.basename(req.path);
   if (filename === "icon.png") {
     res.setHeader("Content-Type", "image/png");
     res.sendFile(path.join(process.cwd(), "public", "pwa-512x512.png"));
+  } else if (filename === "pwa-maskable-512x512.png") {
+    res.setHeader("Content-Type", "image/png");
+    res.sendFile(path.join(process.cwd(), "public", "pwa-maskable-512x512.png"));
   } else if (filename === "favicon.ico") {
     res.setHeader("Content-Type", "image/x-icon");
     res.sendFile(path.join(process.cwd(), "public", "pwa-192x192.png"));
