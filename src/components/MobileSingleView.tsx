@@ -1,54 +1,29 @@
 import React, { useState } from 'react';
 import { 
-  Sprout, 
   Factory,
   User, 
   CheckCircle2, 
   Clock, 
   Award, 
-  DollarSign, 
   Laptop, 
-  ChevronRight, 
   Plus, 
   Check, 
   FileText, 
   ShieldCheck, 
-  Calendar,
-  Building,
-  Sparkles,
-  Layers,
-  ArrowUpRight,
-  HardHat,
-  Briefcase,
-  QrCode,
-  AlertCircle,
-  UserPlus,
-  Phone,
-  CreditCard,
-  Hash,
+  HardHat, 
+  Briefcase, 
+  QrCode, 
+  UserPlus, 
   Scale
 } from 'lucide-react';
 import { AppLanguage, TRANSLATIONS } from '../i18n';
 import { LanguageSelector } from './LanguageSelector';
 import GovernmentSeparationModal from './GovernmentSeparationModal';
-import logoUrl from '../assets/images/shramiklink_logo_1788402038953.jpg';
 
 interface MobileSingleViewProps {
   currentLang: AppLanguage;
   onLanguageChange: (lang: AppLanguage) => void;
   onSwitchToFullDesktop: () => void;
-}
-
-interface QuickPluckingItem {
-  id: string;
-  workerName: string;
-  tokenNo: string;
-  grossKg: number;
-  netKg: number;
-  ticcaKg: number;
-  totalWage: number;
-  status: 'Approved' | 'Pending';
-  time: string;
 }
 
 interface QuickShiftItem {
@@ -81,108 +56,16 @@ export default function MobileSingleView({
 }: MobileSingleViewProps) {
   const t = TRANSLATIONS[currentLang];
 
-  // Sector Selection: Tea Garden vs Manufacturing Industry
-  const [selectedSector, setSelectedSector] = useState<'tea_garden' | 'manufacturing'>('tea_garden');
   const [isGovModalOpen, setIsGovModalOpen] = useState(false);
 
-  // Active Role Tab: 'contractor' (Hajira/Plucking), 'register' (New Worker Onboarding), 'worker', 'supervisor', 'bonus'
+  // Active Role Tab: 'contractor' (Attendance / Shift Entry), 'register' (New Worker Onboarding), 'worker', 'supervisor', 'bonus'
   const [mobileTab, setMobileTab] = useState<'contractor' | 'register' | 'worker' | 'supervisor' | 'bonus'>('contractor');
   
   // Toast State
   const [showSuccessToast, setShowSuccessToast] = useState<string | null>(null);
 
-  // Wage Slip Modals
-  const [showTeaSlip, setShowTeaSlip] = useState<boolean>(false);
+  // Wage Slip Modal
   const [showIndustrySlip, setShowIndustrySlip] = useState<boolean>(false);
-
-  // ==========================================
-  // TEA GARDEN DATA & STATE
-  // ==========================================
-  const [selectedWorkerToken, setSelectedWorkerToken] = useState<string>('TK-402');
-  const [leafWeightInput, setLeafWeightInput] = useState<string>('31.5');
-  const [teaBonusPercent, setTeaBonusPercent] = useState<number>(20);
-  const [teaWorkerCount, setTeaWorkerCount] = useState<number>(450);
-
-  const [teaWorkers, setTeaWorkers] = useState<WorkerProfile[]>([
-    { token: 'TK-402', name: 'সুনীতা কৰ্মকাৰ (Sunita Karmakar)', sectionOrTrade: 'Section 4A', uan: '101488921044', esic: '1319082341', phone: '9864012984', gender: 'মহিলা' },
-    { token: 'TK-403', name: 'লক্ষী তাঁতী (Lakhi Tanti)', sectionOrTrade: 'Section 4A', uan: '101488921092', esic: '1319082377', phone: '9864012985', gender: 'মহিলা' },
-    { token: 'TK-404', name: 'ৰূপালী ওৰাং (Rupali Orang)', sectionOrTrade: 'Section 4A', uan: '101488921133', esic: '1319082390', phone: '9864012986', gender: 'মহিলা' },
-    { token: 'TK-405', name: 'মাধৱী ভূমিজ (Madhavi Bhumij)', sectionOrTrade: 'Section 4A', uan: '101488921155', esic: '1319082412', phone: '9864012987', gender: 'মহিলা' },
-  ]);
-
-  const [teaEntries, setTeaEntries] = useState<QuickPluckingItem[]>([
-    {
-      id: 'p-1',
-      workerName: 'সুনীতা কৰ্মকাৰ',
-      tokenNo: 'TK-402',
-      grossKg: 33.5,
-      netKg: 31.5,
-      ticcaKg: 7.5,
-      totalWage: 283.75,
-      status: 'Approved',
-      time: '11:30 AM'
-    },
-    {
-      id: 'p-2',
-      workerName: 'লক্ষী তাঁতী',
-      tokenNo: 'TK-403',
-      grossKg: 38.0,
-      netKg: 36.0,
-      ticcaKg: 12.0,
-      totalWage: 304.00,
-      status: 'Approved',
-      time: '11:45 AM'
-    },
-    {
-      id: 'p-3',
-      workerName: 'ৰূপালী ওৰাং',
-      tokenNo: 'TK-404',
-      grossKg: 28.5,
-      netKg: 27.0,
-      ticcaKg: 3.0,
-      totalWage: 263.50,
-      status: 'Pending',
-      time: '12:10 PM'
-    }
-  ]);
-
-  const haziraQuota = 24; // 24 kg standard
-  const haziraRate = 250; // ₹250/day
-  const ticcaRate = 4.50; // ₹4.50/kg
-
-  const currentNetKg = parseFloat(leafWeightInput) || 0;
-  const currentTiccaKg = Math.max(0, currentNetKg - haziraQuota);
-  const currentTiccaEarned = currentTiccaKg * ticcaRate;
-  const currentTeaTotalWage = haziraRate + currentTiccaEarned;
-
-  const handleAddTeaEntry = (e: React.FormEvent) => {
-    e.preventDefault();
-    const workerObj = teaWorkers.find(w => w.token === selectedWorkerToken);
-    if (!workerObj || currentNetKg <= 0) return;
-
-    const newEntry: QuickPluckingItem = {
-      id: `p-${Date.now()}`,
-      workerName: workerObj.name.split(' (')[0],
-      tokenNo: workerObj.token,
-      grossKg: currentNetKg + 1.5,
-      netKg: currentNetKg,
-      ticcaKg: currentTiccaKg,
-      totalWage: currentTeaTotalWage,
-      status: 'Pending',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-
-    setTeaEntries([newEntry, ...teaEntries]);
-    setShowSuccessToast(`${workerObj.token} (${workerObj.name.split(' (')[0]}) ৰ পাত ওজন সফলভাৱে জমা হ’ল!`);
-    setTimeout(() => setShowSuccessToast(null), 3500);
-    setLeafWeightInput('29.0');
-  };
-
-  const handleApproveTeaEntry = (id: string) => {
-    setTeaEntries(teaEntries.map(item => item.id === id ? { ...item, status: 'Approved' } : item));
-    setShowSuccessToast(`হাজিৰা অনুমোদন সম্পন্ন হ’ল!`);
-    setTimeout(() => setShowSuccessToast(null), 3000);
-  };
 
   // ==========================================
   // MANUFACTURING INDUSTRY DATA & STATE
@@ -277,9 +160,9 @@ export default function MobileSingleView({
   // ==========================================
   const [regName, setRegName] = useState<string>('');
   const [regPhone, setRegPhone] = useState<string>('');
-  const [regGender, setRegGender] = useState<string>('মহিলা');
+  const [regGender, setRegGender] = useState<string>('পুৰুষ');
   const [regAge, setRegAge] = useState<string>('26');
-  const [regSectionOrTrade, setRegSectionOrTrade] = useState<string>('Section 4A (পাত তোলা)');
+  const [regSectionOrTrade, setRegSectionOrTrade] = useState<string>('CNC Machine Operator');
   const [regAadhaarLast4, setRegAadhaarLast4] = useState<string>('5842');
   const [regUan, setRegUan] = useState<string>('');
   const [regEsic, setRegEsic] = useState<string>('');
@@ -290,51 +173,27 @@ export default function MobileSingleView({
     e.preventDefault();
     if (!regName.trim()) return;
 
-    if (selectedSector === 'tea_garden') {
-      const nextTokenNum = 400 + teaWorkers.length + 2;
-      const generatedToken = `TK-${nextTokenNum}`;
-      const generatedUan = regUan.trim() || `1014889${Math.floor(10000 + Math.random() * 90000)}`;
-      const generatedEsic = regEsic.trim() || `131908${Math.floor(1000 + Math.random() * 9000)}`;
+    const nextEmpNum = 108 + indWorkers.length;
+    const generatedToken = `EMP-${nextEmpNum}`;
+    const generatedUan = regUan.trim() || `1019948${Math.floor(10000 + Math.random() * 90000)}`;
+    const generatedEsic = regEsic.trim() || `139928${Math.floor(1000 + Math.random() * 9000)}`;
 
-      const newWorker: WorkerProfile = {
-        token: generatedToken,
-        name: `${regName.trim()} (${generatedToken})`,
-        sectionOrTrade: regSectionOrTrade || 'Section 4A',
-        uan: generatedUan,
-        esic: generatedEsic,
-        phone: regPhone || '98640XXXXX',
-        gender: regGender,
-        bankAcc: regBankAcc
-      };
+    const newWorker: WorkerProfile = {
+      token: generatedToken,
+      name: `${regName.trim()} (${generatedToken})`,
+      sectionOrTrade: regSectionOrTrade || 'CNC Machine Operator',
+      uan: generatedUan,
+      esic: generatedEsic,
+      phone: regPhone || '98640XXXXX',
+      gender: regGender,
+      bankAcc: regBankAcc
+    };
 
-      setTeaWorkers([...teaWorkers, newWorker]);
-      setSelectedWorkerToken(newWorker.token);
-      setRegisteredSuccessProfile(newWorker);
-      setShowSuccessToast(`নৱ-পঞ্জীকৃত শ্ৰমিক ${newWorker.token} (${regName}) সফলভাৱে যোগ কৰা হ’ল!`);
-      setTimeout(() => setShowSuccessToast(null), 4000);
-    } else {
-      const nextEmpNum = 108 + indWorkers.length;
-      const generatedToken = `EMP-${nextEmpNum}`;
-      const generatedUan = regUan.trim() || `1019948${Math.floor(10000 + Math.random() * 90000)}`;
-      const generatedEsic = regEsic.trim() || `139928${Math.floor(1000 + Math.random() * 9000)}`;
-
-      const newWorker: WorkerProfile = {
-        token: generatedToken,
-        name: `${regName.trim()} (${generatedToken})`,
-        sectionOrTrade: regSectionOrTrade || 'CNC Operator',
-        uan: generatedUan,
-        esic: generatedEsic,
-        phone: regPhone || '98640XXXXX',
-        gender: regGender,
-        bankAcc: regBankAcc
-      };
-
-      setIndWorkers([...indWorkers, newWorker]);
-      setSelectedIndWorkerToken(newWorker.token);
-      setRegisteredSuccessProfile(newWorker);
-      setShowSuccessToast(`কাৰখানা শ্ৰমিক ${newWorker.token} (${regName}) ৰ CLRA পঞ্জীয়ন সফল হ’ল!`);
-      setTimeout(() => setShowSuccessToast(null), 4000);
-    }
+    setIndWorkers([...indWorkers, newWorker]);
+    setSelectedIndWorkerToken(newWorker.token);
+    setRegisteredSuccessProfile(newWorker);
+    setShowSuccessToast(`কাৰখানা শ্ৰমিক ${newWorker.token} (${regName}) ৰ CLRA পঞ্জীয়ন সফল হ’ল!`);
+    setTimeout(() => setShowSuccessToast(null), 4000);
 
     // Reset Form
     setRegName('');
@@ -344,42 +203,20 @@ export default function MobileSingleView({
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col font-sans max-w-md mx-auto relative shadow-2xl overflow-x-hidden pb-20">
       
-      {/* 1. Mobile App Top Header (Displays Standalone App Name) */}
-      <header className={`px-4 py-3 border-b flex items-center justify-between sticky top-0 z-30 shadow-md transition-colors ${
-        selectedSector === 'tea_garden'
-          ? 'bg-emerald-950 border-emerald-800/80 text-emerald-100'
-          : 'bg-slate-950 border-indigo-900/60 text-indigo-100'
-      }`}>
+      {/* 1. Mobile App Top Header (Pure Industry / Factory Standalone) */}
+      <header className="px-4 py-3 border-b flex items-center justify-between sticky top-0 z-30 shadow-md bg-slate-950 border-indigo-900/60 text-indigo-100">
         <div className="flex items-center gap-2.5">
-          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-xs border ${
-            selectedSector === 'tea_garden'
-              ? 'bg-emerald-900 border-emerald-400/50 text-emerald-300'
-              : 'bg-indigo-950 border-indigo-500/50 text-indigo-300'
-          }`}>
-            {selectedSector === 'tea_garden' ? (
-              <Sprout className="h-5 w-5 text-emerald-400" />
-            ) : (
-              <Factory className="h-5 w-5 text-indigo-400" />
-            )}
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-xs border bg-indigo-950 border-indigo-500/50 text-indigo-300">
+            <Factory className="h-5 w-5 text-indigo-400" />
           </div>
           <div>
             <div className="text-sm font-black text-white flex items-center gap-1.5">
-              {selectedSector === 'tea_garden' ? (
-                <>
-                  <span>বাগান-লিংক</span>
-                  <span className="text-emerald-400 font-normal text-xs font-mono">BaganLink</span>
-                  <span className="text-[9px] bg-emerald-500/20 text-emerald-300 font-bold px-1.5 py-0.2 rounded-full border border-emerald-500/30">PLA</span>
-                </>
-              ) : (
-                <>
-                  <span>উদ্যোগ-লিংক</span>
-                  <span className="text-indigo-400 font-normal text-xs font-mono">UdyogLink</span>
-                  <span className="text-[9px] bg-indigo-500/20 text-indigo-300 font-bold px-1.5 py-0.2 rounded-full border border-indigo-500/30">CLRA</span>
-                </>
-              )}
+              <span>শ্ৰমিক-লিংক</span>
+              <span className="text-indigo-400 font-normal text-xs font-mono">ShramikLink Industry</span>
+              <span className="text-[9px] bg-indigo-500/20 text-indigo-300 font-bold px-1.5 py-0.2 rounded-full border border-indigo-500/30">CLRA</span>
             </div>
             <div className="text-[10px] text-slate-300 font-medium">
-              {selectedSector === 'tea_garden' ? 'মৰনৈ চাহ বাগিচা • ATPO/APF ব’ৰ্ড' : 'কামৰূপ কাৰখানা মণ্ডল • EPFO/ESIC'}
+              কামৰূপ কাৰখানা মণ্ডল • EPFO/ESIC সংৰক্ষিত
             </div>
           </div>
         </div>
@@ -401,58 +238,14 @@ export default function MobileSingleView({
         </div>
       </header>
 
-      {/* 2. Dual Sector Toggle Bar (Chah Bagicha vs General Manufacturing) */}
-      <div className="bg-slate-950 px-3.5 py-2.5 border-b border-slate-800">
-        <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1.5 flex items-center justify-between">
-          <span>দ্বৈত আইনগত পোৰ্টেল নিৰ্বাচন (Choose Autonomous Portal):</span>
-          <span className="text-emerald-400 font-mono text-[9px]">100% Isolated</span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 bg-slate-900 p-1 rounded-2xl border border-slate-800">
-          <button
-            onClick={() => {
-              setSelectedSector('tea_garden');
-              setRegisteredSuccessProfile(null);
-            }}
-            className={`py-2 px-2 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer ${
-              selectedSector === 'tea_garden'
-                ? 'bg-emerald-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <div className="flex items-center gap-1.5">
-              <Sprout className="h-3.5 w-3.5" />
-              <span>🌿 বাগান-লিংক</span>
-            </div>
-            <span className="text-[9px] opacity-80 font-normal">Organised PLA 1951</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setSelectedSector('manufacturing');
-              setRegisteredSuccessProfile(null);
-            }}
-            className={`py-2 px-2 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer ${
-              selectedSector === 'manufacturing'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <div className="flex items-center gap-1.5">
-              <Factory className="h-3.5 w-3.5" />
-              <span>🏭 উদ্যোগ-লিংক</span>
-            </div>
-            <span className="text-[9px] opacity-80 font-normal">Unorganised CLRA</span>
-          </button>
-        </div>
-
-        {/* Official Government Brief Button for Mobile */}
+      {/* Official Government Brief Button for Mobile */}
+      <div className="bg-slate-950 px-3.5 py-2 border-b border-slate-800">
         <button
           onClick={() => setIsGovModalOpen(true)}
-          className="w-full mt-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 border border-amber-500/40 text-amber-300 font-bold py-1.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer"
+          className="w-full bg-gradient-to-r from-indigo-500/20 to-blue-500/20 hover:from-indigo-500/30 border border-indigo-500/40 text-indigo-300 font-bold py-1.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer"
         >
-          <Scale className="h-3.5 w-3.5 text-amber-400 shrink-0" />
-          <span>🏛️ চৰকাৰী অডিট ও আইনগত বিভাজন প্ৰতিবেদন</span>
+          <Scale className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
+          <span>🏛️ ঔদ্যোগিক শ্ৰম আইন ও বিধি সংৰচনা (Factories Act & CLRA)</span>
         </button>
       </div>
 
@@ -464,26 +257,24 @@ export default function MobileSingleView({
         </div>
       )}
 
-      {/* 3. Role Picker Tabs (Thumb-Friendly, 5 Roles with Direct Registration!) */}
+      {/* 2. Role Picker Tabs (Thumb-Friendly, 5 Roles for Industrial Ecosystem) */}
       <div className="p-2.5 bg-slate-950 border-b border-slate-800/80">
         <div className="grid grid-cols-5 gap-1 bg-slate-900 p-1 rounded-2xl border border-slate-800">
           
-          {/* Tab 1: Hajira (Contractor/Sardar) */}
+          {/* Tab 1: Hajira (Contractor / Thekedar) */}
           <button
             onClick={() => setMobileTab('contractor')}
             className={`py-2 px-0.5 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
               mobileTab === 'contractor'
-                ? 'bg-emerald-600 text-white shadow-md'
+                ? 'bg-indigo-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            {selectedSector === 'tea_garden' ? <Sprout className="h-3.5 w-3.5" /> : <HardHat className="h-3.5 w-3.5" />}
-            <span className="text-[9px] whitespace-nowrap">
-              {selectedSector === 'tea_garden' ? 'চৰ্দাৰ' : 'ঠিকাদাৰ'}
-            </span>
+            <HardHat className="h-3.5 w-3.5" />
+            <span className="text-[9px] whitespace-nowrap">ঠিকাদাৰ</span>
           </button>
 
-          {/* Tab 2: DIRECT REGISTRATION PANEL (Requested by User!) */}
+          {/* Tab 2: DIRECT REGISTRATION PANEL */}
           <button
             onClick={() => setMobileTab('register')}
             className={`py-2 px-0.5 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
@@ -501,7 +292,7 @@ export default function MobileSingleView({
             onClick={() => setMobileTab('worker')}
             className={`py-2 px-0.5 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
               mobileTab === 'worker'
-                ? 'bg-emerald-600 text-white shadow-md'
+                ? 'bg-indigo-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -514,7 +305,7 @@ export default function MobileSingleView({
             onClick={() => setMobileTab('supervisor')}
             className={`py-2 px-0.5 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
               mobileTab === 'supervisor'
-                ? 'bg-emerald-600 text-white shadow-md'
+                ? 'bg-indigo-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -527,7 +318,7 @@ export default function MobileSingleView({
             onClick={() => setMobileTab('bonus')}
             className={`py-2 px-0.5 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
               mobileTab === 'bonus'
-                ? 'bg-emerald-600 text-white shadow-md'
+                ? 'bg-indigo-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -537,11 +328,11 @@ export default function MobileSingleView({
         </div>
       </div>
 
-      {/* 4. MAIN CONTENT AREA */}
-      <div className="p-3.5 space-y-4">
+      {/* 3. MAIN CONTENT AREA */}
+      <div className="flex-1 p-3.5 space-y-4">
 
         {/* ========================================================= */}
-        {/* TAB: DIRECT MOBILE WORKER REGISTRATION (নতুুন শ্ৰমিক পঞ্জীয়ন)*/}
+        {/* DIRECT WORKER REGISTRATION TAB (ON-SPOT ONBOARDING)       */}
         {/* ========================================================= */}
         {mobileTab === 'register' && (
           <div className="space-y-4 animate-in fade-in duration-200">
@@ -554,10 +345,10 @@ export default function MobileSingleView({
                 </div>
                 <div>
                   <h3 className="text-xs font-black text-white">
-                    {selectedSector === 'tea_garden' ? 'চাহ শ্ৰমিক দ্ৰুত পঞ্জীয়ন' : 'কাৰখানা শ্ৰমিক দ্ৰুত পঞ্জীয়ন'}
+                    কাৰখানা শ্ৰমিক দ্ৰুত পঞ্জীয়ন (Factory Onboarding)
                   </h3>
                   <div className="text-[10px] text-amber-300 font-semibold">
-                    {selectedSector === 'tea_garden' ? 'চৰ্দাৰ গেং #০৭ &bull; বাগিচা লাইন এন্ট্ৰি' : 'CLRA Form XIII &bull; Apex Manpower'}
+                    CLRA Form XIII &bull; Apex Manpower Solutions
                   </div>
                 </div>
               </div>
@@ -609,11 +400,7 @@ export default function MobileSingleView({
                   <button
                     onClick={() => {
                       setMobileTab('contractor');
-                      if (selectedSector === 'tea_garden') {
-                        setSelectedWorkerToken(registeredSuccessProfile.token);
-                      } else {
-                        setSelectedIndWorkerToken(registeredSuccessProfile.token);
-                      }
+                      setSelectedIndWorkerToken(registeredSuccessProfile.token);
                     }}
                     className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-2.5 rounded-xl text-[11px] flex items-center justify-center gap-1 cursor-pointer shadow-md active:scale-95"
                   >
@@ -634,9 +421,9 @@ export default function MobileSingleView({
             <div className="bg-slate-800/90 border border-slate-700 p-4 rounded-2xl shadow-lg space-y-3.5">
               <div className="border-b border-slate-700/80 pb-2">
                 <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider block">
-                  {selectedSector === 'tea_garden' ? 'Plantations Labour Act Onboarding' : 'CLRA Form XIII & Factories Act'}
+                  CLRA Form XIII & Factories Act Onboarding
                 </span>
-                <h3 className="text-xs font-black text-white mt-0.5">নতুন শ্ৰমিকৰ তথ্য অন্তৰ্ভুক্ত কৰক</h3>
+                <h3 className="text-xs font-black text-white mt-0.5">নতুন কাৰখানা শ্ৰমিকৰ তথ্য অন্তৰ্ভুক্ত কৰক</h3>
               </div>
 
               <form onSubmit={handleRegisterWorkerSubmit} className="space-y-3">
@@ -650,7 +437,7 @@ export default function MobileSingleView({
                     required
                     value={regName}
                     onChange={(e) => setRegName(e.target.value)}
-                    placeholder={selectedSector === 'tea_garden' ? 'যেনে: বিমলা তাঁতী / ৰামেশ্বৰ ঘাটোৱাৰ' : 'যেনে: ৰমেন কলিতা / বিকাশ শইকীয়া'}
+                    placeholder="যেনে: ৰমেন কলিতা / বিকাশ শইকীয়া"
                     className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs font-bold text-white placeholder-slate-500 focus:outline-hidden focus:border-amber-500"
                   />
                 </div>
@@ -682,8 +469,8 @@ export default function MobileSingleView({
                       onChange={(e) => setRegGender(e.target.value)}
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs font-bold text-white focus:outline-hidden focus:border-amber-500 cursor-pointer"
                     >
-                      <option value="মহিলা">মহিলা (Female)</option>
                       <option value="পুৰুষ">পুৰুষ (Male)</option>
+                      <option value="মহিলা">মহিলা (Female)</option>
                       <option value="অন্যান্য">অন্যান্য (Other)</option>
                     </select>
                   </div>
@@ -692,32 +479,19 @@ export default function MobileSingleView({
                 {/* 3. Section / Trade */}
                 <div>
                   <label className="text-[11px] font-bold text-slate-300 block mb-1">
-                    {selectedSector === 'tea_garden' ? 'বাগিচাৰ ছেকচন / লাইন (Section & Line):' : 'কাৰখানাৰ কামৰ ট্ৰেড (Trade / Section):'}
+                    কাৰখানাৰ কামৰ ট্ৰেড (Trade / Section):
                   </label>
-                  {selectedSector === 'tea_garden' ? (
-                    <select
-                      value={regSectionOrTrade}
-                      onChange={(e) => setRegSectionOrTrade(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-hidden focus:border-amber-500 cursor-pointer"
-                    >
-                      <option value="Section 4A (পাত তোলা)">Section 4A (পাত তোলা - Plucking)</option>
-                      <option value="Section 2B (প্ৰুনিং / কটা)">Section 2B (প্ৰুনিং / কটা - Pruning)</option>
-                      <option value="Section 1C (নিৰানি / Hoeing)">Section 1C (নিৰানি - Hoeing)</option>
-                      <option value="Line 12 (গেং #০৭)">Line 12 (চৰ্দাৰ মীনা মুণ্ডা গেং)</option>
-                    </select>
-                  ) : (
-                    <select
-                      value={regSectionOrTrade}
-                      onChange={(e) => setRegSectionOrTrade(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-hidden focus:border-amber-500 cursor-pointer"
-                    >
-                      <option value="CNC Machine Operator">CNC Machine Operator (মেচিন অপাৰেটৰ)</option>
-                      <option value="Fitter / Welder">Fitter / Welder (ফিটাৰ / ৱেল্ডাৰ)</option>
-                      <option value="Material Handler">Material Handler (লোডিং / আনলোডিং)</option>
-                      <option value="Assembly Line Technician">Assembly Line Technician (সংযোজন)</option>
-                      <option value="General Helper">General Helper (সাধাৰণ সহায়ক)</option>
-                    </select>
-                  )}
+                  <select
+                    value={regSectionOrTrade}
+                    onChange={(e) => setRegSectionOrTrade(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-hidden focus:border-amber-500 cursor-pointer"
+                  >
+                    <option value="CNC Machine Operator">CNC Machine Operator (মেচিন অপাৰেটৰ)</option>
+                    <option value="Fitter / Welder">Fitter / Welder (ফিটাৰ / ৱেল্ডাৰ)</option>
+                    <option value="Material Handler">Material Handler (লোডিং / আনলোডিং)</option>
+                    <option value="Assembly Line Technician">Assembly Line Technician (সংযোজন)</option>
+                    <option value="General Helper">General Helper (সাধাৰণ সহায়ক)</option>
+                  </select>
                 </div>
 
                 {/* 4. Aadhaar and EPF UAN */}
@@ -785,12 +559,12 @@ export default function MobileSingleView({
             {/* Currently Registered Workers List */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs font-bold text-slate-300 px-1">
-                <span>পঞ্জীকৃত শ্ৰমিকৰ তালিকা ({selectedSector === 'tea_garden' ? teaWorkers.length : indWorkers.length} জন)</span>
+                <span>পঞ্জীকৃত কাৰখানা শ্ৰমিকৰ তালিকা ({indWorkers.length} জন)</span>
                 <span className="text-[10px] text-amber-400 font-mono">লাইভ ডাটাবেচ</span>
               </div>
 
               <div className="space-y-1.5">
-                {(selectedSector === 'tea_garden' ? teaWorkers : indWorkers).map((w) => (
+                {indWorkers.map((w) => (
                   <div key={w.token} className="bg-slate-800/80 border border-slate-700/60 p-2.5 rounded-xl flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2.5">
                       <div className="w-7 h-7 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center font-mono font-bold text-amber-400 text-[10px]">
@@ -813,367 +587,9 @@ export default function MobileSingleView({
         )}
 
         {/* ========================================================= */}
-        {/* SECTOR A: TEA GARDEN (চাৰ বাগান)                            */}
+        {/* GENERAL MANUFACTURING INDUSTRY (ঔদ্যোগিক কাৰখানা)          */}
         {/* ========================================================= */}
-        {selectedSector === 'tea_garden' && mobileTab !== 'register' && (
-          <>
-            {/* 1. SARDAR PANEL */}
-            {mobileTab === 'contractor' && (
-              <div className="space-y-4 animate-in fade-in duration-200">
-                <div className="bg-slate-800/90 border border-slate-700/80 p-3.5 rounded-2xl shadow-md flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-black">
-                      <Sprout className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-white">মীনা মুণ্ডা (Mina Munda)</div>
-                      <div className="text-[10px] text-emerald-400 font-semibold">গেং #০৭ &bull; ছেকচন ৪এ (উত্তৰ)</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[10px] text-slate-400 uppercase font-bold">আজিৰ কোটা</div>
-                    <div className="text-xs font-black text-amber-400">২৪ কেজি (₹২৫০)</div>
-                  </div>
-                </div>
-
-                {/* Quick Registration Shortcut Button */}
-                <button
-                  onClick={() => setMobileTab('register')}
-                  className="w-full bg-amber-950/70 hover:bg-amber-900 border border-amber-500/40 p-2.5 rounded-xl text-xs font-bold text-amber-300 flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-98 transition-all"
-                >
-                  <UserPlus className="h-4 w-4 text-amber-400" />
-                  <span>+ নতুন চাহ শ্ৰমিক পঞ্জীয়ন কৰক (Register New Worker)</span>
-                </button>
-
-                {/* Plucking Form */}
-                <div className="bg-slate-800/90 border border-slate-700 p-4 rounded-2xl shadow-lg space-y-3.5">
-                  <div className="flex items-center justify-between border-b border-slate-700/80 pb-2">
-                    <h3 className="text-xs font-black text-white flex items-center gap-1.5">
-                      <Plus className="h-4 w-4 text-emerald-400" />
-                      <span>দ্ৰুত পাত ওজন এণ্ট্ৰি (Quick Leaf Weighing)</span>
-                    </h3>
-                    <span className="text-[10px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full font-mono font-bold">
-                      টিক্কা: ₹৪.৫০/কেজি
-                    </span>
-                  </div>
-
-                  <form onSubmit={handleAddTeaEntry} className="space-y-3">
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-300 block mb-1">
-                        শ্ৰমিক বাছক (Worker Token & Name):
-                      </label>
-                      <select
-                        value={selectedWorkerToken}
-                        onChange={(e) => setSelectedWorkerToken(e.target.value)}
-                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-bold focus:outline-hidden focus:border-emerald-500 cursor-pointer"
-                      >
-                        {teaWorkers.map((w) => (
-                          <option key={w.token} value={w.token}>
-                            {w.token} &bull; {w.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-300 block mb-1">
-                        পাতেৰে ভৰা ওজন (Net Green Leaf in Kg):
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          step="0.5"
-                          min="1"
-                          value={leafWeightInput}
-                          onChange={(e) => setLeafWeightInput(e.target.value)}
-                          className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-base font-black text-emerald-300 focus:outline-hidden focus:border-emerald-500"
-                          placeholder="e.g. 32.5"
-                          required
-                        />
-                        <span className="absolute right-3 top-3 text-xs font-bold text-slate-400">কেজি (KG)</span>
-                      </div>
-                    </div>
-
-                    <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 grid grid-cols-3 gap-2 text-center text-[10px]">
-                      <div className="bg-slate-900/60 p-1.5 rounded-lg">
-                        <span className="text-slate-400 block">মূল হাজিৰা</span>
-                        <strong className="text-white font-mono">₹{haziraRate}</strong>
-                      </div>
-                      <div className="bg-slate-900/60 p-1.5 rounded-lg">
-                        <span className="text-slate-400 block">টিক্কা ({currentTiccaKg.toFixed(1)}kg)</span>
-                        <strong className="text-amber-400 font-mono">+₹{currentTiccaEarned.toFixed(2)}</strong>
-                      </div>
-                      <div className="bg-emerald-950/80 border border-emerald-500/30 p-1.5 rounded-lg">
-                        <span className="text-emerald-300 font-bold block">মুঠ মজুৰি</span>
-                        <strong className="text-emerald-400 font-black font-mono text-xs">₹{currentTeaTotalWage.toFixed(2)}</strong>
-                      </div>
-                    </div>
-
-                    <button
-                      type="submit"
-                      className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-3 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer shadow-lg active:scale-98 transition-all"
-                    >
-                      <Check className="h-4 w-4" />
-                      <span>পাত ওজন জমা কৰক (Submit Leaf Entry)</span>
-                    </button>
-                  </form>
-                </div>
-
-                {/* Today's Logged Entries */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-slate-300 px-1">
-                    <span>আজিৰ পাত জোখ তালিকা ({teaEntries.length} জন শ্ৰমিক)</span>
-                    <span className="text-[10px] text-emerald-400 font-mono">মুঠ: {teaEntries.reduce((acc, curr) => acc + curr.netKg, 0).toFixed(1)} kg</span>
-                  </div>
-
-                  <div className="space-y-2">
-                    {teaEntries.map((item) => (
-                      <div key={item.id} className="bg-slate-800/80 border border-slate-700/60 p-3 rounded-xl flex items-center justify-between text-xs">
-                        <div>
-                          <div className="font-bold text-white flex items-center gap-1.5">
-                            <span className="text-emerald-400 font-mono">{item.tokenNo}</span>
-                            <span>{item.workerName}</span>
-                          </div>
-                          <div className="text-[10px] text-slate-400 font-mono mt-0.5">
-                            পাত: <strong className="text-slate-200">{item.netKg} kg</strong> (টিক্কা: +{item.ticcaKg}kg) &bull; {item.time}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-mono font-black text-emerald-300">₹{item.totalWage.toFixed(2)}</div>
-                          <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold inline-block mt-0.5 ${
-                            item.status === 'Approved'
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                              : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                          }`}>
-                            {item.status === 'Approved' ? 'অনুমোদিত' : 'অপেক্ষমান'}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 2. TEA WORKER VIEW */}
-            {mobileTab === 'worker' && (
-              <div className="space-y-4 animate-in fade-in duration-200">
-                <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 p-4 rounded-2xl shadow-xl space-y-3 relative overflow-hidden">
-                  <div className="flex items-center justify-between border-b border-slate-700/80 pb-2.5">
-                    <div>
-                      <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">চাহ শ্ৰমিক ডিজিটেল পাছ</span>
-                      <h3 className="text-sm font-black text-white">সুনীতা কৰ্মকাৰ (Sunita Karmakar)</h3>
-                      <span className="text-[10px] text-emerald-400 font-mono font-bold">টোকেন নং: TK-402</span>
-                    </div>
-                    <div className="bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1">
-                      <CheckCircle2 className="h-3 w-3" />
-                      <span>উপস্থিত (Present)</span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="bg-slate-950/70 p-2.5 rounded-xl border border-slate-800">
-                      <span className="text-[10px] text-slate-400 block">আজি সংগৃহীত পাত</span>
-                      <div className="text-base font-black text-emerald-300 font-mono mt-0.5">৩১.৫ কেজি</div>
-                      <span className="text-[9px] text-amber-400 font-semibold">+৭.৫ কেজি ওভাৰ-কোটা (টিক্কা)</span>
-                    </div>
-
-                    <div className="bg-slate-950/70 p-2.5 rounded-xl border border-slate-800">
-                      <span className="text-[10px] text-slate-400 block">আজিৰ মুঠ মজুৰি</span>
-                      <div className="text-base font-black text-white font-mono mt-0.5">₹২৮৩.৭৫</div>
-                      <span className="text-[9px] text-emerald-400 font-semibold">হাজিৰা ₹২৫০ + টিক্কা ₹৩৩.৭৫</span>
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-950/90 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between text-[10px]">
-                    <div className="flex items-center gap-1.5 text-slate-300">
-                      <ShieldCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                      <span>EPF UAN: <strong className="text-white font-mono">101488921044</strong></span>
-                    </div>
-                    <span className="text-emerald-400 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded-md">প্ৰমাণীকৃত</span>
-                  </div>
-
-                  {/* Annual Bonus Passbook Card for Worker */}
-                  <div className="bg-gradient-to-r from-amber-950/90 to-slate-900 border border-amber-500/40 p-3 rounded-xl flex items-center justify-between shadow-xs">
-                    <div>
-                      <div className="flex items-center gap-1">
-                        <Award className="h-3 w-3 text-amber-400" />
-                        <span className="text-[9px] uppercase font-black text-amber-400">বাৰ্ষিক পূজা বোনাছ (Yearly Bonus)</span>
-                      </div>
-                      <div className="text-xs font-black text-white mt-0.5 font-mono">₹১৮,২৪০.০০ <span className="text-[10px] text-emerald-400 font-normal">(২০% সৰ্বোচ্চ হাৰ)</span></div>
-                      <span className="text-[9px] text-slate-300 block mt-0.5">📅 বছৰত ১ বাৰ: দুৰ্গাপূজাৰ পূৰ্বে একাউণ্টত প্ৰত্যক্ষ জমা</span>
-                    </div>
-                    <div className="bg-amber-500/20 text-amber-300 px-2 py-1 rounded-lg text-[9px] font-bold border border-amber-500/40 shrink-0 text-center">
-                      অনুমোদিত<br/>(Approved)
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => setShowTeaSlip(true)}
-                    className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 border border-slate-600 cursor-pointer active:scale-98 transition-all"
-                  >
-                    <FileText className="h-3.5 w-3.5 text-emerald-400" />
-                    <span>ডিজিটেল মজুৰি স্লিপ চাওক (View Wage Slip)</span>
-                  </button>
-                </div>
-
-                <div className="bg-slate-800/70 border border-slate-700/60 p-3.5 rounded-2xl text-xs space-y-2">
-                  <h4 className="font-bold text-white flex items-center gap-1.5 text-[11px]">
-                    <Award className="h-3.5 w-3.5 text-amber-400" />
-                    <span>প্লাণ্টেশ্যন এক্ট অনুসৰি লাভালাভ (Plantation Entitlements)</span>
-                  </h4>
-                  <ul className="text-[10px] text-slate-300 space-y-1.5">
-                    <li className="flex items-center gap-1.5">
-                      <Check className="h-3 w-3 text-emerald-400" />
-                      <span>বিনামূলীয়া বাগিচা স্বাস্থ্যসেৱা আৰু প্ৰাথমিক ঔষধ (Free Medical)</span>
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <Check className="h-3 w-3 text-emerald-400" />
-                      <span>বাৰ্ষিক ২০% দুৰ্গাপূজা ত্ৰিপাক্ষিক বোনাছ প্ৰাপ্য (ACMS Agreement)</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            )}
-
-            {/* 3. TEA SUPERVISOR VIEW */}
-            {mobileTab === 'supervisor' && (
-              <div className="space-y-4 animate-in fade-in duration-200">
-                <div className="bg-slate-800/90 border border-slate-700 p-3.5 rounded-2xl flex items-center justify-between">
-                  <div>
-                    <h3 className="text-xs font-black text-white">ডিজিটেল হাজিৰা বহী (Field Approval)</h3>
-                    <span className="text-[10px] text-slate-400">ফিল্ড ছুপাৰভাইজাৰ: দেৱজিত ফুকন</span>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setTeaEntries(teaEntries.map(item => ({ ...item, status: 'Approved' })));
-                      setShowSuccessToast(`সকলো শ্ৰমিকৰ হাজিৰা অনুমোদিত হ’ল!`);
-                      setTimeout(() => setShowSuccessToast(null), 3000);
-                    }}
-                    className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-[10px] px-3 py-1.5 rounded-xl cursor-pointer shadow-xs active:scale-95"
-                  >
-                    সকলো অনুমোদন
-                  </button>
-                </div>
-
-                <div className="space-y-2">
-                  {teaEntries.map((item) => (
-                    <div key={item.id} className="bg-slate-800/90 border border-slate-700 p-3 rounded-xl flex items-center justify-between text-xs">
-                      <div>
-                        <div className="font-bold text-white flex items-center gap-1.5">
-                          <span className="text-emerald-400 font-mono">{item.tokenNo}</span>
-                          <span>{item.workerName}</span>
-                        </div>
-                        <div className="text-[10px] text-slate-400 font-mono mt-0.5">
-                          পাত: <strong className="text-white">{item.netKg} kg</strong> &bull; মজুৰি: <strong className="text-emerald-300">₹{item.totalWage.toFixed(2)}</strong>
-                        </div>
-                      </div>
-
-                      {item.status === 'Approved' ? (
-                        <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2.5 py-1 rounded-full border border-emerald-500/30 flex items-center gap-1">
-                          <Check className="h-3 w-3" />
-                          <span>অনুমোদিত</span>
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() => handleApproveTeaEntry(item.id)}
-                          className="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold px-3 py-1 rounded-lg cursor-pointer active:scale-95 transition-all shadow-xs"
-                        >
-                          অনুমোদন কৰক
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 4. TEA TRIPARTITE BONUS VIEW */}
-            {mobileTab === 'bonus' && (
-              <div className="space-y-4 animate-in fade-in duration-200">
-                <div className="bg-gradient-to-br from-amber-950/60 to-slate-900 border border-amber-500/30 p-4 rounded-2xl shadow-xl space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">অসম চাহ বাগিচা ত্ৰিপাক্ষিক চুক্তি</span>
-                    <span className="text-[9px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full font-bold border border-amber-500/40">২০২৬ পূজা বোনাছ</span>
-                  </div>
-                  <h3 className="text-sm font-black text-white">দুৰ্গাপূজা বোনাছ বন্দোৱস্ত (২০% সৰ্বোচ্চ)</h3>
-                  <p className="text-[11px] text-slate-300 leading-relaxed">
-                    অসম চাহ মজদুৰ সংঘ (ACMS), বাগান মালিক সন্থা (ABITA/NETA) আৰু শ্ৰম বিভাগৰ যৌথ স্বাক্ষৰিত বোনাছ চুক্তি।
-                  </p>
-
-                  <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800 space-y-2.5">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-slate-400">শ্ৰমিকৰ সংখ্যা:</span>
-                      <strong className="text-white font-mono">{teaWorkerCount} জন</strong>
-                    </div>
-                    <input 
-                      type="range" 
-                      min="50" 
-                      max="1200" 
-                      step="25"
-                      value={teaWorkerCount} 
-                      onChange={(e) => setTeaWorkerCount(parseInt(e.target.value))}
-                      className="w-full accent-emerald-500 cursor-pointer"
-                    />
-
-                    <div className="flex justify-between text-xs">
-                      <span className="text-slate-400">বোনাছৰ হাৰ:</span>
-                      <strong className="text-emerald-400 font-mono">{teaBonusPercent}%</strong>
-                    </div>
-
-                    <div className="border-t border-slate-800 pt-2 flex justify-between items-center text-xs">
-                      <span className="text-slate-300 font-bold">এজন শ্ৰমিকৰ বোনাছ:</span>
-                      <strong className="text-amber-400 font-mono font-black text-sm">₹১৮,২৪০</strong>
-                    </div>
-
-                    <div className="border-t border-slate-800 pt-1 flex justify-between items-center text-xs">
-                      <span className="text-slate-300 font-bold">মুঠ বাৰ্ষিক বোনাছ পুঁজি:</span>
-                      <strong className="text-emerald-400 font-mono font-black text-sm">
-                        ₹{((teaWorkerCount * 18240) / 100000).toFixed(2)} লাখ
-                      </strong>
-                    </div>
-                  </div>
-
-                  {/* Yearly Bonus Note */}
-                  <div className="bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl text-[11px] text-amber-200 flex items-start gap-2">
-                    <Award className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                    <div>
-                      <strong className="block text-amber-300 font-bold">বাৰ্ষিক বোনাছৰ হিচাপ (Annual Bonus Settlement):</strong>
-                      এই বোনাছ বছৰত এবাৰ মাত্ৰ দুৰ্গাপূজাৰ সময়ত বিগত ১২ মাহৰ উপাৰ্জনৰ ওপৰত ভিত্তি কৰি এককালীন বিতৰণ কৰা হয়।
-                    </div>
-                  </div>
-
-                  {/* Stakeholder Transparency Card */}
-                  <div className="bg-slate-800/80 border border-slate-700 p-3 rounded-xl space-y-2 text-[11px]">
-                    <div className="font-bold text-white flex items-center gap-1.5">
-                      <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-                      <span>কোনে কি দেখা পাব? (Stakeholder Transparency)</span>
-                    </div>
-                    <ul className="text-[10px] text-slate-300 space-y-1.5">
-                      <li className="flex items-start gap-1.5">
-                        <span className="text-emerald-400 font-bold">● শ্ৰমিক:</span>
-                        <span>নিজৰ টোকেনত বাৰ্ষিক ₹১৮,২৪০ বোনাছ প্ৰাপ্য আৰু বেংক ক্ৰেডিটৰ অনুমোদন চাব পাৰিব।</span>
-                      </li>
-                      <li className="flex items-start gap-1.5">
-                        <span className="text-amber-400 font-bold">● মেনেজমেন্ট / HR:</span>
-                        <span>সমগ্ৰ বাগিচাৰ মুঠ বাৰ্ষিক বোনাছ পুঁজি (₹{((teaWorkerCount * 18240) / 100000).toFixed(2)} লাখ) আৰু ত্ৰিপাক্ষিক চনদ চাব পাৰিব।</span>
-                      </li>
-                      <li className="flex items-start gap-1.5">
-                        <span className="text-blue-400 font-bold">● চৰ্দাৰ:</span>
-                        <span>নিজৰ গেঙৰ শ্ৰমিকসকলৰ তালিকা আৰু কাৰ কিমান বোনাছ অনুমোদন হ’ল নিৰীক্ষণ কৰিব পাৰিব।</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* ========================================================= */}
-        {/* SECTOR B: GENERAL MANUFACTURING INDUSTRY (ঔদ্যোগিক কাৰখানা)  */}
-        {/* ========================================================= */}
-        {selectedSector === 'manufacturing' && mobileTab !== 'register' && (
+        {mobileTab !== 'register' && (
           <>
             {/* 1. FACTORY CONTRACTOR (Thekedar) DESK */}
             {mobileTab === 'contractor' && (
@@ -1450,7 +866,7 @@ export default function MobileSingleView({
                           <span>{item.workerName}</span>
                         </div>
                         <div className="text-[10px] text-slate-400 font-mono mt-0.5">
-                          {item.shift} &bull; OT: <strong className="text-amber-300">{item.otHours}h</strong> &bull; মজুৰি: <strong className="text-emerald-300">₹{item.totalWage}</strong>
+                          {item.shift} &bull; OT: <strong className="text-amber-300">{item.otHours} hrs</strong> &bull; {item.time}
                         </div>
                       </div>
 
@@ -1470,36 +886,31 @@ export default function MobileSingleView({
                     </div>
                   ))}
                 </div>
-
-                <div className="bg-slate-950 border border-slate-800 p-3 rounded-xl text-center text-[10px] text-slate-400 flex items-center justify-center gap-1.5">
-                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                  <span>গে'ট পাছ ডিজিটেলভাৱে ভেৰিফাই কৰা হৈছে &bull; শূন্য প্ৰক্সি হাজিৰা (Zero Proxy)</span>
-                </div>
               </div>
             )}
 
-            {/* 4. INDUSTRIAL BONUS ACT (Payment of Bonus Act, 1965) */}
+            {/* 4. ANNUAL STATUTORY BONUS VIEW */}
             {mobileTab === 'bonus' && (
               <div className="space-y-4 animate-in fade-in duration-200">
                 <div className="bg-gradient-to-br from-blue-950/60 to-slate-900 border border-blue-500/30 p-4 rounded-2xl shadow-xl space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">Payment of Bonus Act, 1965</span>
-                    <span className="text-[9px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full font-bold border border-blue-500/40">কাৰখানা বোনাছ</span>
+                    <span className="text-[9px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full font-bold border border-blue-500/40">বাৰ্ষিক বোনাছ কেম্বেল</span>
                   </div>
-                  <h3 className="text-sm font-black text-white">ঔদ্যোগিক বিধিবদ্ধ বোনাছ (Statutory Bonus)</h3>
+                  <h3 className="text-sm font-black text-white">বিধিবদ্ধ বাৰ্ষিক বোনাছ (৮.৩৩% - ২০%)</h3>
                   <p className="text-[11px] text-slate-300 leading-relaxed">
-                    ভাৰতীয় উদ্যোগিক কাৰখানা আইন অনুসৰি শ্ৰমিকক বাৰ্ষিক ৮.৩৩% (ন্যূনতম) ৰ পৰা ২০% (সৰ্বোচ্চ) লৈকে প্ৰতিষ্ঠানৰ লাভৰ ওপৰত বোনাছ প্ৰদান কৰা বাধ্যতামূলক।
+                    ভাৰতীয় ঔদ্যোগিক আইন অনুসৰি কাৰখানা শ্ৰমিকসকলৰ বছৰেকীয়া উপাৰ্জনৰ ওপৰত নিৰ্ধাৰিত বাৰ্ষিক বোনাছ হিচাপ।
                   </p>
 
                   <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800 space-y-2.5">
                     <div className="flex justify-between text-xs">
-                      <span className="text-slate-400">কাৰখানাৰ শ্ৰমিক সংখ্যা:</span>
+                      <span className="text-slate-400">কাৰখানাৰ শ্ৰমিকৰ সংখ্যা:</span>
                       <strong className="text-white font-mono">{indWorkerCount} জন</strong>
                     </div>
                     <input 
                       type="range" 
-                      min="20" 
-                      max="600" 
+                      min="50" 
+                      max="1000" 
                       step="10"
                       value={indWorkerCount} 
                       onChange={(e) => setIndWorkerCount(parseInt(e.target.value))}
@@ -1507,10 +918,11 @@ export default function MobileSingleView({
                     />
 
                     <div className="flex justify-between text-xs">
-                      <span className="text-slate-400">বোনাছৰ শতাংশ (8.33% - 20%):</span>
-                      <strong className="text-blue-400 font-mono font-bold">{indBonusPercent}%</strong>
+                      <span className="text-slate-400">ঘোষিত বোনাছৰ শতাংশ:</span>
+                      <strong className="text-blue-400 font-mono">{indBonusPercent}%</strong>
                     </div>
-                    <div className="flex gap-2">
+
+                    <div className="flex gap-1.5 pt-1">
                       <button
                         onClick={() => setIndBonusPercent(8.33)}
                         className={`flex-1 py-1 text-[10px] font-bold rounded-lg cursor-pointer border ${
@@ -1606,68 +1018,7 @@ export default function MobileSingleView({
       </div>
 
       {/* ========================================================= */}
-      {/* MODAL 1: TEA GARDEN WAGE SLIP                             */}
-      {/* ========================================================= */}
-      {showTeaSlip && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl text-xs animate-in zoom-in-95">
-            <div className="border-b border-slate-800 pb-3 flex justify-between items-start">
-              <div>
-                <div className="text-[10px] uppercase font-bold text-slate-400">ডিজিটেল মজুৰি স্লিপ (Pay Slip)</div>
-                <h3 className="text-sm font-black text-white">মৰনৈ চাহ বাগিচা (Mornoi TE)</h3>
-                <span className="text-[10px] text-emerald-400 font-mono">মাহ: ছেপ্টেম্বৰ ২০২৬ &bull; ফৰ্ম ১১</span>
-              </div>
-              <button
-                onClick={() => setShowTeaSlip(false)}
-                className="text-slate-400 hover:text-white p-1 text-base font-bold cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-1.5 text-[11px]">
-              <div className="flex justify-between py-1 border-b border-slate-800">
-                <span className="text-slate-400">শ্ৰমিকৰ নাম:</span>
-                <strong className="text-white">সুনীতা কৰ্মকাৰ</strong>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-800">
-                <span className="text-slate-400">টোকেন নং:</span>
-                <strong className="text-emerald-400 font-mono">TK-402</strong>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-800">
-                <span className="text-slate-400">মুঠ উপস্থিত দিন:</span>
-                <strong className="text-white font-mono">২৬ দিন</strong>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-800">
-                <span className="text-slate-400">মূল হাজিৰা (Basic):</span>
-                <strong className="text-white font-mono">₹৬,৫০০.০০</strong>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-800">
-                <span className="text-slate-400">অতিৰিক্ত পাত টিক্কা (Ticca):</span>
-                <strong className="text-amber-400 font-mono">+₹১,০৮২.৫০</strong>
-              </div>
-              <div className="flex justify-between py-1.5 bg-emerald-950/60 px-2 rounded-lg border border-emerald-500/30">
-                <span className="text-emerald-300 font-bold">মুঠ প্ৰাপ্য মজুৰি (Net):</span>
-                <strong className="text-emerald-400 font-black font-mono text-sm">₹৭,৫৮২.৫০</strong>
-              </div>
-            </div>
-
-            <div className="text-[9px] text-slate-400 text-center font-mono">
-              EPF UAN: 101488921044 &bull; ESIC: 1319082341
-            </div>
-
-            <button
-              onClick={() => setShowTeaSlip(false)}
-              className="w-full bg-emerald-500 text-slate-950 font-black py-2.5 rounded-xl cursor-pointer"
-            >
-              বন্ধ কৰক (Close Slip)
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================= */}
-      {/* MODAL 2: INDUSTRIAL FACTORY WAGE SLIP (CLRA Form XIX)     */}
+      {/* INDUSTRIAL FACTORY WAGE SLIP (CLRA Form XIX)              */}
       {/* ========================================================= */}
       {showIndustrySlip && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
@@ -1692,11 +1043,11 @@ export default function MobileSingleView({
                 <strong className="text-white">ৰাহুল বৰ্মন (Rahul Barman)</strong>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-800">
-                <span className="text-slate-400">পদবী (Trade):</span>
-                <strong className="text-emerald-400">CNC Machine Operator</strong>
+                <span className="text-slate-400">টোকেন / ID:</span>
+                <strong className="text-emerald-400 font-mono">EMP-108</strong>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-800">
-                <span className="text-slate-400">মুঠ উপস্থিত দিন:</span>
+                <span className="text-slate-400">মুঠ কাৰ্য্যদিৱস:</span>
                 <strong className="text-white font-mono">২৬ দিন (২৬ x ₹৪৮০)</strong>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-800">
@@ -1736,18 +1087,18 @@ export default function MobileSingleView({
         </div>
       )}
 
-      {/* 5. Fixed Bottom Navigation (Mobile Native Bar - 5 Thumb Friendly Icons) */}
+      {/* 4. Fixed Bottom Navigation (Mobile Native Bar - 5 Thumb Friendly Icons) */}
       <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-slate-950 border-t border-slate-800/90 py-2 px-2 flex items-center justify-around z-40 shadow-2xl">
         
-        {/* Hajira / Plucking */}
+        {/* Attendance Punch (Contractor) */}
         <button
           onClick={() => setMobileTab('contractor')}
           className={`flex flex-col items-center gap-0.5 transition-all cursor-pointer ${
-            mobileTab === 'contractor' ? 'text-emerald-400 font-black' : 'text-slate-400'
+            mobileTab === 'contractor' ? 'text-indigo-400 font-black' : 'text-slate-400'
           }`}
         >
-          {selectedSector === 'tea_garden' ? <Sprout className="h-4 w-4" /> : <HardHat className="h-4 w-4" />}
-          <span className="text-[9px]">{selectedSector === 'tea_garden' ? 'চৰ্দাৰ' : 'ঠিকাদাৰ'}</span>
+          <HardHat className="h-4 w-4" />
+          <span className="text-[9px]">ঠিকাদাৰ</span>
         </button>
 
         {/* Direct Registration */}
@@ -1765,7 +1116,7 @@ export default function MobileSingleView({
         <button
           onClick={() => setMobileTab('worker')}
           className={`flex flex-col items-center gap-0.5 transition-all cursor-pointer ${
-            mobileTab === 'worker' ? 'text-emerald-400 font-black' : 'text-slate-400'
+            mobileTab === 'worker' ? 'text-indigo-400 font-black' : 'text-slate-400'
           }`}
         >
           <User className="h-4 w-4" />
@@ -1776,7 +1127,7 @@ export default function MobileSingleView({
         <button
           onClick={() => setMobileTab('supervisor')}
           className={`flex flex-col items-center gap-0.5 transition-all cursor-pointer ${
-            mobileTab === 'supervisor' ? 'text-emerald-400 font-black' : 'text-slate-400'
+            mobileTab === 'supervisor' ? 'text-indigo-400 font-black' : 'text-slate-400'
           }`}
         >
           <CheckCircle2 className="h-4 w-4" />
@@ -1787,7 +1138,7 @@ export default function MobileSingleView({
         <button
           onClick={() => setMobileTab('bonus')}
           className={`flex flex-col items-center gap-0.5 transition-all cursor-pointer ${
-            mobileTab === 'bonus' ? 'text-emerald-400 font-black' : 'text-slate-400'
+            mobileTab === 'bonus' ? 'text-indigo-400 font-black' : 'text-slate-400'
           }`}
         >
           <Award className="h-4 w-4" />
@@ -1799,9 +1150,6 @@ export default function MobileSingleView({
       <GovernmentSeparationModal 
         isOpen={isGovModalOpen}
         onClose={() => setIsGovModalOpen(false)}
-        onSelectPortal={(portal) => {
-          setSelectedSector(portal === 'tea_garden' ? 'tea_garden' : 'manufacturing');
-        }}
       />
 
     </div>

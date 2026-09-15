@@ -21,7 +21,7 @@ import {
 interface GovernmentSeparationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectPortal: (portal: 'tea_garden' | 'app') => void;
+  onSelectPortal?: (portal: 'tea_garden' | 'app') => void;
 }
 
 export default function GovernmentSeparationModal({ 

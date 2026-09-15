@@ -10,8 +10,8 @@ interface PublicMobileLoginProps {
   mobileOtpInput: string;
   setMobileOtpInput: (val: string) => void;
   mobileDetectedName: string | null;
-  mobileSelectedRole: 'tea_garden' | 'contractor' | 'supervisor' | 'worker';
-  setMobileSelectedRole: (val: 'tea_garden' | 'contractor' | 'supervisor' | 'worker') => void;
+  mobileSelectedRole: 'contractor' | 'supervisor' | 'worker';
+  setMobileSelectedRole: (val: 'contractor' | 'supervisor' | 'worker') => void;
   mobileOtpSmsBanner: string | null;
   setMobileOtpSmsBanner: (val: string | null) => void;
   handleSendMobileOtp: (e?: React.FormEvent, directPhone?: string) => void;
@@ -125,25 +125,6 @@ export const PublicMobileLogin: React.FC<PublicMobileLoginProps> = ({
               <div className="grid grid-cols-1 gap-1.5 text-xs">
                 <button
                   type="button"
-                  onClick={() => handleSendMobileOtp(undefined, '9876543214')}
-                  className="text-left p-2 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200/80 hover:border-emerald-300 transition-all flex items-center justify-between group cursor-pointer"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm">🍃</span>
-                    <div>
-                      <div className="font-bold text-slate-800 text-[11px] group-hover:text-emerald-800">
-                        চাহ বাগিচা চৰ্দাৰ (Mina Munda - Mornoi TE)
-                      </div>
-                      <div className="text-[10px] text-slate-500 font-mono">+91 9876543214</div>
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-bold text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                    লগইন &rarr;
-                  </span>
-                </button>
-
-                <button
-                  type="button"
                   onClick={() => handleSendMobileOtp(undefined, '9876543211')}
                   className="text-left p-2 rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200/80 hover:border-indigo-300 transition-all flex items-center justify-between group cursor-pointer"
                 >
@@ -176,6 +157,25 @@ export const PublicMobileLogin: React.FC<PublicMobileLoginProps> = ({
                     </div>
                   </div>
                   <span className="text-[10px] font-bold text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                    লগইন &rarr;
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSendMobileOtp(undefined, '9876543212')}
+                  className="text-left p-2 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200/80 hover:border-emerald-300 transition-all flex items-center justify-between group cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">👤</span>
+                    <div>
+                      <div className="font-bold text-slate-800 text-[11px] group-hover:text-emerald-800">
+                        ঔদ্যোগিক শ্ৰমিক (Gopal Kumar)
+                      </div>
+                      <div className="text-[10px] text-slate-500 font-mono">+91 9876543212</div>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity">
                     লগইন &rarr;
                   </span>
                 </button>
@@ -237,21 +237,9 @@ export const PublicMobileLogin: React.FC<PublicMobileLoginProps> = ({
             {!mobileDetectedName && (
               <div className="space-y-1.5">
                 <label className="block text-[11px] font-bold text-slate-700">
-                  কাৰ্যক্ষেত্ৰ বাছনি কৰক (Select Sector):
+                  কাৰখানাৰ ভূমিকা বাছনি কৰক (Select Industry Role):
                 </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setMobileSelectedRole('tea_garden')}
-                    className={`p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition-all cursor-pointer ${
-                      mobileSelectedRole === 'tea_garden'
-                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
-                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                    }`}
-                  >
-                    <span>🍃 চাহ বাগিচা</span>
-                    <span className="text-[10px] font-normal opacity-90">চৰ্দাৰ / হাজিৰা</span>
-                  </button>
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setMobileSelectedRole('contractor')}
@@ -261,8 +249,32 @@ export const PublicMobileLogin: React.FC<PublicMobileLoginProps> = ({
                         : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                     }`}
                   >
-                    <span>🏭 কাৰখানা</span>
-                    <span className="text-[10px] font-normal opacity-90">কণ্ট্ৰেক্টৰ / শ্ৰমিক</span>
+                    <span>🏢 ঠিকাদাৰ</span>
+                    <span className="text-[10px] font-normal opacity-90">Contractor</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMobileSelectedRole('supervisor')}
+                    className={`p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition-all cursor-pointer ${
+                      mobileSelectedRole === 'supervisor'
+                        ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span>👷 ছুপাৰভাইজাৰ</span>
+                    <span className="text-[10px] font-normal opacity-90">Supervisor</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMobileSelectedRole('worker')}
+                    className={`p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition-all cursor-pointer ${
+                      mobileSelectedRole === 'worker'
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span>👤 শ্ৰমিক</span>
+                    <span className="text-[10px] font-normal opacity-90">Worker</span>
                   </button>
                 </div>
               </div>
