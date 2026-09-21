@@ -15,9 +15,12 @@ export interface Contractor {
   licenseNo: string; // CLRA License Number
   lin: string; // Labour Identification Number
   pan: string;
+  gstin?: string;
   epfCode: string;
   esiCode: string;
   contactNo: string;
+  email?: string;
+  address?: string;
   rating: number;
 }
 
@@ -26,12 +29,15 @@ export interface Worker {
   name: string;
   aadhaarHash: string; // Masked Aadhaar
   phone: string;
-  contractorId: string; // Current assigned Contractor
+  contractorId: string; // Current assigned Contractor or 'direct' for independent
   skillType: 'Unskilled' | 'Semi-Skilled' | 'Skilled' | 'Highly-Skilled';
+  workerType?: 'Unskilled-Laborer' | 'Semi-Skilled-Laborer' | 'Skilled-Technician' | 'Field-Supervisor';
+  sectionOrTrade?: string;
   dailyWageRate: number; // in INR
   status: 'Available' | 'Deployed' | 'On-Leave';
   onboardingVerified: boolean;
   onboardingDate: string;
+  assignedSupervisorId?: string;
 }
 
 export interface MultiIndustryAssignment {
@@ -48,13 +54,65 @@ export interface DailyRequirement {
   id: string;
   industryId: string;
   industryName: string; // Hidden from Worker, visible to Contractor
-  contractorId: string; // Target Contractor (or open to all)
+  contractorId: string; // Target Contractor (or open to all: 'OPEN_POOL' or 'ALL')
   date: string;
   skillType: 'Unskilled' | 'Semi-Skilled' | 'Skilled' | 'Highly-Skilled';
   workersNeeded: number;
+  minWorkersNeeded?: number; // Minimum workers required per contractor application
   workersFulfilled: number;
   shiftTiming: string;
+  dailyWageOffer?: number;
+  description?: string;
   status: 'Open' | 'Fulfilled' | 'Closed';
+}
+
+export interface ContractorApplication {
+  id: string;
+  requirementId: string;
+  industryId: string;
+  industryName: string;
+  contractorId: string;
+  contractorName: string;
+  contractorPhone: string;
+  contractorLicenseNo: string;
+  committedWorkers: number;
+  availablePoolCount: number;
+  proposedWageRate?: number;
+  appliedDate: string;
+  status: 'Pending' | 'Accepted' | 'Rejected';
+  notes?: string;
+}
+
+export interface DirectJobOpening {
+  id: string;
+  industryId: string;
+  industryName: string;
+  location: string;
+  roleTitle: string;
+  skillType: 'Unskilled' | 'Semi-Skilled' | 'Skilled' | 'Highly-Skilled';
+  openingsCount: number;
+  dailyWageRate: number;
+  shiftTiming: string;
+  contactPerson: string;
+  contactPhone: string;
+  postedDate: string;
+  status: 'Open' | 'Closed';
+  description: string;
+}
+
+export interface DirectWorkerApplication {
+  id: string;
+  jobOpeningId: string;
+  industryId: string;
+  industryName: string;
+  workerName: string;
+  phone: string;
+  skillType: string;
+  experienceYears: number;
+  preferredShift: string;
+  appliedDate: string;
+  status: 'Applied' | 'Shortlisted' | 'Accepted' | 'Rejected';
+  notes?: string;
 }
 
 export interface Attendance {
@@ -179,88 +237,5 @@ export interface AppFeedback {
   category: 'Attendance System' | 'CLRA Forms' | 'Bill Audit' | 'Speed & Performance' | 'General Feedback';
   feedbackText: string;
   createdAt: string;
-}
-
-export interface TeaGardenEstate {
-  id: string;
-  estateName: string;
-  district: string;
-  regNo: string;
-  totalAcreage: number;
-  pluckingSections: string[];
-}
-
-export interface TeaGardenSardar {
-  id: string;
-  name: string;
-  gangNo: string;
-  phone: string;
-  assignedSection: string;
-  estateId: string;
-  estateName: string;
-  workerCount: number;
-}
-
-export interface TeaGardenPluckingEntry {
-  id: string;
-  date: string;
-  estateId: string;
-  estateName: string;
-  sardarId: string;
-  sardarName: string;
-  gangNo: string;
-  section: string;
-  workerId: string;
-  workerName: string;
-  tokenNo: string;
-  taskType: 'Plucking' | 'Pruning' | 'Hoeing' | 'Factory-Processing';
-  grossLeafKg: number;
-  leafDeductionKg: number;
-  netLeafKg: number;
-  haziraBaseKg: number;
-  ticcaKg: number;
-  haziraWage: number;
-  ticcaRatePerKg: number;
-  ticcaEarned: number;
-  totalWageToday: number;
-  status: 'Logged-By-Sardar' | 'Approved-By-Supervisor' | 'Muster-Locked';
-  supervisorApprovedBy?: string;
-  approvedAt?: string;
-}
-
-export interface TeaGardenBonusAgreement {
-  year: number;
-  estateId: string;
-  estateName: string;
-  unionName: string;
-  tripartiteAgreementNo: string;
-  negotiatedBonusPercentage: number;
-  settlementDate: string;
-  effectiveFrom: string;
-  festivalType: 'Durga Puja Pre-Bonus' | 'Diwali Bonus' | 'Annual Statutory';
-  totalEligibleWorkers: number;
-  totalDisbursementAmount: number;
-  status: 'Agreed-Tripartite' | 'Disbursed';
-}
-
-export interface TeaGardenWorker {
-  id: string;
-  name: string;
-  tokenNo: string;
-  estateId: string;
-  estateName: string;
-  sardarId: string;
-  sardarName: string;
-  gangNo: string;
-  section: string;
-  phone?: string;
-  aadhaarHash?: string;
-  gender: 'Female' | 'Male';
-  taskCategory: 'Plucker' | 'Pruner' | 'Factory-Hand' | 'General';
-  dailyHaziraLeafKg: number;
-  haziraWageRate: number;
-  ticcaRatePerKg: number;
-  status: 'Active' | 'On-Leave';
-  joinedDate: string;
 }
 

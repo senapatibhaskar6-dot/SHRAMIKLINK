@@ -43,10 +43,15 @@ export default function App() {
   };
 
   React.useEffect(() => {
-    // Clear any previous tea garden cached tabs from browser localStorage
+    // Clear any previous tea garden cached tabs and role from browser localStorage
     try {
       localStorage.removeItem('shramiklink_current_app');
       localStorage.removeItem('shramiklink_active_tab');
+      localStorage.removeItem('shramiklink_tea_active_tab');
+      localStorage.removeItem('shramiklink_tea_state');
+      if (localStorage.getItem('s_current_role') === 'tea_garden') {
+        localStorage.setItem('s_current_role', 'industry_admin');
+      }
       // If URL has ?app=bagan or ?app=hub, clean it up to keep it purely industry
       if (typeof window !== 'undefined') {
         const url = new URL(window.location.href);
