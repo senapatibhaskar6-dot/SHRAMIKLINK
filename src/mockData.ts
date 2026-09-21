@@ -9,7 +9,8 @@ import {
   Bill, 
   AadhaarVerificationLog, 
   GovernmentAuditLog, 
-  RevenueLog 
+  RevenueLog,
+  GovernmentLaborInspector 
 } from './types';
 
 export const initialIndustries: Industry[] = [
@@ -139,19 +140,26 @@ export const initialAttendance: Attendance[] = [
 
 export const initialComplianceDocs: ComplianceDocument[] = [
   // Verified Previous Month (July 2026) Challans - allowing Apex (con-1) to generate August bills
-  { id: 'doc-1', contractorId: 'con-1', month: 'July 2026', docType: 'EPF-Challan', fileUrl: 'EPF-CH-JULY-90212.pdf', uploadedAt: '2026-08-15', status: 'Verified', verifiedBy: 'System Audit', remarks: 'EPF payment of ₹1,45,200 verified with EPFO portal API.' },
-  { id: 'doc-2', contractorId: 'con-1', month: 'July 2026', docType: 'ESI-Challan', fileUrl: 'ESI-CH-JULY-88310.pdf', uploadedAt: '2026-08-15', status: 'Verified', verifiedBy: 'System Audit', remarks: 'ESI payment of ₹38,400 matching with ESIC records.' },
-  { id: 'doc-3', contractorId: 'con-1', month: 'July 2026', docType: 'GST-Return', fileUrl: 'GST-3B-JULY-99231.pdf', uploadedAt: '2026-08-18', status: 'Verified', verifiedBy: 'System Audit', remarks: 'GSTR-3B filed. Tax of ₹1,88,290 verified.' },
-  
+  { id: 'doc-1', contractorId: 'con-1', industryId: 'ind-1', month: 'July 2026', docType: 'EPF-Challan', fileUrl: 'EPF-CH-JULY-90212.pdf', fileName: 'EPF_ECR_Challan_Jul2026_TRRN90212.pdf', referenceNo: 'TRRN-90212984920', uploadedAt: '2026-08-15', status: 'Verified', verifiedBy: 'System Audit', remarks: 'EPF payment of ₹1,45,200 verified with EPFO portal API.' },
+  { id: 'doc-2', contractorId: 'con-1', industryId: 'ind-1', month: 'July 2026', docType: 'ESI-Challan', fileUrl: 'ESI-CH-JULY-88310.pdf', fileName: 'ESIC_Contribution_Challan_Jul2026.pdf', referenceNo: 'ESIC-CH-8831029', uploadedAt: '2026-08-15', status: 'Verified', verifiedBy: 'System Audit', remarks: 'ESI payment of ₹38,400 matching with ESIC records.' },
+  { id: 'doc-3', contractorId: 'con-1', industryId: 'ind-1', month: 'July 2026', docType: 'GST-Return', fileUrl: 'GST-3B-JULY-99231.pdf', fileName: 'GSTR_3B_Filed_July_2026.pdf', referenceNo: 'GSTR3B-2026-99231', uploadedAt: '2026-08-18', status: 'Verified', verifiedBy: 'System Audit', remarks: 'GSTR-3B filed. Tax of ₹1,88,290 verified.' },
+  { id: 'doc-1a', contractorId: 'con-1', industryId: 'ind-1', month: 'August 2026', docType: 'Form-IV-License', fileUrl: 'CLRA_FORM_IV_APEX_TATA.pdf', fileName: 'CLRA_Form_IV_License_2026_TataMotors.pdf', referenceNo: 'MH-PUN-CLRA-2024-902', uploadedAt: '2026-08-01', status: 'Verified', verifiedBy: 'Labour Commissioner Office', remarks: 'Licensed for max 50 contract workmen. Valid till 31-Dec-2026.' },
+  { id: 'doc-1b', contractorId: 'con-1', industryId: 'ind-1', month: 'August 2026', docType: 'Form-VI-A-Notice', fileUrl: 'FORM_VI_A_COMMENCEMENT_TATA.pdf', fileName: 'Notice_Commencement_Form_VI_A_Tata.pdf', referenceNo: 'NOT-VIA-PUN-2026-092', uploadedAt: '2026-08-05', status: 'Verified', verifiedBy: 'Senior Labour Inspector', remarks: 'Notice of contract work commencement acknowledged by Inspectorate.' },
+  { id: 'doc-1c', contractorId: 'con-1', industryId: 'ind-1', month: 'August 2026', docType: 'Bank-Disbursement-Proof', fileUrl: 'NEFT_SALARY_DISBURSEMENT_TATA_AUG.pdf', fileName: 'SBI_Bulk_NEFT_Wages_Aug2026_Batch892.pdf', referenceNo: 'CMS-NEFT-99201948', uploadedAt: '2026-09-02', status: 'Verified', verifiedBy: 'Tata Motors HR Dept', remarks: 'Bank salary credit confirmed to 100% Aadhaar-linked worker bank accounts.' },
+
   // Jai Hind (con-2) Challans - Verified as well
-  { id: 'doc-4', contractorId: 'con-2', month: 'July 2026', docType: 'EPF-Challan', fileUrl: 'EPF-CH-JUL-2201.pdf', uploadedAt: '2026-08-14', status: 'Verified', verifiedBy: 'System Audit', remarks: 'EPF verified.' },
-  { id: 'doc-5', contractorId: 'con-2', month: 'July 2026', docType: 'ESI-Challan', fileUrl: 'ESI-CH-JUL-4322.pdf', uploadedAt: '2026-08-14', status: 'Verified', verifiedBy: 'System Audit', remarks: 'ESI verified.' },
-  { id: 'doc-6', contractorId: 'con-2', month: 'July 2026', docType: 'GST-Return', fileUrl: 'GST-JUL-7712.pdf', uploadedAt: '2026-08-14', status: 'Verified', verifiedBy: 'System Audit', remarks: 'GST verified.' },
+  { id: 'doc-4', contractorId: 'con-2', industryId: 'ind-2', month: 'July 2026', docType: 'EPF-Challan', fileUrl: 'EPF-CH-JUL-2201.pdf', fileName: 'EPF_ECR_Receipt_July_2026.pdf', referenceNo: 'TRRN-2201984210', uploadedAt: '2026-08-14', status: 'Verified', verifiedBy: 'System Audit', remarks: 'EPF verified.' },
+  { id: 'doc-5', contractorId: 'con-2', industryId: 'ind-2', month: 'July 2026', docType: 'ESI-Challan', fileUrl: 'ESI-CH-JUL-4322.pdf', fileName: 'ESIC_Paid_Challan_July_2026.pdf', referenceNo: 'ESIC-4322901', uploadedAt: '2026-08-14', status: 'Verified', verifiedBy: 'System Audit', remarks: 'ESI verified.' },
+  { id: 'doc-6', contractorId: 'con-2', industryId: 'ind-2', month: 'July 2026', docType: 'GST-Return', fileUrl: 'GST-JUL-7712.pdf', fileName: 'GSTR3B_Receipt_Jul2026.pdf', referenceNo: 'GST-7712390', uploadedAt: '2026-08-14', status: 'Verified', verifiedBy: 'System Audit', remarks: 'GST verified.' },
+  { id: 'doc-4a', contractorId: 'con-2', industryId: 'ind-2', month: 'August 2026', docType: 'Form-IV-License', fileUrl: 'CLRA_FORM_IV_JAIHIND_JSW.pdf', fileName: 'CLRA_Form_IV_License_JSW_Steel.pdf', referenceNo: 'KA-BEL-CLRA-2025-412', uploadedAt: '2026-08-02', status: 'Verified', verifiedBy: 'Labour Enforcement Officer', remarks: 'Licensed for max 35 contract workmen at JSW Steel Bellary.' },
+  { id: 'doc-4b', contractorId: 'con-2', industryId: 'ind-2', month: 'August 2026', docType: 'Form-VI-A-Notice', fileUrl: 'FORM_VI_A_JAIHIND_JSW.pdf', fileName: 'Form_VI_A_Commencement_JSW.pdf', referenceNo: 'NOT-VIA-BEL-2026-118', uploadedAt: '2026-08-04', status: 'Verified', verifiedBy: 'Labour Enforcement Officer', remarks: 'Form VI-A filed electronically on ShramikLink portal.' },
+  { id: 'doc-4c', contractorId: 'con-2', industryId: 'ind-2', month: 'August 2026', docType: 'Bank-Disbursement-Proof', fileUrl: 'NEFT_SALARY_JSW_AUG.pdf', fileName: 'HDFC_Bank_Salary_Statement_Aug2026.pdf', referenceNo: 'HDFC-NEFT-8812903', uploadedAt: '2026-09-01', status: 'Verified', verifiedBy: 'JSW Steel HR', remarks: 'Wages disbursed via direct bank transfer.' },
 
   // Sahyadri (con-3) has NOT uploaded previous month's GST-Return, only EPF/ESI. This will trigger the compliance billing lock for them!
-  { id: 'doc-7', contractorId: 'con-3', month: 'July 2026', docType: 'EPF-Challan', fileUrl: 'EPF-CH-JUL-9912.pdf', uploadedAt: '2026-08-19', status: 'Verified', verifiedBy: 'System Audit', remarks: 'EPF Verified.' },
-  { id: 'doc-8', contractorId: 'con-3', month: 'July 2026', docType: 'ESI-Challan', fileUrl: 'ESI-CH-JUL-0012.pdf', uploadedAt: '2026-08-19', status: 'Verified', verifiedBy: 'System Audit', remarks: 'ESI Verified.' },
-  // Missing GST Challan will lock con-3's August billing!
+  { id: 'doc-7', contractorId: 'con-3', industryId: 'ind-1', month: 'July 2026', docType: 'EPF-Challan', fileUrl: 'EPF-CH-JUL-9912.pdf', fileName: 'EPF_Receipt_Jul_2026.pdf', referenceNo: 'TRRN-9912048', uploadedAt: '2026-08-19', status: 'Verified', verifiedBy: 'System Audit', remarks: 'EPF Verified.' },
+  { id: 'doc-8', contractorId: 'con-3', industryId: 'ind-1', month: 'July 2026', docType: 'ESI-Challan', fileUrl: 'ESI-CH-JUL-0012.pdf', fileName: 'ESI_Challan_Jul_2026.pdf', referenceNo: 'ESIC-0012984', uploadedAt: '2026-08-19', status: 'Verified', verifiedBy: 'System Audit', remarks: 'ESI Verified.' },
+  { id: 'doc-7a', contractorId: 'con-3', industryId: 'ind-1', month: 'August 2026', docType: 'Form-IV-License', fileUrl: 'CLRA_FORM_IV_SAHYADRI.pdf', fileName: 'Form_IV_License_Sahyadri.pdf', referenceNo: 'MH-PUN-CLRA-2025-502', uploadedAt: '2026-08-10', status: 'Verified', verifiedBy: 'Assistant Labour Commissioner', remarks: 'Contractor license valid.' },
+  // Missing GST Challan and Form VI-A for con-3!
 ];
 
 export const initialBills: Bill[] = [
@@ -222,4 +230,58 @@ export const initialRevenueLogs: RevenueLog[] = [
   { id: 'rev-1', date: '2026-08-31', workerCount: 6, feeAmount: 6, status: 'Accrued' },
   { id: 'rev-2', date: '2026-09-01', workerCount: 5, feeAmount: 5, status: 'Accrued' },
   { id: 'rev-3', date: '2026-09-02', workerCount: 2, feeAmount: 2, status: 'Accrued' }
+];
+
+export const initialInspectors: GovernmentLaborInspector[] = [
+  {
+    id: 'insp-1',
+    name: 'Shri Bhaskar Senapati',
+    badgeId: 'GOV-AS-ALC-2026-081',
+    designation: 'Assistant Labour Commissioner & Statutory Inspector',
+    department: 'Office of the Labour Commissioner, Govt of Assam',
+    email: 'inspector@shramiklink.com',
+    phone: '9876543213',
+    state: 'Assam',
+    district: 'Kamrup Metropolitan',
+    jurisdictionZone: 'Guwahati Industrial Belt, EPIP Amingaon & North Guwahati Zone',
+    assignedPinCodes: ['781001', '781021', '781031', '781039', '781101'],
+    active: true,
+    registeredAt: '2026-01-15',
+    officeAddress: 'Shram Bhavan, Ulubari, Guwahati, Assam - 781007',
+    officeHours: 'Mon - Fri: 09:30 AM - 05:00 PM'
+  },
+  {
+    id: 'insp-2',
+    name: 'Shri K. D. Rane',
+    badgeId: 'GOV-MH-LEO-109',
+    designation: 'Regional Labour Enforcement Officer (Central Circle)',
+    department: 'Office of the Commissioner of Labour, Maharashtra',
+    email: 'kd.rane.labour@gov.in',
+    phone: '9822019944',
+    state: 'Maharashtra',
+    district: 'Pune District',
+    jurisdictionZone: 'Pimpri-Chinchwad, Hadapsar & Bhosari Industrial Corridor',
+    assignedPinCodes: ['411018', '411028', '411033', '411019'],
+    active: true,
+    registeredAt: '2026-02-10',
+    officeAddress: 'Kamgar Bhavan, Wakdewadi, Pune, Maharashtra - 411005',
+    officeHours: 'Mon - Fri: 10:00 AM - 05:30 PM'
+  },
+  {
+    id: 'insp-3',
+    name: 'Smti. Ananya Borah',
+    badgeId: 'GOV-AS-LI-2026-142',
+    designation: 'Senior Labour Inspector (Plantations & Mining)',
+    department: 'Zonal Labour Office, Upper Assam Division',
+    email: 'ananya.borah@labourassam.gov.in',
+    phone: '9435012345',
+    state: 'Assam',
+    district: 'Dibrugarh & Tinsukia',
+    jurisdictionZone: 'Upper Assam Tea Belt, Digboi Refinery & Petrochemical Zone',
+    assignedPinCodes: ['786001', '786125', '786192', '786181'],
+    active: true,
+    registeredAt: '2026-03-01',
+    officeAddress: 'Labour Welfare Centre, Graham Bazar, Dibrugarh, Assam - 786001',
+    officeHours: 'Mon - Fri: 09:30 AM - 04:30 PM'
+  }
 ];

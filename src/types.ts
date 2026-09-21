@@ -132,17 +132,48 @@ export interface Attendance {
   markedBySupervisor?: string; // Supervisor name
 }
 
+export type ComplianceDocType = 
+  | 'EPF-Challan' 
+  | 'ESI-Challan' 
+  | 'GST-Return' 
+  | 'Wage-Register'
+  | 'Form-IV-License'
+  | 'Form-VI-A-Notice'
+  | 'Bank-Disbursement-Proof'
+  | 'Muster-Roll-XVI';
+
 export interface ComplianceDocument {
   id: string;
   contractorId: string;
   industryId?: string; // Optional: tagged to specific principal employer factory
   month: string; // e.g. "August 2026"
-  docType: 'EPF-Challan' | 'ESI-Challan' | 'GST-Return' | 'Wage-Register';
+  docType: ComplianceDocType;
   fileUrl: string;
+  fileName?: string;
+  referenceNo?: string;
   uploadedAt: string;
   status: 'Verified' | 'Pending' | 'Rejected';
   verifiedBy: string | null; // Industry ID or Government Inspector
   remarks: string | null;
+  validTill?: string;
+}
+
+export interface IndustryProjectCompliance {
+  id: string;
+  contractorId: string;
+  industryId: string;
+  projectName?: string;
+  workOrderNo?: string;
+  contractPeriod?: string;
+  status: 'Compliant' | 'Pending-Docs' | 'Under-Review';
+  hrVerified: boolean;
+  hrVerifiedAt?: string;
+  hrVerifiedBy?: string;
+  inspectorAudited: boolean;
+  inspectorAuditedAt?: string;
+  inspectorAuditedBy?: string;
+  inspectorRemarks?: string;
+  notes?: string;
 }
 
 export interface Bill {
@@ -237,5 +268,38 @@ export interface AppFeedback {
   category: 'Attendance System' | 'CLRA Forms' | 'Bill Audit' | 'Speed & Performance' | 'General Feedback';
   feedbackText: string;
   createdAt: string;
+}
+
+export interface GovernmentLaborInspector {
+  id: string;
+  name: string;
+  badgeId: string; // e.g. "GOV-AS-LI-8821"
+  designation: string; // e.g. "Assistant Labour Commissioner" or "Senior Labour Inspector"
+  department: string; // e.g. "Office of the Labour Commissioner, Govt of Assam"
+  email: string;
+  phone: string;
+  state: string; // e.g. "Assam", "Maharashtra", "Karnataka"
+  district: string; // e.g. "Kamrup Metropolitan", "Dibrugarh", "Tinsukia", "Pune"
+  jurisdictionZone: string; // e.g. "Guwahati & EPIP Amingaon Industrial Belt"
+  assignedPinCodes: string[]; // e.g. ["781001", "781021", "781031", "411018"]
+  active: boolean;
+  registeredAt: string;
+  officeAddress?: string;
+  officeHours?: string;
+}
+
+export interface InspectionNotice {
+  id: string;
+  inspectorId: string;
+  inspectorName: string;
+  targetType: 'Industry' | 'Contractor';
+  targetId: string;
+  targetName: string;
+  subject: string;
+  statutoryAct: 'CLRA Act 1970' | 'Factories Act 1948' | 'Plantations Labour Act 1951' | 'Minimum Wages Act 1948' | 'EPF & MP Act 1952';
+  severity: 'Notice' | 'Advisory' | 'Urgent-Compliance-Summons';
+  message: string;
+  issuedAt: string;
+  status: 'Pending' | 'Acknowledged' | 'Resolved';
 }
 

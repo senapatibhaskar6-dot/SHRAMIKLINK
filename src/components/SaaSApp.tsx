@@ -41,7 +41,8 @@ import {
   Key,
   Smartphone,
   Sparkles,
-  CheckCircle2
+  CheckCircle2,
+  Scale
 } from 'lucide-react';
 import { 
   Industry, 
@@ -57,7 +58,9 @@ import {
   RevenueLog,
   Supervisor,
   AppFeedback,
-  ContractorAttendanceRecord
+  ContractorAttendanceRecord,
+  GovernmentLaborInspector,
+  InspectionNotice
 } from '../types';
 import { 
   initialIndustries, 
@@ -70,7 +73,8 @@ import {
   initialBills, 
   initialVerificationLogs, 
   initialAuditLogs, 
-  initialRevenueLogs 
+  initialRevenueLogs,
+  initialInspectors
 } from '../mockData';
 import { auth, googleAuthProvider } from '../lib/firebase';
 import { signInWithPopup, signOut, onAuthStateChanged, User } from 'firebase/auth';
@@ -89,6 +93,8 @@ import IndustrySupervisorManager from './IndustrySupervisorManager';
 import IndustryRequirementManager from './IndustryRequirementManager';
 import ContractorJobSupplyBrowse from './ContractorJobSupplyBrowse';
 import DirectWorkersPanel from './DirectWorkersPanel';
+import AssignedInspectorCard from './AssignedInspectorCard';
+import GovernmentInspectorJurisdictionPanel from './GovernmentInspectorJurisdictionPanel';
 import { 
   ContractorApplication, 
   DirectJobOpening, 
@@ -144,6 +150,30 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
   const [bills, setBills] = useState<Bill[]>(initialBills);
   const [verificationLogs, setVerificationLogs] = useState<AadhaarVerificationLog[]>(initialVerificationLogs);
   const [auditLogs, setAuditLogs] = useState<GovernmentAuditLog[]>(initialAuditLogs);
+  const [inspectors, setInspectors] = useState<GovernmentLaborInspector[]>(() => {
+    try {
+      const saved = localStorage.getItem('s_inspectors_list');
+      return saved ? JSON.parse(saved) : initialInspectors;
+    } catch (e) {
+      return initialInspectors;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('s_inspectors_list', JSON.stringify(inspectors));
+    } catch (e) {}
+  }, [inspectors]);
+
+  const [selectedInspectorId, setSelectedInspectorId] = useState<string>(() => {
+    return localStorage.getItem('s_selected_inspector_id') || initialInspectors[0]?.id || 'insp-1';
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('s_selected_inspector_id', selectedInspectorId);
+    } catch (e) {}
+  }, [selectedInspectorId]);
   const [revenueLogs, setRevenueLogs] = useState<RevenueLog[]>(initialRevenueLogs);
   const [workerRemarks, setWorkerRemarks] = useState<Record<string, string>>(() => {
     try {
@@ -468,6 +498,14 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
   const [regFactoryName, setRegFactoryName] = useState<string>('');
   const [regLocation, setRegLocation] = useState<string>('');
   
+  // Government Labor Inspector Registration Fields
+  const [regInspectorBadgeId, setRegInspectorBadgeId] = useState<string>('');
+  const [regInspectorDesignation, setRegInspectorDesignation] = useState<string>('Assistant Labour Commissioner');
+  const [regInspectorDepartment, setRegInspectorDepartment] = useState<string>('Office of the Labour Commissioner, Govt of Assam');
+  const [regInspectorDistrict, setRegInspectorDistrict] = useState<string>('Kamrup Metropolitan');
+  const [regInspectorZone, setRegInspectorZone] = useState<string>('Guwahati Industrial Belt & Amingaon Industrial Area');
+  const [regInspectorPinCodes, setRegInspectorPinCodes] = useState<string>('781001, 781021, 781031');
+  
   const [otpStep, setOtpStep] = useState<boolean>(false);
   const [simulatedOtpCode, setSimulatedOtpCode] = useState<string>('');
   const [enteredOtpCode, setEnteredOtpCode] = useState<string>('');
@@ -626,6 +664,36 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
       try {
         localStorage.setItem('s_industries_list', JSON.stringify(updatedIndustries));
       } catch (e) {}
+    } else if (finalRole === 'government_inspector') {
+      const pinList = regInspectorPinCodes
+        .split(',')
+        .map(p => p.trim())
+        .filter(Boolean);
+
+      const newInspector: GovernmentLaborInspector = {
+        id: `insp-${Date.now()}`,
+        name: registerName.trim(),
+        badgeId: regInspectorBadgeId.trim() || `GOV-AS-LI-${Math.floor(1000 + Math.random() * 9000)}`,
+        designation: regInspectorDesignation.trim() || 'Assistant Labour Commissioner & Statutory Inspector',
+        department: regInspectorDepartment.trim() || 'Office of the Labour Commissioner, Govt of Assam',
+        email: registerEmailOrPhone.includes('@') ? registerEmailOrPhone.trim().toLowerCase() : `${registerName.toLowerCase().replace(/\s+/g, '.')}@labour.gov.in`,
+        phone: registerEmailOrPhone.replace(/\D/g, '') || '9876543213',
+        state: 'Assam',
+        district: regInspectorDistrict.trim() || 'Kamrup Metropolitan',
+        jurisdictionZone: regInspectorZone.trim() || 'Guwahati Industrial Belt & Amingaon Industrial Area',
+        assignedPinCodes: pinList.length > 0 ? pinList : ['781001', '781021'],
+        active: true,
+        registeredAt: new Date().toISOString().split('T')[0],
+        officeAddress: 'Shram Bhavan, Ulubari, Guwahati, Assam',
+        officeHours: 'Mon - Fri: 09:30 AM - 05:00 PM'
+      };
+
+      const updatedInspectors = [newInspector, ...inspectors];
+      setInspectors(updatedInspectors);
+      setSelectedInspectorId(newInspector.id);
+      try {
+        localStorage.setItem('s_inspectors_list', JSON.stringify(updatedInspectors));
+      } catch (e) {}
     }
 
     setCurrentRole(finalRole);
@@ -645,6 +713,12 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
     setRegGstin('');
     setRegFactoryName('');
     setRegLocation('');
+    setRegInspectorBadgeId('');
+    setRegInspectorDesignation('Assistant Labour Commissioner');
+    setRegInspectorDepartment('Office of the Labour Commissioner, Govt of Assam');
+    setRegInspectorDistrict('Kamrup Metropolitan');
+    setRegInspectorZone('Guwahati Industrial Belt & Amingaon Industrial Area');
+    setRegInspectorPinCodes('781001, 781021, 781031');
     
     showNotice(`পঞ্জীয়ন আৰু লগইন সফল হৈছে! স্বাগতম ${newUser.name}! (Registration & Login Successful!)`, 'success');
     refreshData();
@@ -980,6 +1054,54 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
   const activeIndustry = industries.find(i => i.id === selectedIndustryId) || industries[0] || defaultFallbackIndustry;
   const activeContractor = contractors.find(c => c.id === selectedContractorId) || contractors[0] || defaultFallbackContractor;
   const activeWorker = workers.find(w => w.id === selectedWorkerId) || workers[0] || defaultFallbackWorker;
+
+  // Helper to find the assigned Government Labor Inspector for an Industry
+  const getAssignedInspectorForIndustry = (industry: Industry): GovernmentLaborInspector => {
+    if (!industry || inspectors.length === 0) return initialInspectors[0];
+    const loc = (industry.location || '').toLowerCase();
+    const matched = inspectors.find(insp => {
+      const dist = (insp.district || '').toLowerCase();
+      const zone = (insp.jurisdictionZone || '').toLowerCase();
+      const state = (insp.state || '').toLowerCase();
+      if (dist && (loc.includes(dist) || dist.includes(loc))) return true;
+      if (state && loc.includes(state)) return true;
+      const keywords = zone.split(/[,\s&/]+/).filter(w => w.length > 3);
+      if (keywords.some(kw => loc.includes(kw))) return true;
+      return false;
+    });
+    return matched || inspectors[0];
+  };
+
+  // Helper to find the assigned Government Labor Inspector for a Contractor
+  const getAssignedInspectorForContractor = (contractor: Contractor): GovernmentLaborInspector => {
+    if (!contractor || inspectors.length === 0) return initialInspectors[0];
+    const conWorkers = workers.filter(w => w.contractorId === contractor.id);
+    const assignedIndIds = assignments
+      .filter(a => conWorkers.some(w => w.id === a.workerId) && a.status === 'Active')
+      .map(a => a.industryId);
+    const activeInd = industries.find(i => assignedIndIds.includes(i.id));
+    if (activeInd) {
+      return getAssignedInspectorForIndustry(activeInd);
+    }
+    const cAddr = (contractor.address || '').toLowerCase();
+    const matchByAddr = inspectors.find(i => cAddr.includes(i.district.toLowerCase()) || cAddr.includes(i.state.toLowerCase()));
+    return matchByAddr || inspectors[0];
+  };
+
+  const handleUpdateInspectorProfile = (inspectorId: string, updates: Partial<GovernmentLaborInspector>) => {
+    setInspectors(prev => prev.map(insp => insp.id === inspectorId ? { ...insp, ...updates } : insp));
+    showNotice(`শ্ৰম পৰিদৰ্শন এলেকা আৰু তথ্য সফলতাৰে আপডেট কৰা হ'ল! (Jurisdiction profile updated!)`, 'success');
+  };
+
+  const handleFileAuditFromInspector = (auditData: Omit<GovernmentAuditLog, 'id' | 'timestamp'>) => {
+    const newAuditLog: GovernmentAuditLog = {
+      ...auditData,
+      id: `aud-${Date.now()}`,
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16)
+    };
+    setAuditLogs(prev => [newAuditLog, ...prev]);
+    showNotice(`চৰকাৰী পৰিদৰ্শন প্ৰমাণপত্ৰ ${newAuditLog.entityName}-ৰ বাবে সফলতাৰে দাখিল কৰা হ'ল! (Audit certificate filed!)`, 'success');
+  };
 
   // System auditing: check if contractor has July compliance verified
   const checkContractorCompliance = (contractorId: string, month: string) => {
@@ -3193,11 +3315,109 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                       </div>
                     )}
 
+                    {/* DEDICATED GOVERNMENT LABOR INSPECTOR JURISDICTION & DETAILS ENTRY */}
+                    {registerRole === 'government_inspector' && (
+                      <div className="bg-slate-50 border border-indigo-200 rounded-xl p-3 space-y-2.5 text-xs">
+                        <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-indigo-900 border-b border-indigo-100 pb-1.5">
+                          <Scale className="h-4 w-4 text-indigo-600" />
+                          চৰকাৰী শ্ৰম পৰিদৰ্শন এলেকা আৰু কৰ্তৃত্ব (Inspector Details & Jurisdiction Area)
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-600 uppercase">চৰকাৰী পদবী (Designation)</label>
+                            <select
+                              value={regInspectorDesignation}
+                              onChange={(e) => setRegInspectorDesignation(e.target.value)}
+                              className="w-full bg-white border border-slate-200 rounded px-2 py-1.5 text-xs font-semibold outline-none focus:border-indigo-500"
+                            >
+                              <option value="Assistant Labour Commissioner">Assistant Labour Commissioner</option>
+                              <option value="Senior Labour Inspector">Senior Labour Inspector</option>
+                              <option value="Labour Enforcement Officer">Labour Enforcement Officer</option>
+                              <option value="Inspector of Factories">Inspector of Factories</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-600 uppercase">বেজ ক্ৰমাংক (Badge ID)</label>
+                            <input
+                              type="text"
+                              placeholder="GOV-AS-LI-2026-881"
+                              value={regInspectorBadgeId}
+                              onChange={(e) => setRegInspectorBadgeId(e.target.value)}
+                              className="w-full bg-white border border-slate-200 rounded px-2.5 py-1.5 text-xs font-mono outline-none focus:border-indigo-500 uppercase"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-600 uppercase">অধিকাৰভুক্ত জিলা (Jurisdiction District) *</label>
+                            <select
+                              value={regInspectorDistrict}
+                              onChange={(e) => setRegInspectorDistrict(e.target.value)}
+                              className="w-full bg-white border border-slate-200 rounded px-2 py-1.5 text-xs font-semibold outline-none focus:border-indigo-500"
+                            >
+                              <option value="Kamrup Metropolitan">Kamrup Metropolitan (Guwahati)</option>
+                              <option value="Dibrugarh & Tinsukia">Dibrugarh & Tinsukia (Upper Assam)</option>
+                              <option value="Cachar & Barak Valley">Cachar & Barak Valley (Silchar)</option>
+                              <option value="Nagaon & Morigaon">Nagaon & Morigaon</option>
+                              <option value="Jorhat & Golaghat">Jorhat & Golaghat</option>
+                              <option value="Pune District">Pune District (Maharashtra)</option>
+                              <option value="Bellary District">Bellary District (Karnataka)</option>
+                              <option value="Kamrup Rural">Kamrup Rural (Amingaon)</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-600 uppercase">মণ্ডল / জ'ন (Industrial Zone) *</label>
+                            <input
+                              type="text"
+                              placeholder="e.g. Guwahati & Amingaon Belt"
+                              value={regInspectorZone}
+                              onChange={(e) => setRegInspectorZone(e.target.value)}
+                              className="w-full bg-white border border-slate-200 rounded px-2.5 py-1.5 text-xs outline-none focus:border-indigo-500"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-600 uppercase">PIN কভাৰেজ (Pin Codes - comma separated)</label>
+                          <input
+                            type="text"
+                            placeholder="781001, 781021, 781031"
+                            value={regInspectorPinCodes}
+                            onChange={(e) => setRegInspectorPinCodes(e.target.value)}
+                            className="w-full bg-white border border-slate-200 rounded px-2.5 py-1.5 text-xs font-mono outline-none focus:border-indigo-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-600 uppercase">চৰকাৰী বিভাগ (Department)</label>
+                          <input
+                            type="text"
+                            placeholder="Office of the Labour Commissioner, Govt of Assam"
+                            value={regInspectorDepartment}
+                            onChange={(e) => setRegInspectorDepartment(e.target.value)}
+                            className="w-full bg-white border border-slate-200 rounded px-2.5 py-1.5 text-xs outline-none focus:border-indigo-500"
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     <button
                       type="submit"
                       className="w-full py-2.5 rounded-lg text-xs font-black tracking-wider uppercase transition-all shadow-xs cursor-pointer text-center mt-1 bg-indigo-600 hover:bg-indigo-700 text-white"
                     >
-                      🏭 ইণ্ডাষ্ট্ৰী পঞ্জীয়ন সম্পন্ন কৰক (Complete Industry Registration)
+                      {registerRole === 'government_inspector'
+                        ? '⚖️ চৰকাৰী শ্ৰম পৰিদৰ্শক পঞ্জীয়ন সম্পন্ন কৰক (Complete Inspector Registration)'
+                        : registerRole === 'contractor'
+                        ? '🏢 ঠিকাদাৰ পঞ্জীয়ন সম্পন্ন কৰক (Complete Contractor Registration)'
+                        : registerRole === 'supervisor'
+                        ? '👷 ছুপাৰভাইজাৰ পঞ্জীয়ন সম্পন্ন কৰক (Complete Supervisor Registration)'
+                        : registerRole === 'worker'
+                        ? '👷 শ্ৰমিক পঞ্জীয়ন সম্পন্ন কৰক (Complete Worker Registration)'
+                        : '🏭 ইণ্ডাষ্ট্ৰী পঞ্জীয়ন সম্পন্ন কৰক (Complete Industry Registration)'}
                     </button>
                   </form>
                 )}
@@ -3641,6 +3861,15 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                 লগ আউট কৰক (Log Out)
               </button>
             </div>
+
+            {/* ==================== ASSIGNED GOVERNMENT LABOR INSPECTOR (JURISDICTION COMPLIANCE) ==================== */}
+            <AssignedInspectorCard
+              inspector={getAssignedInspectorForIndustry(activeIndustry)}
+              allInspectors={inspectors}
+              userRole="industry_admin"
+              entityName={activeIndustry.name}
+              entityLocation={activeIndustry.location}
+            />
 
             {/* Quick Metrics (Bento Grid) */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -4409,6 +4638,15 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                 লগ আউট কৰক (Log Out)
               </button>
             </div>
+
+            {/* ==================== ASSIGNED GOVERNMENT LABOR INSPECTOR (JURISDICTION COMPLIANCE) ==================== */}
+            <AssignedInspectorCard
+              inspector={getAssignedInspectorForContractor(activeContractor)}
+              allInspectors={inspectors}
+              userRole="contractor"
+              entityName={activeContractor.name}
+              entityLocation={activeContractor.address || 'Guwahati Industrial Belt'}
+            />
 
             {/* Contractor Dashboard Horizontal Navigation Tabs */}
             <div className="flex border-b border-slate-200 gap-1 overflow-x-auto pb-px">
@@ -7302,334 +7540,27 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
           </div>
         )}
 
-        {/* ==================== 4. LABOUR INSPECTOR AUDITOR PANEL ==================== */}
-        {currentRole === 'government_inspector' && (
-          <div className="space-y-8 animate-fadeIn">
-            
-            {/* Top Stats */}
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 flex flex-wrap justify-between items-center gap-4">
-              <div className="space-y-1 flex-1">
-                <h3 className="font-bold text-slate-900 text-lg flex items-center gap-2">
-                  <ShieldCheck className="text-indigo-600 h-6 w-6" />
-                  Labour Inspector & Statutory Auditor Portal
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Government panel to audit factory registrations, contractor statutory compliance records, and minimum wages compliance.
-                </p>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto shrink-0">
-                <button 
-                  onClick={() => setIsAuditModalOpen(true)}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-colors"
-                >
-                  File Audit Certificate / Finding
-                </button>
-                <button 
-                  onClick={handleLogout}
-                  className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/40 px-4 py-2.5 rounded-lg text-xs font-bold tracking-wide transition-all flex items-center gap-1.5 justify-center"
-                >
-                  <LogOut className="h-4 w-4 shrink-0" />
-                  লগ আউট কৰক (Log Out)
-                </button>
-              </div>
-            </div>
-
-            {/* Inspection Audit Logs & Finding Certificates */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-5 shadow-xs">
-              <div className="border-b border-slate-100 pb-3">
-                <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-                  <ShieldCheck className="text-indigo-600 h-4 w-4" />
-                  দাখিল কৰা পৰিদৰ্শন প্ৰমাণপত্ৰসমূহ (Filed Audit Inspection Certificates - Form VI Compliant)
-                </h4>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  আইনী অডিটৰ আৰু চৰকাৰী শ্ৰম পৰিদৰ্শকৰ দ্বাৰা দাখিল কৰা পৰিদৰ্শন প্ৰতিবেদন।
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {auditLogs.map(audit => (
-                  <div key={audit.id} className="border border-slate-200 rounded-xl p-4 bg-slate-50/50 space-y-2.5 text-xs hover:border-indigo-200 transition-colors">
-                    <div className="flex justify-between items-center">
-                      <span className="font-bold text-slate-900 text-sm">{audit.inspectorName}</span>
-                      <span className={`font-bold px-2.5 py-0.5 rounded text-[10px] ${
-                        audit.status === 'Clean' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
-                        audit.status === 'Minor-Observations' ? 'bg-amber-50 text-amber-800 border border-amber-200' :
-                        'bg-rose-50 text-rose-800 border border-rose-200'
-                      }`}>
-                        {audit.status}
-                      </span>
-                    </div>
-
-                    <div className="text-slate-500">
-                      পৰিদৰ্শন কৰা প্ৰতিষ্ঠান: <strong className="text-slate-800">{audit.entityName} ({audit.inspectedEntity})</strong>
-                    </div>
-
-                    <p className="text-slate-600 italic leading-relaxed bg-white border border-slate-200/80 p-3 rounded-lg">
-                      "{audit.findings}"
-                    </p>
-
-                    <div className="text-[10px] text-slate-400 flex items-center justify-between border-t border-slate-100 pt-2">
-                      <span>পৰিদৰ্শনৰ তাৰিখ: {audit.timestamp}</span>
-                      <span className="text-indigo-600 font-semibold flex items-center gap-1">
-                        <CheckCircle className="h-3 w-3 text-indigo-600" />
-                        চৰকাৰী অডিট সম্পন্ন
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Real-time CLRA Form XVI (Muster Roll) & Gate Attendance Audit Desk */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 shadow-xs">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="bg-indigo-600 text-white text-[10px] font-mono font-bold px-2 py-0.5 rounded">
-                      RULE 78(1)(a)(i)
-                    </span>
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
-                      Statutory CLRA Live Audit Desk
-                    </span>
-                  </div>
-                  <h4 className="font-bold text-slate-900 text-base flex items-center gap-2 mt-1">
-                    <FileSpreadsheet className="text-indigo-600 h-5 w-5" />
-                    পৰিদৰ্শনযোগ্য লাইভ Form XVI (Muster Roll) আৰু ছুপাৰভাইজাৰ হাজিৰা অডিট লেজাৰ
-                  </h4>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    কাৰখানাৰ গেটত ছুপাৰভাইজাৰে দিয়া দৈনিক উপস্থিতি, অভাৰটাইম (OT) আৰু মন্তব্যৰ ওপৰত ভিত্তি কৰি স্বয়ংক্ৰিয়ভাৱে প্ৰস্তুত হোৱা চৰকাৰী অডিট বহী।
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                  <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg text-xs">
-                    <span className="font-bold text-slate-500">ঠিকাদাৰ বাছক:</span>
-                    <select
-                      value={inspectorContractorFilter}
-                      onChange={(e) => setInspectorContractorFilter(e.target.value)}
-                      className="bg-white border border-slate-200 rounded px-2 py-1 outline-none font-semibold text-slate-700 focus:border-indigo-500"
-                    >
-                      <option value="ALL">সকলো ঠিকাদাৰ (All Contractors)</option>
-                      {contractors.map(c => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2.5 py-1.5 rounded-lg border border-emerald-200 flex items-center gap-1.5 shrink-0">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    লাইভ ছিংক (Live Synced)
-                  </span>
-                </div>
-              </div>
-
-              <div className="overflow-x-auto text-xs">
-                <table className="w-full text-left text-slate-600">
-                  <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] font-bold">
-                    <tr>
-                      <th className="p-3">শ্ৰমিকৰ নাম আৰু UAN</th>
-                      <th className="p-3">ঠিকাদাৰ প্ৰতিষ্ঠান</th>
-                      <th className="p-3">কাৰখানা / স্থান</th>
-                      <th className="p-3 text-center">মুঠ কৰ্মদিন (Shifts)</th>
-                      <th className="p-3 text-center">অভাৰটাইম (OT Hours)</th>
-                      <th className="p-3 text-right">মজুৰি নিৰিখ (Rate)</th>
-                      <th className="p-3 min-w-[150px]">ছুপাৰভাইজাৰৰ মন্তব্য (Remarks)</th>
-                      <th className="p-3 text-center">CLRA অডিট স্থিতি</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {workers
-                      .filter(w => inspectorContractorFilter === 'ALL' || w.contractorId === inspectorContractorFilter)
-                      .map(w => {
-                        const contractor = contractors.find(c => c.id === w.contractorId);
-                        const wrkAttendance = attendance.filter(a => a.workerId === w.id && a.status === 'Present');
-                        const shiftsCount = wrkAttendance.length;
-                        const otHours = wrkAttendance.reduce((sum, curr) => sum + (curr.overtimeHours || 0), 0);
-                        const assignedIndId = assignments.find(a => a.workerId === w.id && a.status === 'Active')?.industryId || wrkAttendance[0]?.industryId;
-                        const industry = industries.find(i => i.id === assignedIndId);
-                        const remark = workerRemarks[w.id] || wrkAttendance[0]?.notes;
-
-                        return (
-                          <tr key={w.id} className="hover:bg-slate-50/50">
-                            <td className="p-3 font-semibold text-slate-800">
-                              {w.name}
-                              <span className="block text-[10px] text-slate-400 font-mono font-normal">UAN: {getWorkerUAN(w)}</span>
-                            </td>
-                            <td className="p-3 text-slate-600 font-medium">{contractor?.name}</td>
-                            <td className="p-3 text-slate-600 font-medium">{industry?.name || 'Assigned Plant'}</td>
-                            <td className="p-3 text-center font-bold text-slate-800">
-                              <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-mono">
-                                {shiftsCount} দিন
-                              </span>
-                            </td>
-                            <td className="p-3 text-center">
-                              {otHours > 0 ? (
-                                <span className="bg-amber-100 text-amber-900 px-2 py-0.5 rounded font-bold font-mono">
-                                  +{otHours}h OT
-                                </span>
-                              ) : (
-                                <span className="text-slate-400 font-mono">0h</span>
-                              )}
-                            </td>
-                            <td className="p-3 text-right font-mono font-semibold text-slate-700">
-                              ₹{w.dailyWageRate}/দিন
-                            </td>
-                            <td className="p-3">
-                              {remark ? (
-                                <span className="bg-indigo-50 text-indigo-900 border border-indigo-200 text-[11px] font-medium px-2 py-0.5 rounded-lg inline-block">
-                                  📝 {remark}
-                                </span>
-                              ) : (
-                                <span className="text-slate-400 italic text-[11px]">কোনো টোকা নাই</span>
-                              )}
-                            </td>
-                            <td className="p-3 text-center">
-                              <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                                <CheckCircle className="h-3 w-3 text-emerald-600" /> Form XVI Verified
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Master Roster Audit (Factory / Contractor Cross Verifications) */}
-            <div className="bg-white border border-slate-200 rounded-lg p-6 space-y-4">
-              <h4 className="font-bold text-slate-800 text-sm border-b border-slate-100 pb-3">
-                Master Compliance Audit Ledger (EPF, ESI & Aadhaar Match Integrity)
-              </h4>
-
-              <div className="overflow-x-auto text-xs">
-                <table className="w-full text-left text-slate-600">
-                  <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] font-bold">
-                    <tr>
-                      <th className="p-3">Worker UID</th>
-                      <th className="p-3">Full Legal Name</th>
-                      <th className="p-3">Assigned Contractor</th>
-                      <th className="p-3">Aadhaar Status</th>
-                      <th className="p-3">Skill Type</th>
-                      <th className="p-3">Min Daily Wage</th>
-                      <th className="p-3">Onboarding Verified</th>
-                      <th className="p-3">CLRA Compliance Rating</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {workers.map(w => {
-                      const contractor = contractors.find(c => c.id === w.contractorId);
-                      return (
-                        <tr key={w.id} className="hover:bg-slate-50/50">
-                          <td className="p-3 font-mono font-bold text-slate-700">{w.id}</td>
-                          <td className="p-3 font-semibold text-slate-800">{w.name}</td>
-                          <td className="p-3 text-slate-500 font-medium">{contractor?.name}</td>
-                          <td className="p-3 font-mono text-slate-500">{w.aadhaarHash}</td>
-                          <td className="p-3 text-slate-500">{w.skillType}</td>
-                          <td className="p-3 font-mono text-slate-700">₹{w.dailyWageRate}</td>
-                          <td className="p-3">
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                              w.onboardingVerified ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-800'
-                            }`}>
-                              {w.onboardingVerified ? 'Completed' : 'Failed/Pending'}
-                            </span>
-                          </td>
-                          <td className="p-3">
-                            <span className="text-emerald-600 font-bold">100% Compliant</span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Inspector Certificate Modal */}
-            {isAuditModalOpen && (
-              <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
-                <div className="bg-white rounded-lg p-6 max-w-md w-full space-y-4">
-                  <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-                    <h3 className="font-bold text-slate-800">Issue Audit Findings / Finding Certificate</h3>
-                    <button onClick={() => setIsAuditModalOpen(false)} className="text-slate-400 hover:text-slate-600">
-                      <X className="h-5 w-5" />
-                    </button>
-                  </div>
-
-                  <form onSubmit={handlePostAudit} className="space-y-4 text-xs">
-                    <div>
-                      <label className="block text-slate-600 font-semibold mb-1">Entity Inspected Category</label>
-                      <select 
-                        value={newAudit.inspectedEntity} 
-                        onChange={(e) => setNewAudit(prev => ({ ...prev, inspectedEntity: e.target.value as any, entityId: e.target.value === 'Industry' ? (industries[0]?.id || 'ind-1') : (contractors[0]?.id || 'con-1') }))}
-                        className="w-full border border-slate-200 p-2 rounded outline-none"
-                      >
-                        <option value="Industry">Manufacturing Industry</option>
-                        <option value="Contractor">Labor Contractor</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-slate-600 font-semibold mb-1">Select Specific Entity</label>
-                      <select 
-                        value={newAudit.entityId}
-                        onChange={(e) => setNewAudit(prev => ({ ...prev, entityId: e.target.value }))}
-                        className="w-full border border-slate-200 p-2 rounded outline-none"
-                      >
-                        {newAudit.inspectedEntity === 'Industry' 
-                          ? industries.map(i => <option key={i.id} value={i.id}>{i.name}</option>)
-                          : contractors.map(c => <option key={c.id} value={c.id}>{c.name}</option>)
-                        }
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-slate-600 font-semibold mb-1">Inspector Finding Status</label>
-                      <select 
-                        value={newAudit.status}
-                        onChange={(e) => setNewAudit(prev => ({ ...prev, status: e.target.value as any }))}
-                        className="w-full border border-slate-200 p-2 rounded outline-none"
-                      >
-                        <option value="Clean">Clean Record Certificate Issued</option>
-                        <option value="Minor-Observations">Minor Compliance Observations Registered</option>
-                        <option value="Non-Compliant-Alert">NON-COMPLIANCE VIOLATION WARNING</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-slate-600 font-semibold mb-1">Detailed Findings Description</label>
-                      <textarea 
-                        rows={4}
-                        placeholder="State legal findings, EPF code checks, Form 15 verification notes..."
-                        value={newAudit.findings}
-                        onChange={(e) => setNewAudit(prev => ({ ...prev, findings: e.target.value }))}
-                        className="w-full border border-slate-200 p-2 rounded outline-none"
-                        required
-                      />
-                    </div>
-
-                    <div className="pt-2 flex justify-end gap-2">
-                      <button 
-                        type="button" 
-                        onClick={() => setIsAuditModalOpen(false)}
-                        className="border border-slate-200 px-4 py-2 rounded text-slate-600 hover:bg-slate-50"
-                      >
-                        Cancel
-                      </button>
-                      <button 
-                        type="submit" 
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded"
-                      >
-                        File Inspection Certificate
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            )}
-          </div>
+        {/* ==================== 4. LABOUR INSPECTOR JURISDICTION & STATUTORY AUDITOR PANEL ==================== */}
+        {currentRole === "government_inspector" && (
+          <GovernmentInspectorJurisdictionPanel
+            currentInspector={
+              inspectors.find(i => i.id === selectedInspectorId) ||
+              inspectors.find(i => i.email.toLowerCase() === (loginEmailOrPhone || "").toLowerCase() || i.phone === loginEmailOrPhone) ||
+              inspectors[0]
+            }
+            allInspectors={inspectors}
+            industries={industries}
+            contractors={contractors}
+            workers={workers}
+            attendance={attendance}
+            auditLogs={auditLogs}
+            assignments={assignments}
+            onUpdateInspectorProfile={handleUpdateInspectorProfile}
+            onFileAuditLog={handleFileAuditFromInspector}
+            onLogout={handleLogout}
+            onRefreshData={refreshData}
+          />
         )}
-
       </div>
 
       {/* Simulator active Challan Dossier inspection modal */}
