@@ -42,7 +42,9 @@ import {
   Smartphone,
   Sparkles,
   CheckCircle2,
-  Scale
+  Scale,
+  FolderArchive,
+  FolderCheck
 } from 'lucide-react';
 import { 
   Industry, 
@@ -78,7 +80,7 @@ import {
 } from '../mockData';
 import { auth, googleAuthProvider } from '../lib/firebase';
 import { signInWithPopup, signOut, onAuthStateChanged, User } from 'firebase/auth';
-import logoUrl from '../assets/images/shramiklink_logo_uploaded.jpeg';
+import logoUrl from '../assets/images/icwl_logo.png';
 import TransparentImage from './TransparentImage';
 import { PWAInstallButton } from './PWAInstallButton';
 import { AppLanguage, getStoredLanguage, setStoredLanguage, TRANSLATIONS, SUPPORTED_LANGUAGES } from '../i18n';
@@ -95,6 +97,7 @@ import ContractorJobSupplyBrowse from './ContractorJobSupplyBrowse';
 import DirectWorkersPanel from './DirectWorkersPanel';
 import AssignedInspectorCard from './AssignedInspectorCard';
 import GovernmentInspectorJurisdictionPanel from './GovernmentInspectorJurisdictionPanel';
+import IndustryProjectComplianceSystem from './IndustryProjectComplianceSystem';
 import { 
   ContractorApplication, 
   DirectJobOpening, 
@@ -215,7 +218,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
         proposedWageRate: 520,
         appliedDate: '2026-09-01',
         status: 'Pending',
-        notes: 'Assembly line skilled workers with valid EPF, ESI, and safety PPE ready to deploy.'
+        notes: 'Assembly line manual workers with valid EPF, ESI, and safety PPE ready to deploy.'
       },
       {
         id: 'capp-2',
@@ -253,10 +256,10 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
         industryId: 'ind-1',
         industryName: 'Tata Motors Assembly Plant',
         location: 'Guwahati Industrial Estate, Sector 3',
-        roleTitle: 'CNC Machine Operator & Assistant',
-        skillType: 'Skilled',
+        roleTitle: 'General Factory & Assembly Helper',
+        skillType: 'Unskilled',
         openingsCount: 8,
-        dailyWageRate: 650,
+        dailyWageRate: 480,
         shiftTiming: 'Shift A (06:00 - 14:00)',
         contactPerson: 'Mr. Pranjal Baruah (Plant HR Manager)',
         contactPhone: '9864019280',
@@ -272,7 +275,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
         roleTitle: 'Warehouse Packaging & Material Handler',
         skillType: 'Unskilled',
         openingsCount: 15,
-        dailyWageRate: 490,
+        dailyWageRate: 480,
         shiftTiming: 'General (09:00 - 17:00)',
         contactPerson: 'Ms. Anita Dutta (HR Lead)',
         contactPhone: '9864019285',
@@ -285,16 +288,16 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
         industryId: 'ind-3',
         industryName: 'Numaligarh Bio-Refinery Ltd',
         location: 'Golaghat Industrial Zone',
-        roleTitle: 'Electrical Substation Helper',
-        skillType: 'Semi-Skilled',
+        roleTitle: 'Refinery Material Loading Helper',
+        skillType: 'Unskilled',
         openingsCount: 6,
-        dailyWageRate: 580,
+        dailyWageRate: 480,
         shiftTiming: 'Shift B (14:00 - 22:00)',
         contactPerson: 'Mr. Kalyan Gogoi (Operations Head)',
         contactPhone: '9864019290',
         postedDate: '2026-09-03',
         status: 'Open',
-        description: 'বৈদ্যুতিক পেনেল আৰু মেইনটিনেন্স কামৰ সহায়কাৰী। ডাইৰেক্ট কোম্পানী ৰোল আৰু অভাৰটাইম অতিৰিক্ত নিৰিখ।'
+        description: 'কাৰখানা মজিয়া আৰু সামগ্ৰী উঠোৱা-নমোৱা সহায়কাৰী। ডাইৰেক্ট কোম্পানী ৰোল আৰু অভাৰটাইম অতিৰিক্ত নিৰিখ।'
       }
     ];
   });
@@ -318,12 +321,12 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
         industryName: 'Tata Motors Assembly Plant',
         workerName: 'ৰাহুল ডেকা (Rahul Deka)',
         phone: '9864055443',
-        skillType: 'Skilled',
+        skillType: 'Unskilled',
         experienceYears: 3,
         preferredShift: 'Shift A (06:00 - 14:00)',
         appliedDate: '2026-09-03',
         status: 'Shortlisted',
-        notes: '৩ বছৰ কাৰখানাত লেথ আৰু সিএনচি অপাৰেটিং অভিজ্ঞতা।'
+        notes: 'কাৰখানা মজিয়াত ৩ বছৰ মাল চম্ভালা আৰু পৰিচালনাৰ অভিজ্ঞতা।'
       }
     ];
   });
@@ -547,10 +550,14 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
     }
 
     const defaults: CredentialUser[] = [
+      { name: 'Tata Motors HR (Industry)', emailOrPhone: 'admin@icwl.in', passwordHash: 'admin', role: 'industry_admin' },
       { name: 'Tata Motors HR (Industry)', emailOrPhone: 'admin@shramiklink.com', passwordHash: 'admin', role: 'industry_admin' },
       { name: 'Ramesh Kalita (Supervisor)', emailOrPhone: 'ramesh.kalita@industry.com', passwordHash: 'admin', role: 'supervisor' },
+      { name: 'Apex Solutions (Contractor)', emailOrPhone: 'contractor@icwl.in', passwordHash: 'admin', role: 'contractor' },
       { name: 'Apex Solutions (Contractor)', emailOrPhone: 'contractor@shramiklink.com', passwordHash: 'admin', role: 'contractor' },
+      { name: 'Gopal Kumar (Worker)', emailOrPhone: 'worker@icwl.in', passwordHash: 'admin', role: 'worker' },
       { name: 'Gopal Kumar (Worker)', emailOrPhone: 'worker@shramiklink.com', passwordHash: 'admin', role: 'worker' },
+      { name: 'Bhaskar Senapati (Government)', emailOrPhone: 'inspector@icwl.in', passwordHash: 'admin', role: 'government_inspector' },
       { name: 'Bhaskar Senapati (Government)', emailOrPhone: 'inspector@shramiklink.com', passwordHash: 'admin', role: 'government_inspector' },
       { name: 'Demo Admin Phone', emailOrPhone: '9876543210', passwordHash: 'admin', role: 'industry_admin' },
       { name: 'Demo Supervisor Phone', emailOrPhone: '9876543220', passwordHash: 'admin', role: 'supervisor' },
@@ -567,6 +574,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
     }
 
     const standardEmailsOrPhones = [
+      'admin@icwl.in', 'contractor@icwl.in', 'worker@icwl.in', 'inspector@icwl.in',
       'admin@shramiklink.com', 'ramesh.kalita@industry.com', 'contractor@shramiklink.com', 'worker@shramiklink.com', 'inspector@shramiklink.com',
       '9876543210', '9876543220', '9876543211', '9876543212', '9876543213'
     ];
@@ -757,7 +765,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
       setMobileDetectedName(null);
     }
 
-    const bannerText = `[ShramikLinks SMS] আপোনাৰ সুৰক্ষিত এক্সেছ অ’টিপি ক’ড হৈছে: ${generatedOtp}। নিৰাপত্তাৰ স্বাৰ্থত কাৰো সৈতে ভাগ-বতৰা নকৰিব।`;
+    const bannerText = `[ICWL SMS] আপোনাৰ সুৰক্ষিত এক্সেছ অ’টিপি ক’ড হৈছে: ${generatedOtp}। নিৰাপত্তাৰ স্বাৰ্থত কাৰো সৈতে ভাগ-বতৰা নকৰিব।`;
     setMobileOtpSmsBanner(bannerText);
     showNotice(`📱 SMS প্ৰেৰণ কৰা হৈছে: OTP ক’ড হৈছে ${generatedOtp}`, 'info');
   };
@@ -794,7 +802,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
   const handleUnlockMasterKey = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const key = masterKeyInput.trim().toLowerCase();
-    if (key === 'admin' || key === '1234' || key === 'shramik' || key === 'master' || key === 'bhaskar') {
+    if (key === 'admin' || key === '1234' || key === 'icwl' || key === 'shramik' || key === 'master' || key === 'bhaskar') {
       setAdminModeUnlocked(true);
       sessionStorage.setItem('s_admin_mode_unlocked', 'true');
       setShowMasterKeyModal(false);
@@ -948,7 +956,11 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
       handleLogout();
     };
     window.addEventListener('shramiklink-logout', handleGlobalLogoutEvent);
-    return () => window.removeEventListener('shramiklink-logout', handleGlobalLogoutEvent);
+    window.addEventListener('icwl-logout', handleGlobalLogoutEvent);
+    return () => {
+      window.removeEventListener('shramiklink-logout', handleGlobalLogoutEvent);
+      window.removeEventListener('icwl-logout', handleGlobalLogoutEvent);
+    };
   }, []);
   
   // Selected Actor Sub-states
@@ -957,7 +969,8 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
   const [selectedWorkerId, setSelectedWorkerId] = useState<string>('wrk-4'); // Idle worker
 
   // Dashboard navigation tabs
-  const [contractorTab, setContractorTab] = useState<'work' | 'deployment' | 'billing' | 'requisitions' | 'supervisors_attendance'>('work');
+  const [contractorTab, setContractorTab] = useState<'project_compliance' | 'work' | 'deployment' | 'billing' | 'requisitions' | 'supervisors_attendance' | 'workforce'>('project_compliance');
+  const [isHrComplianceDossierOpen, setIsHrComplianceDossierOpen] = useState<boolean>(false);
   const [isContractorMonthlySheetOpen, setIsContractorMonthlySheetOpen] = useState<boolean>(false);
   const [selectedContractorMonth, setSelectedContractorMonth] = useState<string>('2026-09');
   const [activeSummaryIndustryId, setActiveSummaryIndustryId] = useState<string | null>(null);
@@ -966,7 +979,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
   // Interactive Form Dialog states
   const [isRequirementModalOpen, setIsRequirementModalOpen] = useState(false);
   const [newReq, setNewReq] = useState({
-    skillType: 'Skilled' as 'Unskilled' | 'Semi-Skilled' | 'Skilled' | 'Highly-Skilled',
+    skillType: 'Unskilled' as const,
     workersNeeded: 5,
     shiftTiming: 'Shift A (06:00 - 14:00)',
     contractorId: 'con-1'
@@ -1043,8 +1056,8 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
     aadhaarHash: 'XXXXXXXX4910',
     phone: '+91 98765 43210',
     contractorId: 'con-1',
-    skillType: 'Semi-Skilled',
-    dailyWageRate: 650,
+    skillType: 'Unskilled',
+    dailyWageRate: 480,
     status: 'Available',
     onboardingVerified: true,
     onboardingDate: '2026-08-10'
@@ -1115,6 +1128,66 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
       hasESI,
       hasGST
     };
+  };
+
+  // Compliance documents persistence effect
+  useEffect(() => {
+    try {
+      localStorage.setItem('s_compliance_docs', JSON.stringify(complianceDocs));
+    } catch (e) {}
+  }, [complianceDocs]);
+
+  // Automated Industry-Wise Project Compliance Handlers
+  const handleUploadComplianceDoc = (doc: Omit<ComplianceDocument, 'id' | 'uploadedAt'>) => {
+    const newDoc: ComplianceDocument = {
+      ...doc,
+      id: `doc-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      uploadedAt: new Date().toISOString().split('T')[0]
+    };
+    setComplianceDocs(prev => [newDoc, ...prev]);
+    showNotice(`নথি '${newDoc.fileName}' সফলতাৰে প্ৰকল্প ফোল্ডাৰত সংৰক্ষণ কৰা হ'ল! (Document archived)`, 'success');
+  };
+
+  const handleAddSiteAttendance = (att: Omit<Attendance, 'id'>) => {
+    const newAtt: Attendance = {
+      ...att,
+      id: `att-${Date.now()}-${Math.floor(Math.random() * 1000)}`
+    };
+    setAttendance(prev => [newAtt, ...prev]);
+    showNotice(`শ্ৰমিক ${newAtt.workerName}-ৰ দৈনিক চাইট হাজিৰা সফলতাৰে সংৰক্ষণ হ'ল! (Site attendance logged)`, 'success');
+  };
+
+  const handleHrSignOff = (industryId: string, contractorId: string, remarks: string) => {
+    const ind = industries.find(i => i.id === industryId);
+    const con = contractors.find(c => c.id === contractorId);
+    handleFileAuditFromInspector({
+      inspectorName: `${ind?.name || 'Principal Employer'} (HR Office)`,
+      inspectedEntity: 'Contractor',
+      entityId: contractorId,
+      entityName: con?.name || 'Contractor Agency',
+      findings: `Principal Employer (${ind?.name || 'Industry'}) verified & signed off Form XVI/XVII registers and statutory challans. Remarks: ${remarks}`,
+      status: 'Clean'
+    });
+    showNotice(`প্ৰধান নিয়োগকাৰীয়ে ঠিকাদাৰ ${con?.name}-ৰ প্ৰকল্প নথি ডিজিটেল অনুমোদন কৰিলে!`, 'success');
+  };
+
+  const handleInspectorAuditSignOff = (industryId: string, contractorId: string, status: string, remarks: string) => {
+    const ind = industries.find(i => i.id === industryId);
+    const con = contractors.find(c => c.id === contractorId);
+    const currentInsp = inspectors.find(i => i.id === selectedInspectorId) || inspectors[0];
+    const auditStatus: 'Clean' | 'Minor-Observations' | 'Non-Compliant-Alert' = 
+      status === 'Non-Compliant-Alert' ? 'Non-Compliant-Alert' : 
+      status === 'Minor-Observations' ? 'Minor-Observations' : 'Clean';
+
+    handleFileAuditFromInspector({
+      inspectorName: `${currentInsp.name} (${currentInsp.designation})`,
+      inspectedEntity: 'Contractor',
+      entityId: contractorId,
+      entityName: `${con?.name} at ${ind?.name}`,
+      findings: `Official Labour Inspection: Form XVI Muster Roll, Form XVII Wage Register & Statutory Licenses audited. Result: ${status}. Notes: ${remarks}`,
+      status: auditStatus
+    });
+    showNotice(`শ্ৰম আয়ুক্ত কাৰ্যালয়ৰ ডিজিটেল পৰিদৰ্শন চাৰ্টিফিকেট জাৰী কৰা হ'ল!`, 'success');
   };
 
   // Industry-wise Attendance Filter & Worker Check-In state
@@ -1810,7 +1883,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
       csvRows.push(`Contractor: "${contractorObj.name}", License No: "${contractorObj.licenseNo}", LIN: "${contractorObj.lin}"`);
       csvRows.push(`Sl No,Workman Name,UAN,Age/Sex,Father/Husband Name,Designation,Address,Date of Joining,Verification Status`);
       targetWorkers.forEach((wrk, idx) => {
-        csvRows.push(`${idx + 1},"${wrk.name}","${getWorkerUAN(wrk)}","32/M","Late B. ${wrk.name.split(' ')[1] || 'Kumar'}","${wrk.skillType}","Guwahati Assam","${wrk.onboardingDate || '2026-04-12'}","Aadhaar Verified"`);
+        csvRows.push(`${idx + 1},"${wrk.name}","${getWorkerUAN(wrk)}","32/M","Late B. ${wrk.name.split(' ')[1] || 'Kumar'}","Unskilled Labourer","Guwahati Assam","${wrk.onboardingDate || '2026-04-12'}","Aadhaar Verified"`);
       });
     } else if (formType === 'Form XVI') {
       csvRows.push(`FORM XVI - Muster Roll Ledger (See Rule 78(1)(a)(i))`);
@@ -1847,7 +1920,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
         const epf = Math.min(gross, 15000) * 0.12;
         const esi = gross * 0.0075;
         const net = gross - epf - esi;
-        csvRows.push(`${idx + 1},"${wrk.name}","${wrk.skillType}",${wrk.dailyWageRate},${days},${ot},${Math.round(gross)},${Math.round(epf)},${Math.round(esi)},${Math.round(net)}`);
+        csvRows.push(`${idx + 1},"${wrk.name}","Unskilled",${wrk.dailyWageRate},${days},${ot},${Math.round(gross)},${Math.round(epf)},${Math.round(esi)},${Math.round(net)}`);
       });
     } else if (formType === 'Form XX') {
       csvRows.push(`FORM XX - Register of Deductions for Damage or Loss (See Rule 78(1)(a)(ii))`);
@@ -1947,7 +2020,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
   const [newWorkerPhone, setNewWorkerPhone] = useState('');
   const [newWorkerAadhaar, setNewWorkerAadhaar] = useState('');
   const [newWorkerContractor, setNewWorkerContractor] = useState('con-1');
-  const [newWorkerSkill, setNewWorkerSkill] = useState<'Unskilled' | 'Semi-Skilled' | 'Skilled' | 'Highly-Skilled'>('Unskilled');
+  const [newWorkerSkill, setNewWorkerSkill] = useState<'Unskilled'>('Unskilled');
   const [newWorkerSuccess, setNewWorkerSuccess] = useState(false);
 
   const handleRegisterWorker = async (e: React.FormEvent) => {
@@ -1970,8 +2043,8 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
           phone: newWorkerPhone,
           aadhaarHash: newWorkerAadhaar,
           contractorId: newWorkerContractor,
-          skillType: newWorkerSkill,
-          dailyWageRate: newWorkerSkill === 'Highly-Skilled' ? 850 : newWorkerSkill === 'Skilled' ? 650 : newWorkerSkill === 'Semi-Skilled' ? 550 : 480
+          skillType: 'Unskilled',
+          dailyWageRate: 480
         })
       });
 
@@ -2650,27 +2723,28 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
           <div className="absolute right-0 top-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
           <div className="absolute left-1/3 bottom-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
 
-          {/* Top Row: Logo (Left), ShramikLinks (Center), Pill (Right) */}
+          {/* Top Row: Logo (Left), ICWL Brand (Center), Pill (Right) */}
           <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-2 border-b border-slate-800/30 pb-2.5">
             
             {/* Logo (Left side) */}
             <div className="flex-1 flex justify-center md:justify-start w-full md:w-auto">
-              <div className="relative group w-10 h-10 md:w-12 md:h-12 bg-slate-950 rounded-xl overflow-hidden flex items-center justify-center border border-emerald-500/50 shadow-lg hover:scale-105 transition-transform duration-300">
+              <div className="relative group w-10 h-10 md:w-12 md:h-12 bg-slate-950 rounded-xl overflow-hidden flex items-center justify-center border border-indigo-500/50 shadow-lg hover:scale-105 transition-transform duration-300 p-0.5">
                 <img 
                   src={logoUrl} 
-                  alt="ShramikLinks Official Logo" 
-                  className="w-full h-full object-cover"
+                  alt="IndustrialContractorWorkerLink (ICWL) Official Logo" 
+                  className="w-full h-full object-contain rounded-lg"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/shramiklinks_logo.jpg';
+                    (e.target as HTMLImageElement).src = '/ICWL.png';
                   }}
                 />
               </div>
             </div>
 
-            {/* ShramikLinks (Center) */}
+            {/* IndustrialContractorWorkerLink / ICWL (Center) */}
             <div className="flex-1 flex justify-center text-center">
-              <h2 className="text-lg md:text-xl font-black tracking-tight text-white select-none">
-                <span className="text-white">Shramik</span><span className="text-orange-500">Links</span>
+              <h2 className="text-base md:text-lg font-black tracking-tight text-white select-none flex items-center justify-center gap-1.5 flex-wrap">
+                <span className="text-white">IndustrialContractorWorkerLink</span>
+                <span className="text-indigo-400 font-mono text-sm bg-indigo-500/15 px-2 py-0.5 rounded border border-indigo-500/30 font-bold">(ICWL)</span>
               </h2>
             </div>
 
@@ -2879,7 +2953,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                       <input 
                         type="text"
                         required
-                        placeholder="E.g., contractor@shramiklink.com"
+                        placeholder="E.g., contractor@icwl.in"
                         value={resetEmailOrPhone}
                         onChange={(e) => setResetEmailOrPhone(e.target.value)}
                         className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-indigo-500"
@@ -3038,7 +3112,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                       <input 
                         type="text"
                         required
-                        placeholder="E.g., admin@shramiklink.com or 9876543210"
+                        placeholder="E.g., admin@icwl.in or 9876543210"
                         value={loginEmailOrPhone}
                         onChange={(e) => setLoginEmailOrPhone(e.target.value)}
                         className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:bg-white focus:border-indigo-500"
@@ -3444,11 +3518,11 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
 
               <div className="space-y-2.5">
                 {[
-                  { label: '🏭 Industry HR', email: 'admin@shramiklink.com', pass: 'admin', phone: '9876543210' },
+                  { label: '🏭 Industry HR', email: 'admin@icwl.in', pass: 'admin', phone: '9876543210' },
                   { label: '👷 Factory Supervisor (Gate Attendance)', email: 'ramesh.kalita@industry.com', pass: 'admin', phone: '9876543220' },
-                  { label: '🏢 Licensed Contractor', email: 'contractor@shramiklink.com', pass: 'admin', phone: '9876543211' },
-                  { label: '👷 Contract Worker', email: 'worker@shramiklink.com', pass: 'admin', phone: '9876543212' },
-                  { label: '⚖️ Government Inspector', email: 'inspector@shramiklink.com', pass: 'admin', phone: '9876543213' }
+                  { label: '🏢 Licensed Contractor', email: 'contractor@icwl.in', pass: 'admin', phone: '9876543211' },
+                  { label: '👷 Contract Worker', email: 'worker@icwl.in', pass: 'admin', phone: '9876543212' },
+                  { label: '⚖️ Government Inspector', email: 'inspector@icwl.in', pass: 'admin', phone: '9876543213' }
                 ].map((cred, idx) => (
                   <button
                     key={idx}
@@ -3618,16 +3692,16 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
           <div className="relative group w-11 h-11 bg-white p-0.5 rounded-xl text-slate-950 flex items-center justify-center shrink-0 border border-slate-700 shadow-sm">
             <TransparentImage 
               src={logoUrl} 
-              alt="ShramikLinks Logo" 
+              alt="IndustrialContractorWorkerLink Logo" 
               className="w-full h-full object-contain"
               threshold={195}
             />
             {currentRole === 'industry_admin' && (
               <a 
                 href={logoUrl} 
-                download="shramiklinks_logo.png" 
+                download="ICWL_logo.png" 
                 className="absolute -bottom-1 -right-1 bg-slate-900 text-emerald-400 hover:text-emerald-300 p-0.5 rounded-md border border-slate-800 shadow-md cursor-pointer hover:scale-105 transition-all flex items-center justify-center"
-                title="Download Logo"
+                title="Download ICWL Logo"
               >
                 <Download className="w-2.5 h-2.5" />
               </a>
@@ -3636,7 +3710,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
           <div>
             <div className="flex items-center gap-2 mb-0.5">
               <span className="text-xs font-black tracking-tight text-white flex items-center">
-                Shramik<span className="text-orange-500">Links</span>
+                ICWL <span className="text-indigo-400 ml-1 font-mono text-[10px]">(IndustrialContractorWorkerLink)</span>
               </span>
               <span className="text-[10px] text-slate-400 font-mono">B2B Compliance</span>
             </div>
@@ -3922,6 +3996,15 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
 
               <div className="flex gap-2 shrink-0 flex-wrap">
                 <button
+                  onClick={() => setIsHrComplianceDossierOpen(!isHrComplianceDossierOpen)}
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+                >
+                  <FolderArchive className="h-4 w-4" />
+                  {isHrComplianceDossierOpen 
+                    ? 'প্ৰকল্প ডচিয়াৰ বন্ধ কৰক (Close Dossiers)' 
+                    : '📁 ঠিকাদাৰ প্ৰকল্প কমপ্লাইয়েন্স ডচিয়াৰ ও ৰেজিষ্টাৰ অডিট (Contractor Dossiers)'}
+                </button>
+                <button
                   onClick={() => setIsFeedbackModalOpen(true)}
                   className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs px-3.5 py-2.5 rounded-xl transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
                 >
@@ -3940,6 +4023,49 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                 </button>
               </div>
             </div>
+
+            {/* COLLAPSIBLE / DEDICATED INDUSTRY HR CONTRACTOR COMPLIANCE DOSSIER AUDIT */}
+            {isHrComplianceDossierOpen && (
+              <div className="bg-slate-50 border-2 border-indigo-200 rounded-2xl p-6 shadow-sm space-y-4 animate-fadeIn">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-indigo-100 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-xs">
+                      <FolderCheck className="h-5 w-5" />
+                    </span>
+                    <div>
+                      <h3 className="font-extrabold text-slate-900 text-base">
+                        {activeIndustry.name} - ঠিকাদাৰভিত্তিক আইনী কমপ্লাইয়েন্স ডচিয়াৰ ও ৰেজিষ্টাৰ অডিট ডেস্ক
+                      </h3>
+                      <p className="text-xs text-slate-600">
+                        Form XVI Muster Roll, Form XVII Wage Register, শ্ৰম অনুজ্ঞাপত্ৰ (Form IV), Form VI A আৰু EPF/ESI পৰিশোধৰ প্ৰমাণ নিৰীক্ষণ কৰি প্ৰধান নিয়োগকাৰী হিচাপে অনুমোদন কৰক।
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setIsHrComplianceDossierOpen(false)}
+                    className="text-xs font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-100 px-3.5 py-1.5 rounded-xl transition-colors cursor-pointer"
+                  >
+                    বন্ধ কৰক (Close)
+                  </button>
+                </div>
+
+                <IndustryProjectComplianceSystem
+                  contractor={contractors[0]}
+                  allContractors={contractors}
+                  industries={industries}
+                  workers={workers}
+                  assignments={assignments}
+                  attendance={attendance}
+                  complianceDocs={complianceDocs}
+                  inspectors={inspectors}
+                  viewMode="industry_hr"
+                  onUploadDoc={handleUploadComplianceDoc}
+                  onAddAttendanceRecord={handleAddSiteAttendance}
+                  onHrSignOff={handleHrSignOff}
+                  onInspectorAuditSignOff={handleInspectorAuditSignOff}
+                />
+              </div>
+            )}
 
             {/* INDUSTRY HR MANPOWER REQUIREMENTS, APPLYING CONTRACTORS & RELIABLE DIRECTORY */}
             <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
@@ -4455,17 +4581,10 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
 
                   <form onSubmit={handlePostRequirement} className="space-y-4 text-xs">
                     <div>
-                      <label className="block text-slate-600 font-semibold mb-1">Required Skill Category</label>
-                      <select 
-                        value={newReq.skillType} 
-                        onChange={(e) => setNewReq(prev => ({ ...prev, skillType: e.target.value as any }))}
-                        className="w-full border border-slate-200 p-2 rounded outline-none"
-                      >
-                        <option value="Unskilled">Unskilled (₹480/day)</option>
-                        <option value="Semi-Skilled">Semi-Skilled (₹550/day)</option>
-                        <option value="Skilled">Skilled (₹650/day)</option>
-                        <option value="Highly-Skilled">Highly-Skilled (₹850/day)</option>
-                      </select>
+                      <label className="block text-slate-600 font-semibold mb-1">Labour Category</label>
+                      <div className="w-full bg-slate-100 border border-slate-200 p-2 rounded text-slate-800 font-bold text-xs">
+                        অদক্ষ শ্ৰমিক (Unskilled Manual Labour - ₹480/day)
+                      </div>
                     </div>
 
                     <div>
@@ -4651,6 +4770,18 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
             {/* Contractor Dashboard Horizontal Navigation Tabs */}
             <div className="flex border-b border-slate-200 gap-1 overflow-x-auto pb-px">
               <button
+                onClick={() => setContractorTab('project_compliance')}
+                className={`py-3 px-5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+                  contractorTab === 'project_compliance' 
+                    ? 'border-indigo-600 text-indigo-600 font-extrabold bg-indigo-50/40' 
+                    : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+                }`}
+              >
+                <FolderArchive className="h-4 w-4 text-indigo-600" />
+                📁 প্ৰকল্প কমপ্লাইয়েন্স ও নথি (Project Compliance & Registers)
+              </button>
+
+              <button
                 onClick={() => setContractorTab('workforce')}
                 className={`py-3 px-5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
                   contractorTab === 'workforce' 
@@ -4724,6 +4855,24 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
             </div>
 
             {/* CONTRACTOR TAB CONTENTS */}
+            {contractorTab === 'project_compliance' && (
+              <IndustryProjectComplianceSystem
+                contractor={activeContractor}
+                allContractors={contractors}
+                industries={industries}
+                workers={workers}
+                assignments={assignments}
+                attendance={attendance}
+                complianceDocs={complianceDocs}
+                inspectors={inspectors}
+                viewMode="contractor"
+                onUploadDoc={handleUploadComplianceDoc}
+                onAddAttendanceRecord={handleAddSiteAttendance}
+                onHrSignOff={handleHrSignOff}
+                onInspectorAuditSignOff={handleInspectorAuditSignOff}
+              />
+            )}
+
             {contractorTab === 'work' && (
               <>
                 {/* CONTRACTOR'S INDUSTRY-WISE WORK & DEPLOYMENT SUMMARY */}
@@ -4894,7 +5043,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                           <thead className="bg-slate-100 text-slate-700 uppercase tracking-wider text-[10px] font-bold border-b border-slate-200">
                             <tr>
                               <th className="p-3">শ্ৰমিকৰ নাম</th>
-                              <th className="p-3 text-center">শ্ৰেণী (Skill)</th>
+                              <th className="p-3 text-center">শ্ৰেণী (Category)</th>
                               <th className="p-3 text-right">মজুৰি নিৰিখ (Rate)</th>
                               <th className="p-3 text-center">উপস্থিতি (Shifts)</th>
                               <th className="p-3 text-center">মুঠ ঘণ্টা</th>
@@ -4919,8 +5068,8 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                                     <span className="block text-[10px] text-slate-400 font-mono font-normal">UAN: {getWorkerUAN(w)}</span>
                                   </td>
                                   <td className="p-3 text-center font-sans">
-                                    <span className="bg-slate-100 text-slate-700 text-[10px] font-medium px-2 py-0.5 rounded-full border border-slate-200">
-                                      {w.skillType}
+                                    <span className="bg-emerald-50 text-emerald-800 text-[10px] font-medium px-2 py-0.5 rounded-full border border-emerald-200">
+                                      অদক্ষ শ্ৰমিক
                                     </span>
                                   </td>
                                   <td className="p-3 text-right text-slate-700">
@@ -5035,7 +5184,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                         <div key={wrk.id} className="bg-white border border-slate-150 p-3 rounded shadow-2xs space-y-2">
                           <div>
                             <span className="font-semibold text-slate-800 text-xs block">{wrk.name}</span>
-                            <span className="text-[10px] text-slate-400">Daily: ₹{wrk.dailyWageRate} | {wrk.skillType}</span>
+                            <span className="text-[10px] text-slate-400">Daily: ₹{wrk.dailyWageRate} | অদক্ষ শ্ৰমিক</span>
                           </div>
                           
                           {deployingWorkerId === wrk.id ? (
@@ -5454,7 +5603,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                                     <div key={row.worker?.id || idx} className="p-2 flex items-center justify-between hover:bg-slate-50">
                                       <div>
                                         <span className="font-bold text-slate-800">{row.worker?.name || 'Worker'}</span>
-                                        <span className="text-[10px] text-slate-400 ml-1.5">({row.worker?.skillType || 'General'})</span>
+                                        <span className="text-[10px] text-slate-400 ml-1.5">(অদক্ষ শ্ৰমিক)</span>
                                       </div>
                                       <div className="flex items-center gap-3 text-right font-mono">
                                         <span className="text-slate-600">{row.daysWorked} দিন × ₹{row.dailyRate}</span>
@@ -6002,7 +6151,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                     <tr>
                       <th className="p-3">Worker Details</th>
                       <th className="p-3">UAN / ESIC IP</th>
-                      <th className="p-3">Skill Category</th>
+                      <th className="p-3">Labour Category</th>
                       <th className="p-3 font-mono">Daily Rate</th>
                       <th className="p-3 text-center">Days Present</th>
                       <th className="p-3 text-center">OT Hours</th>
@@ -6032,7 +6181,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                             <div>UAN: {getWorkerUAN(wrk)}</div>
                             <div>IP: {getWorkerESIIP(wrk)}</div>
                           </td>
-                          <td className="p-3 text-slate-500">{wrk.skillType}</td>
+                          <td className="p-3 text-slate-500 font-medium">অদক্ষ শ্ৰমিক</td>
                           <td className="p-3 font-mono">₹{wrk.dailyWageRate}</td>
                           <td className="p-3 text-center font-bold text-slate-700">{daysPresent}</td>
                           <td className="p-3 text-center">
@@ -6286,7 +6435,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                                   <th className="p-3 border-r border-slate-200">শ্ৰমিকৰ সম্পূৰ্ণ নাম (Workman Name)</th>
                                   <th className="p-3 border-r border-slate-200 w-24 text-center">বয়স / লিংগ</th>
                                   <th className="p-3 border-r border-slate-200">পিতৃ / স্বামীৰ নাম</th>
-                                  <th className="p-3 border-r border-slate-200">কামৰ পদবী (Skill Category)</th>
+                                  <th className="p-3 border-r border-slate-200">কামৰ পদবী (Labour Category)</th>
                                   <th className="p-3 border-r border-slate-200">ঠিকনা (Present & Permanent)</th>
                                   <th className="p-3 border-r border-slate-200 w-28 text-center">যোগদানৰ তাৰিখ</th>
                                   <th className="p-3 text-center">ডিজিটেল আধাৰ স্বাক্ষৰ (Verification)</th>
@@ -6303,7 +6452,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                                     <td className="p-3 border-r border-slate-200 font-medium text-center">32 / M</td>
                                     <td className="p-3 border-r border-slate-200 text-slate-600">Late B. {wrk.name.split(' ')[1] || 'Kumar'}</td>
                                     <td className="p-3 border-r border-slate-200">
-                                      <span className="font-semibold text-slate-800 bg-slate-100 px-2 py-0.5 rounded text-[11px]">{wrk.skillType}</span>
+                                      <span className="font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[11px]">অদক্ষ শ্ৰমিক</span>
                                     </td>
                                     <td className="p-3 border-r border-slate-200 text-[11px] text-slate-600 leading-relaxed max-w-xs">
                                       Plot 12, Industrial Area, Guwahati, Assam - 781001
@@ -6461,7 +6610,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                                     className="bg-white border border-slate-300 font-bold text-slate-800 text-xs rounded-lg px-3 py-1.5 outline-none focus:border-indigo-600"
                                   >
                                     {allContractorWorkers.map(w => (
-                                      <option key={w.id} value={w.id}>{w.name} ({w.skillType})</option>
+                                      <option key={w.id} value={w.id}>{w.name} (অদক্ষ শ্ৰমিক)</option>
                                     ))}
                                   </select>
                                 </div>
@@ -6497,7 +6646,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                                     <div className="grid grid-cols-2 gap-3 text-xs font-mono">
                                       <div><span className="text-slate-500">শ্ৰমিকৰ নাম:</span> <strong className="text-slate-900 font-sans">{activeSlipWorker?.name || 'Worker'}</strong></div>
                                       <div><span className="text-slate-500">মজুৰি মাহ:</span> <strong className="text-slate-900">August 2026</strong></div>
-                                      <div><span className="text-slate-500">কামৰ শ্ৰেণী:</span> <strong className="text-slate-900 font-sans">{activeSlipWorker?.skillType || 'General'}</strong></div>
+                                      <div><span className="text-slate-500">কামৰ শ্ৰেণী:</span> <strong className="text-slate-900 font-sans">অদক্ষ শ্ৰমিক</strong></div>
                                       <div><span className="text-slate-500">UAN No:</span> <strong className="text-slate-900">{getWorkerUAN(activeSlipWorker)}</strong></div>
                                       <div><span className="text-slate-500">দৈনিক নিৰিখ:</span> <strong className="text-slate-900">₹{activeSlipWorker?.dailyWageRate || 500} / Day</strong></div>
                                       <div><span className="text-slate-500">উপস্থিতি:</span> <strong className="text-slate-900">{daysPresent} Days ({otHours} hrs OT)</strong></div>
@@ -7033,7 +7182,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                           <th className="p-3">ক্ৰমিক (Sl)</th>
                           <th className="p-3">শ্ৰমিকৰ নাম (Worker Name)</th>
                           <th className="p-3">ফোন / আধাৰ</th>
-                          <th className="p-3">দক্ষতা (Skill)</th>
+                          <th className="p-3">শ্ৰেণী (Category)</th>
                           <th className="p-3 text-right">দৈনিক মজুৰি</th>
                           <th className="p-3 text-center">স্মাৰ্টফোন স্থিতি</th>
                           <th className="p-3 text-center">ছুপাৰভাইজাৰ হাজিৰা (দিন)</th>
@@ -7055,8 +7204,8 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                                   {w.phone}
                                 </td>
                                 <td className="p-3">
-                                  <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-semibold">
-                                    {w.skillType}
+                                  <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded text-[10px] font-semibold">
+                                    অদক্ষ শ্ৰমিক
                                   </span>
                                 </td>
                                 <td className="p-3 text-right font-mono font-bold text-slate-800">
@@ -7155,7 +7304,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                     className="font-bold text-white text-lg bg-slate-800 border border-slate-700 rounded px-3 py-1.5 outline-none focus:border-indigo-500 w-full"
                   >
                     {workers.map(w => (
-                      <option key={w.id} value={w.id} className="text-slate-800">{w.name} ({w.skillType})</option>
+                      <option key={w.id} value={w.id} className="text-slate-800">{w.name} (অদক্ষ শ্ৰমিক)</option>
                     ))}
                   </select>
                 </div>
@@ -7499,17 +7648,10 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-500 font-semibold mb-1">Skill Category Mapping</label>
-                    <select 
-                      value={newWorkerSkill}
-                      onChange={(e) => setNewWorkerSkill(e.target.value as any)}
-                      className="w-full border border-slate-200 p-2 rounded outline-none"
-                    >
-                      <option value="Unskilled">Unskilled (Basic Manual Labour)</option>
-                      <option value="Semi-Skilled">Semi-Skilled (Helper / Packer)</option>
-                      <option value="Skilled">Skilled (Machine Op / Fitter)</option>
-                      <option value="Highly-Skilled">Highly-Skilled (Supervisor)</option>
-                    </select>
+                    <label className="block text-slate-500 font-semibold mb-1">Labour Category</label>
+                    <div className="w-full bg-slate-100 border border-slate-200 p-2 rounded text-slate-800 font-bold text-xs">
+                      অদক্ষ শ্ৰমিক (Unskilled Manual Labour)
+                    </div>
                   </div>
                 </div>
 
@@ -7555,6 +7697,11 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
             attendance={attendance}
             auditLogs={auditLogs}
             assignments={assignments}
+            complianceDocs={complianceDocs}
+            onUploadDoc={handleUploadComplianceDoc}
+            onAddAttendanceRecord={handleAddSiteAttendance}
+            onHrSignOff={handleHrSignOff}
+            onInspectorAuditSignOff={handleInspectorAuditSignOff}
             onUpdateInspectorProfile={handleUpdateInspectorProfile}
             onFileAuditLog={handleFileAuditFromInspector}
             onLogout={handleLogout}
@@ -7770,7 +7917,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                             <td className="p-3 font-mono text-slate-400">{idx + 1}</td>
                             <td className="p-3">
                               <span className="font-bold text-slate-900 block">{row.worker?.name || 'Worker'}</span>
-                              <span className="text-[10px] text-slate-400">{row.worker?.skillType || 'Labour'} • ₹{row.worker?.dailyWageRate || 500}/day</span>
+                              <span className="text-[10px] text-slate-400">অদক্ষ শ্ৰমিক • ₹{row.worker?.dailyWageRate || 500}/day</span>
                             </td>
                             <td className="p-3 font-mono font-bold text-slate-700 text-[11px]">{row.uan}</td>
                             <td className="p-3 font-mono text-slate-600 text-[11px]">{row.ipNo}</td>
@@ -8181,7 +8328,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                           <tr key={r.worker?.id || idx} className="hover:bg-slate-50/50">
                             <td className="p-2.5 text-slate-400 font-normal">{idx + 1}</td>
                             <td className="p-2.5 font-bold text-slate-900 font-sans">{r.worker?.name || 'Worker'}</td>
-                            <td className="p-2.5 text-slate-600 font-sans text-[10px]">{r.worker?.skillType || 'General'}</td>
+                            <td className="p-2.5 text-slate-600 font-sans text-[10px]">অদক্ষ শ্ৰমিক</td>
                             <td className="p-2.5 text-center font-bold text-indigo-700">{r.daysWorked} দিন</td>
                             <td className="p-2.5 text-right text-slate-700">₹{r.dailyRate}</td>
                             <td className="p-2.5 text-right text-amber-700">{r.otHours > 0 ? `+${r.otHours}h (₹${r.otWage})` : '-'}</td>
@@ -8559,7 +8706,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                           <td className="p-2 border border-slate-900 font-sans font-extrabold text-left">{wrk.name}</td>
                           <td className="p-2 border border-slate-900 font-sans text-xs">32 / M</td>
                           <td className="p-2 border border-slate-900 font-sans text-left">Late B. {wrk.name.split(' ')[1] || 'Kumar'}</td>
-                          <td className="p-2 border border-slate-900 font-sans text-left">{wrk.skillType}</td>
+                          <td className="p-2 border border-slate-900 font-sans text-left">অদক্ষ শ্ৰমিক</td>
                           <td className="p-2 border border-slate-900 font-sans text-left text-[10px] max-w-xs leading-tight">
                             Assam Industrial Zone, Guwahati - 781001
                           </td>

@@ -32,7 +32,7 @@ export default function ArchitectureDocs() {
         </div>
 
         <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-4xl">
-          To comply strictly with the directives of the <strong>Labour Commissionerate and Factories Inspectorates of Assam</strong>, ShramikLinks enforces strict <strong>operational, algorithmic, and statutory compliance</strong> for Industrial Manufacturing, Commercial Units, and Contract Labour operations.
+          To comply strictly with the directives of the <strong>Labour Commissionerate and Factories Inspectorates of Assam</strong>, IndustrialContractorWorkerLink (ICWL) enforces strict <strong>operational, algorithmic, and statutory compliance</strong> for Industrial Manufacturing, Commercial Units, and Contract Labour operations.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

@@ -99,15 +99,12 @@ export default function ContractorWorkforceManager({
     );
   }, [supervisors, contractor.id]);
 
-  // Skill breakdown counts for capacity gauging
+  // Worker breakdown counts for capacity gauging
   const counts = useMemo(() => {
     const total = contractorWorkers.length;
-    const unskilled = contractorWorkers.filter(w => w.skillType === 'Unskilled').length;
-    const semiSkilled = contractorWorkers.filter(w => w.skillType === 'Semi-Skilled').length;
-    const skilled = contractorWorkers.filter(w => w.skillType === 'Skilled' || w.skillType === 'Highly-Skilled').length;
     const available = contractorWorkers.filter(w => w.status === 'Available').length;
     const deployed = contractorWorkers.filter(w => w.status === 'Deployed').length;
-    return { total, unskilled, semiSkilled, skilled, available, deployed };
+    return { total, available, deployed };
   }, [contractorWorkers]);
 
   // Search filtered workers
@@ -241,14 +238,11 @@ export default function ContractorWorkforceManager({
 
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
           <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Skill Category Mix</span>
-            <Award className="h-4 w-4 text-amber-600" />
+            <span className="text-[11px] font-bold uppercase tracking-wider">Labour Classification</span>
+            <Award className="h-4 w-4 text-emerald-600" />
           </div>
-          <div className="text-xs font-bold text-slate-700 space-y-0.5 mt-1">
-            <div>Unskilled: <strong className="text-slate-900">{counts.unskilled}</strong></div>
-            <div>Semi-Skilled: <strong className="text-slate-900">{counts.semiSkilled}</strong></div>
-            <div>Skilled / Tech: <strong className="text-slate-900">{counts.skilled}</strong></div>
-          </div>
+          <div className="text-2xl font-black text-slate-900">{counts.total} <span className="text-xs font-normal text-slate-500">শ্ৰমিক</span></div>
+          <span className="text-[11px] text-emerald-700 font-bold mt-1 block">100% সাধাৰণ ও অদক্ষ শ্ৰমিক (Unskilled Labour)</span>
         </div>
 
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
@@ -332,18 +326,10 @@ export default function ContractorWorkforceManager({
 
             <div className="flex items-center gap-3 w-full md:w-auto">
               <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                <Filter className="h-3.5 w-3.5 text-slate-400" />
-                <span>Skill:</span>
-                <select
-                  value={skillFilter}
-                  onChange={(e) => setSkillFilter(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs font-semibold outline-none"
-                >
-                  <option value="ALL">All Skills</option>
-                  <option value="Unskilled">Unskilled (অদক্ষ)</option>
-                  <option value="Semi-Skilled">Semi-Skilled (অৰ্ধ-দক্ষ)</option>
-                  <option value="Skilled">Skilled (দক্ষ)</option>
-                </select>
+                <span className="font-semibold text-slate-500">শ্ৰেণী:</span>
+                <span className="bg-slate-100 text-slate-800 border border-slate-200 rounded px-2.5 py-1 text-xs font-bold">
+                  কেৱল অদক্ষ শ্ৰমিক (Unskilled Only)
+                </span>
               </div>
 
               <div className="flex items-center gap-1.5 text-xs text-slate-600">
@@ -403,14 +389,8 @@ export default function ContractorWorkforceManager({
                           </a>
                         </td>
                         <td className="py-3 px-4">
-                          <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded border ${
-                            worker.skillType === 'Skilled' || worker.skillType === 'Highly-Skilled'
-                              ? 'bg-purple-50 text-purple-700 border-purple-200'
-                              : worker.skillType === 'Semi-Skilled'
-                              ? 'bg-blue-50 text-blue-700 border-blue-200'
-                              : 'bg-amber-50 text-amber-700 border-amber-200'
-                          }`}>
-                            {worker.skillType}
+                          <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-200">
+                            অদক্ষ শ্ৰমিক (Unskilled)
                           </span>
                           <span className="block text-[10px] text-slate-500 mt-0.5 font-medium">
                             {worker.sectionOrTrade || 'General Floor'}
@@ -515,7 +495,7 @@ export default function ContractorWorkforceManager({
                               </a>
                               <a 
                                 href={`https://wa.me/91${sup.phone.replace(/\D/g, '')}?text=${encodeURIComponent(
-                                  `নমস্কাৰ ${sup.name} ডাঙৰীয়া, ShramikLink এজেন্সিৰ তৰফৰ পৰা শ্ৰমিক দলৰ হাজিৰা আৰু কাৰখানাৰ কাম সন্দৰ্ভত যোগাযোগ কৰা হৈছে।`
+                                  `নমস্কাৰ ${sup.name} ডাঙৰীয়া, ICWL (IndustrialContractorWorkerLink) এজেন্সিৰ তৰফৰ পৰা শ্ৰমিক দলৰ হাজিৰা আৰু কাৰখানাৰ কাম সন্দৰ্ভত যোগাযোগ কৰা হৈছে।`
                                 )}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
@@ -649,23 +629,10 @@ export default function ContractorWorkforceManager({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">দক্ষতাৰ স্তৰ (Skill Category)</label>
-                  <select
-                    value={newWorker.skillType}
-                    onChange={(e) => {
-                      const skill = e.target.value as Worker['skillType'];
-                      setNewWorker({
-                        ...newWorker,
-                        skillType: skill,
-                        dailyWageRate: skill === 'Skilled' ? 620 : skill === 'Semi-Skilled' ? 530 : 480
-                      });
-                    }}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:bg-white focus:border-indigo-600 font-semibold"
-                  >
-                    <option value="Unskilled">অদক্ষ শ্ৰমিক (Unskilled Labour)</option>
-                    <option value="Semi-Skilled">অৰ্ধ-দক্ষ শ্ৰমিক (Semi-Skilled)</option>
-                    <option value="Skilled">দক্ষ টেকনিচিয়ান (Skilled)</option>
-                  </select>
+                  <label className="block font-bold text-slate-700 mb-1">শ্ৰমিকৰ শ্ৰেণী (Labour Category)</label>
+                  <div className="w-full bg-slate-100 border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800">
+                    অদক্ষ শ্ৰমিক (Unskilled Labour)
+                  </div>
                 </div>
 
                 <div>

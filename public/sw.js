@@ -1,12 +1,9 @@
-const CACHE_NAME = 'shramiklinks-v4';
+const CACHE_NAME = 'icwl-v1';
 const ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/pwa-192x192.png',
-  '/pwa-512x512.png',
-  '/pwa-maskable-512x512.png',
-  '/icon.png'
+  '/ICWL.png'
 ];
 
 self.addEventListener('install', (event) => {

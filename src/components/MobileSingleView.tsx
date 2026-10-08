@@ -206,13 +206,13 @@ export default function MobileSingleView({
       {/* 1. Mobile App Top Header (Pure Industry / Factory Standalone) */}
       <header className="px-4 py-3 border-b flex items-center justify-between sticky top-0 z-30 shadow-md bg-slate-950 border-indigo-900/60 text-indigo-100">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-xs border bg-indigo-950 border-indigo-500/50 text-indigo-300">
-            <Factory className="h-5 w-5 text-indigo-400" />
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-xs border bg-slate-900 border-indigo-500/50 text-indigo-300 overflow-hidden p-0.5">
+            <img src="/ICWL.png" alt="ICWL Logo" className="w-full h-full object-contain rounded-lg" onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
           </div>
           <div>
             <div className="text-sm font-black text-white flex items-center gap-1.5">
-              <span>শ্ৰমিক-লিংক</span>
-              <span className="text-indigo-400 font-normal text-xs font-mono">ShramikLink Industry</span>
+              <span>ICWL</span>
+              <span className="text-indigo-400 font-medium text-xs font-mono">(IndustrialContractorWorkerLink)</span>
               <span className="text-[9px] bg-indigo-500/20 text-indigo-300 font-bold px-1.5 py-0.2 rounded-full border border-indigo-500/30">CLRA</span>
             </div>
             <div className="text-[10px] text-slate-300 font-medium">

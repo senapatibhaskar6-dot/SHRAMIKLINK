@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   FolderCheck, 
   Building2, 
@@ -167,43 +167,43 @@ export const IndustryProjectComplianceSystem: React.FC<IndustryProjectCompliance
   const deployedWorkerIds = useMemo(() => {
     const ids = new Set<string>();
     assignments.forEach(a => {
-      if (a.contractorId === contractor.id && a.industryId === activeIndustryId && a.status === 'Active') {
+      if (a.contractorId === activeContractor.id && a.industryId === activeIndustryId && a.status === 'Active') {
         ids.add(a.workerId);
       }
     });
     // Also include workers with attendance at this site
     attendance.forEach(att => {
-      if (att.contractorId === contractor.id && att.industryId === activeIndustryId) {
+      if (att.contractorId === activeContractor.id && att.industryId === activeIndustryId) {
         ids.add(att.workerId);
       }
     });
     return ids;
-  }, [assignments, attendance, contractor.id, activeIndustryId]);
+  }, [assignments, attendance, activeContractor.id, activeIndustryId]);
 
   const deployedWorkers = useMemo(() => {
-    const list = workers.filter(w => deployedWorkerIds.has(w.id) && w.contractorId === contractor.id);
+    const list = workers.filter(w => deployedWorkerIds.has(w.id) && w.contractorId === activeContractor.id);
     // If empty fallback to contractor's general workers
     if (list.length === 0) {
-      return workers.filter(w => w.contractorId === contractor.id).slice(0, 3);
+      return workers.filter(w => w.contractorId === activeContractor.id).slice(0, 3);
     }
     return list;
-  }, [workers, deployedWorkerIds, contractor.id]);
+  }, [workers, deployedWorkerIds, activeContractor.id]);
 
   // Site-specific attendance records
   const siteAttendance = useMemo(() => {
     return attendance.filter(a => 
-      a.contractorId === contractor.id && 
+      a.contractorId === activeContractor.id && 
       a.industryId === activeIndustryId
     );
-  }, [attendance, contractor.id, activeIndustryId]);
+  }, [attendance, activeContractor.id, activeIndustryId]);
 
   // Site-specific compliance documents
   const siteDocs = useMemo(() => {
     return complianceDocs.filter(d => 
-      d.contractorId === contractor.id && 
+      d.contractorId === activeContractor.id && 
       (d.industryId === activeIndustryId || !d.industryId)
     );
-  }, [complianceDocs, contractor.id, activeIndustryId]);
+  }, [complianceDocs, activeContractor.id, activeIndustryId]);
 
   // Find assigned inspector for this industry
   const assignedInspector = useMemo(() => {
@@ -240,8 +240,8 @@ export const IndustryProjectComplianceSystem: React.FC<IndustryProjectCompliance
       const esiDeduction = Math.round(grossWage * 0.0075);
       const netWage = grossWage - epfDeduction - esiDeduction;
 
-      // Minimum wage compliance check (Assam Scheduled Employment rate baseline)
-      const minWageFloor = worker.skillType === 'Unskilled' ? 450 : worker.skillType === 'Semi-Skilled' ? 520 : worker.skillType === 'Skilled' ? 620 : 750;
+      // Minimum wage compliance check (Assam Scheduled Employment rate baseline for Unskilled Labour)
+      const minWageFloor = 450;
       const isCompliant = dailyRate >= minWageFloor;
 
       return {
@@ -305,7 +305,7 @@ export const IndustryProjectComplianceSystem: React.FC<IndustryProjectCompliance
     onAddAttendanceRecord({
       workerId: workerObj.id,
       workerName: workerObj.name,
-      contractorId: contractor.id,
+      contractorId: activeContractor.id,
       industryId: activeIndustryId,
       date: attDate,
       checkIn: attCheckIn,
@@ -315,7 +315,7 @@ export const IndustryProjectComplianceSystem: React.FC<IndustryProjectCompliance
       hoursWorked: attStatus === 'Present' ? 8 : 0,
       overtimeHours: attStatus === 'Present' ? Number(attOvertimeHours) : 0,
       status: attStatus,
-      markedBySupervisor: `${contractor.name} Site Field Office`
+      markedBySupervisor: `${activeContractor.name} Site Field Office`
     });
 
     setIsAttendanceModalOpen(false);
@@ -339,7 +339,7 @@ export const IndustryProjectComplianceSystem: React.FC<IndustryProjectCompliance
     const finalRef = uploadRefNo.trim() || `REF-${activeUploadDocType.slice(0, 4)}-${Math.floor(100000 + Math.random() * 900000)}`;
 
     onUploadDoc({
-      contractorId: contractor.id,
+      contractorId: activeContractor.id,
       industryId: activeIndustryId,
       month: uploadMonth,
       docType: activeUploadDocType,
@@ -348,7 +348,7 @@ export const IndustryProjectComplianceSystem: React.FC<IndustryProjectCompliance
       referenceNo: finalRef,
       status: 'Verified',
       verifiedBy: viewMode === 'industry_hr' ? 'Industry HR Gate Office' : viewMode === 'government_inspector' ? 'Govt Labor Inspector' : 'System Auto-Audit',
-      remarks: uploadRemarks.trim() || 'Digitally archived on ShramikLink compliance folder.',
+      remarks: uploadRemarks.trim() || 'Digitally archived on ICWL compliance folder.',
       validTill: '2026-12-31'
     });
 
@@ -418,17 +418,35 @@ export const IndustryProjectComplianceSystem: React.FC<IndustryProjectCompliance
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-500">অডিট মাহ:</span>
-            <select
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-800 outline-none focus:border-indigo-600"
-            >
-              <option value="August 2026">August 2026</option>
-              <option value="September 2026">September 2026</option>
-              <option value="July 2026">July 2026</option>
-            </select>
+          <div className="flex flex-wrap items-center gap-2">
+            {allContractors && allContractors.length > 1 && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-semibold text-slate-500">ঠিকাদাৰ:</span>
+                <select
+                  value={selectedContractorId}
+                  onChange={(e) => setSelectedContractorId(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-800 outline-none focus:border-indigo-600"
+                >
+                  {allContractors.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} ({c.licenseNo.split('-')[0]})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-semibold text-slate-500">অডিট মাহ:</span>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-800 outline-none focus:border-indigo-600"
+              >
+                <option value="August 2026">August 2026</option>
+                <option value="September 2026">September 2026</option>
+                <option value="July 2026">July 2026</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -437,12 +455,12 @@ export const IndustryProjectComplianceSystem: React.FC<IndustryProjectCompliance
           {industries.map(ind => {
             const isSelected = ind.id === activeIndustryId;
             const indWorkersCount = workers.filter(w => 
-              w.contractorId === contractor.id && 
+              w.contractorId === activeContractor.id && 
               assignments.some(a => a.workerId === w.id && a.industryId === ind.id)
             ).length || (ind.id === 'ind-1' ? 2 : ind.id === 'ind-2' ? 1 : 1);
 
             const indDocsCount = complianceDocs.filter(d => 
-              d.contractorId === contractor.id && 
+              d.contractorId === activeContractor.id && 
               (d.industryId === ind.id || !d.industryId)
             ).length;
 
@@ -505,7 +523,7 @@ export const IndustryProjectComplianceSystem: React.FC<IndustryProjectCompliance
               📁 {activeIndustry.name} — আইনী নথি ও ৰেজিষ্টাৰ সংৰক্ষণ
             </h3>
             <p className="text-xs text-slate-300">
-              ঠিকাদাৰ: <span className="font-bold text-white">{contractor.name}</span> | লাইচেঞ্চ: <span className="font-mono text-indigo-300">{contractor.licenseNo}</span>
+              ঠিকাদাৰ: <span className="font-bold text-white">{activeContractor.name}</span> | লাইচেঞ্চ: <span className="font-mono text-indigo-300">{activeContractor.licenseNo}</span>
             </p>
           </div>
 
@@ -809,7 +827,7 @@ export const IndustryProjectComplianceSystem: React.FC<IndustryProjectCompliance
                     <span className="font-semibold text-slate-800">প্ৰধান নিয়োগকাৰী (Principal Employer):</span> {activeIndustry.name}, {activeIndustry.location}
                   </div>
                   <div>
-                    <span className="font-semibold text-slate-800">ঠিকাদাৰ (Contractor):</span> {contractor.name} (License No: {contractor.licenseNo})
+                    <span className="font-semibold text-slate-800">ঠিকাদাৰ (Contractor):</span> {activeContractor.name} (License No: {activeContractor.licenseNo})
                   </div>
                   <div>
                     <span className="font-semibold text-slate-800">কামৰ প্ৰকৃতি ও স্থান (Nature of Work):</span> Industrial Operations & Maintenance at {activeIndustry.name}
@@ -854,8 +872,8 @@ export const IndustryProjectComplianceSystem: React.FC<IndustryProjectCompliance
                             </span>
                           </td>
                           <td className="p-3">
-                            <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded font-bold text-[10px]">
-                              {item.worker.skillType}
+                            <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded font-bold text-[10px]">
+                              অদক্ষ শ্ৰমিক
                             </span>
                           </td>
                           <td className="p-3 font-bold text-slate-800">
@@ -989,7 +1007,7 @@ export const IndustryProjectComplianceSystem: React.FC<IndustryProjectCompliance
                         <tr key={item.worker.id} className="hover:bg-slate-50 transition-colors">
                           <td className="p-3">
                             <span className="font-bold text-slate-900 block">{item.worker.name}</span>
-                            <span className="text-[10px] text-slate-500">{item.worker.skillType}</span>
+                            <span className="text-[10px] text-slate-500">অদক্ষ শ্ৰমিক</span>
                           </td>
                           <td className="p-3 text-center font-bold text-slate-700">{item.daysWorked}</td>
                           <td className="p-3 font-mono font-semibold">₹{item.dailyRate}</td>
@@ -1494,7 +1512,7 @@ export const IndustryProjectComplianceSystem: React.FC<IndustryProjectCompliance
                     <div className="pt-2">
                       <button
                         onClick={() => {
-                          if (onHrSignOff) onHrSignOff(activeIndustryId, contractor.id, 'Verified and approved by Principal Employer');
+                          if (onHrSignOff) onHrSignOff(activeIndustryId, activeContractor.id, 'Verified and approved by Principal Employer');
                         }}
                         className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-xs"
                       >
@@ -1561,7 +1579,7 @@ export const IndustryProjectComplianceSystem: React.FC<IndustryProjectCompliance
                         <button
                           onClick={() => {
                             if (onInspectorAuditSignOff) {
-                              onInspectorAuditSignOff(activeIndustryId, contractor.id, auditStatusResult, signOffRemarks || 'Official statutory inspection verified on ShramikLink.');
+                              onInspectorAuditSignOff(activeIndustryId, activeContractor.id, auditStatusResult, signOffRemarks || 'Official statutory inspection verified on ICWL.');
                             }
                           }}
                           className="flex-1 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
@@ -1617,9 +1635,9 @@ export const IndustryProjectComplianceSystem: React.FC<IndustryProjectCompliance
                   className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold outline-none focus:border-indigo-600"
                 >
                   <option value="">-- শ্ৰমিক বাচক --</option>
-                  {workers.filter(w => w.contractorId === contractor.id).map(w => (
+                  {workers.filter(w => w.contractorId === activeContractor.id).map(w => (
                     <option key={w.id} value={w.id}>
-                      {w.name} ({w.skillType} • ₹{w.dailyWageRate}/দিন)
+                      {w.name} (অদক্ষ শ্ৰমিক • ₹{w.dailyWageRate}/দিন)
                     </option>
                   ))}
                 </select>
@@ -1884,8 +1902,8 @@ export const IndustryProjectComplianceSystem: React.FC<IndustryProjectCompliance
                 </div>
                 <div>
                   <span className="font-bold text-slate-600 block">Licensed Contractor:</span>
-                  <span className="font-semibold text-slate-900">{contractor.name}</span>
-                  <span className="text-slate-500 block text-[10px]">License: {contractor.licenseNo}</span>
+                  <span className="font-semibold text-slate-900">{activeContractor.name}</span>
+                  <span className="text-slate-500 block text-[10px]">License: {activeContractor.licenseNo}</span>
                 </div>
                 <div>
                   <span className="font-bold text-slate-600 block">Reference / TRRN / Challan No:</span>
@@ -1918,7 +1936,7 @@ export const IndustryProjectComplianceSystem: React.FC<IndustryProjectCompliance
                   <div className="w-20 h-10 border border-slate-300 rounded flex items-center justify-center font-mono text-[9px] text-slate-400">
                     [OFFICIAL STAMP]
                   </div>
-                  <span className="block mt-1 font-bold text-slate-700">ShramikLink Compliance Engine</span>
+                  <span className="block mt-1 font-bold text-slate-700">ICWL Compliance Engine</span>
                 </div>
               </div>
             </div>

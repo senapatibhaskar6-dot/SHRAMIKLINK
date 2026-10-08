@@ -23,7 +23,7 @@ export const DirectWorkerEntryModal: React.FC<DirectWorkerEntryModalProps> = ({
   const [phone, setPhone] = useState<string>('');
   const [hasNoSmartphone, setHasNoSmartphone] = useState<boolean>(true);
   const [aadhaarLastDigits, setAadhaarLastDigits] = useState<string>('');
-  const [skillType, setSkillType] = useState<'Unskilled' | 'Semi-Skilled' | 'Skilled' | 'Highly-Skilled'>('Unskilled');
+  const [skillType, setSkillType] = useState<'Unskilled'>('Unskilled');
   const [dailyWageRate, setDailyWageRate] = useState<number>(480);
   const [gender, setGender] = useState<'Male' | 'Female' | 'Other'>('Male');
   const [assignedShift, setAssignedShift] = useState<string>('General (09:00 - 17:00)');
@@ -43,13 +43,9 @@ export const DirectWorkerEntryModal: React.FC<DirectWorkerEntryModalProps> = ({
     rating: 4.9
   };
 
-  // Auto-adjust default minimum wage when skill type changes
-  const handleSkillChange = (newSkill: 'Unskilled' | 'Semi-Skilled' | 'Skilled' | 'Highly-Skilled') => {
-    setSkillType(newSkill);
-    if (newSkill === 'Unskilled') setDailyWageRate(480);
-    else if (newSkill === 'Semi-Skilled') setDailyWageRate(550);
-    else if (newSkill === 'Skilled') setDailyWageRate(650);
-    else if (newSkill === 'Highly-Skilled') setDailyWageRate(850);
+  // Standard minimum wage for unskilled labor
+  const handleWageChange = (rate: number) => {
+    setDailyWageRate(rate);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -211,22 +207,16 @@ export const DirectWorkerEntryModal: React.FC<DirectWorkerEntryModalProps> = ({
             </span>
           </div>
 
-          {/* Skill Category & Daily Wage Rate */}
+          {/* Worker Category & Daily Wage Rate */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-slate-700 font-extrabold mb-1">
-                দক্ষতাৰ শ্ৰেণী (Skill Category) *
+                শ্ৰমিকৰ শ্ৰেণী (Labour Category)
               </label>
-              <select
-                value={skillType}
-                onChange={(e: any) => handleSkillChange(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-bold text-slate-800 outline-none focus:border-indigo-500 text-xs"
-              >
-                <option value="Unskilled">Unskilled (অদক্ষ - ₹480/দিন)</option>
-                <option value="Semi-Skilled">Semi-Skilled (অৰ্ধ-দক্ষ - ₹550/দিন)</option>
-                <option value="Skilled">Skilled (দক্ষ - ₹650/দিন)</option>
-                <option value="Highly-Skilled">Highly-Skilled (উচ্চ-দক্ষ - ₹850/দিন)</option>
-              </select>
+              <div className="w-full bg-slate-100 border border-slate-300 rounded-xl p-2.5 font-bold text-slate-800 text-xs flex items-center justify-between">
+                <span>অদক্ষ শ্ৰমিক (Unskilled Labourer)</span>
+                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full">মান্য</span>
+              </div>
             </div>
 
             <div>

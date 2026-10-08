@@ -25,7 +25,8 @@ import {
   ChevronRight,
   UserCheck,
   RefreshCw,
-  Sparkles
+  Sparkles,
+  FolderArchive
 } from 'lucide-react';
 import { 
   GovernmentLaborInspector, 
@@ -35,8 +36,10 @@ import {
   Attendance, 
   GovernmentAuditLog, 
   MultiIndustryAssignment,
-  InspectionNotice
+  InspectionNotice,
+  ComplianceDocument
 } from '../types';
+import IndustryProjectComplianceSystem from './IndustryProjectComplianceSystem';
 
 interface GovernmentInspectorJurisdictionPanelProps {
   currentInspector: GovernmentLaborInspector;
@@ -47,6 +50,11 @@ interface GovernmentInspectorJurisdictionPanelProps {
   attendance: Attendance[];
   auditLogs: GovernmentAuditLog[];
   assignments: MultiIndustryAssignment[];
+  complianceDocs?: ComplianceDocument[];
+  onUploadDoc?: (doc: Omit<ComplianceDocument, 'id' | 'uploadedAt'>) => void;
+  onAddAttendanceRecord?: (att: Omit<Attendance, 'id'>) => void;
+  onHrSignOff?: (industryId: string, contractorId: string, remarks: string) => void;
+  onInspectorAuditSignOff?: (industryId: string, contractorId: string, status: string, remarks: string) => void;
   onUpdateInspectorProfile: (inspectorId: string, updates: Partial<GovernmentLaborInspector>) => void;
   onFileAuditLog: (audit: Omit<GovernmentAuditLog, 'id' | 'timestamp'>) => void;
   onLogout: () => void;
@@ -62,6 +70,11 @@ export const GovernmentInspectorJurisdictionPanel: React.FC<GovernmentInspectorJ
   attendance,
   auditLogs,
   assignments,
+  complianceDocs = [],
+  onUploadDoc,
+  onAddAttendanceRecord,
+  onHrSignOff,
+  onInspectorAuditSignOff,
   onUpdateInspectorProfile,
   onFileAuditLog,
   onLogout,
@@ -71,7 +84,7 @@ export const GovernmentInspectorJurisdictionPanel: React.FC<GovernmentInspectorJ
   const [jurisdictionScope, setJurisdictionScope] = useState<'my_jurisdiction' | 'all_state'>('my_jurisdiction');
   
   // Navigation tabs in inspector panel
-  const [activeTab, setActiveTab] = useState<'overview' | 'industries' | 'contractors' | 'muster_audit' | 'notices'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'industries' | 'contractors' | 'muster_audit' | 'industry_compliance' | 'notices'>('overview');
 
   // Modals state
   const [isEditJurisdictionModalOpen, setIsEditJurisdictionModalOpen] = useState(false);
@@ -517,6 +530,19 @@ export const GovernmentInspectorJurisdictionPanel: React.FC<GovernmentInspectorJ
         >
           <FileSpreadsheet className="h-4 w-4" />
           লাইভ Form XVI (Muster Roll) অডিট ডেস্ক
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('industry_compliance')}
+          className={`py-3 px-5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+            activeTab === 'industry_compliance'
+              ? 'border-indigo-600 text-indigo-600 font-black'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <FolderArchive className="h-4 w-4" />
+          📁 প্ৰকল্প কমপ্লাইয়েন্স ডচিয়াৰ ও ৰেজিষ্টাৰ অডিট (Project Compliance Dossiers)
         </button>
 
         <button
@@ -1071,6 +1097,27 @@ export const GovernmentInspectorJurisdictionPanel: React.FC<GovernmentInspectorJ
             ))}
           </div>
 
+        </div>
+      )}
+
+      {/* ==================== TAB 6: INDUSTRY PROJECT COMPLIANCE & REGISTERS ==================== */}
+      {activeTab === 'industry_compliance' && (
+        <div className="space-y-4">
+          <IndustryProjectComplianceSystem
+            contractor={contractors[0]}
+            allContractors={contractors}
+            industries={industries}
+            workers={workers}
+            assignments={assignments}
+            attendance={attendance}
+            complianceDocs={complianceDocs}
+            inspectors={allInspectors}
+            viewMode="government_inspector"
+            onUploadDoc={onUploadDoc || (() => {})}
+            onAddAttendanceRecord={onAddAttendanceRecord || (() => {})}
+            onHrSignOff={onHrSignOff}
+            onInspectorAuditSignOff={onInspectorAuditSignOff}
+          />
         </div>
       )}
 

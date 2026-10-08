@@ -77,18 +77,18 @@ export const initialContractors: Contractor[] = [
 ];
 
 export const initialWorkers: Worker[] = [
-  { id: 'wrk-1', name: 'Rakesh Kumar Yadav', aadhaarHash: 'XXXX-XXXX-8920', phone: '9876543210', contractorId: 'con-1', skillType: 'Skilled', dailyWageRate: 650, status: 'Deployed', onboardingVerified: true, onboardingDate: '2026-01-10' },
-  { id: 'wrk-2', name: 'Vikram Singh Shekhawat', aadhaarHash: 'XXXX-XXXX-4531', phone: '9823456789', contractorId: 'con-1', skillType: 'Skilled', dailyWageRate: 650, status: 'Deployed', onboardingVerified: true, onboardingDate: '2026-01-12' },
+  { id: 'wrk-1', name: 'Rakesh Kumar Yadav', aadhaarHash: 'XXXX-XXXX-8920', phone: '9876543210', contractorId: 'con-1', skillType: 'Unskilled', dailyWageRate: 480, status: 'Deployed', onboardingVerified: true, onboardingDate: '2026-01-10' },
+  { id: 'wrk-2', name: 'Vikram Singh Shekhawat', aadhaarHash: 'XXXX-XXXX-4531', phone: '9823456789', contractorId: 'con-1', skillType: 'Unskilled', dailyWageRate: 480, status: 'Deployed', onboardingVerified: true, onboardingDate: '2026-01-12' },
   { id: 'wrk-3', name: 'Anil S. Patil', aadhaarHash: 'XXXX-XXXX-1029', phone: '9422019283', contractorId: 'con-1', skillType: 'Unskilled', dailyWageRate: 480, status: 'Deployed', onboardingVerified: true, onboardingDate: '2026-02-15' },
-  { id: 'wrk-4', name: 'Sunita Devi', aadhaarHash: 'XXXX-XXXX-9382', phone: '9112233445', contractorId: 'con-1', skillType: 'Semi-Skilled', dailyWageRate: 550, status: 'Available', onboardingVerified: true, onboardingDate: '2026-03-01' },
-  { id: 'wrk-5', name: 'Ramesh Sawant', aadhaarHash: 'XXXX-XXXX-7721', phone: '9552103948', contractorId: 'con-1', skillType: 'Highly-Skilled', dailyWageRate: 850, status: 'Available', onboardingVerified: true, onboardingDate: '2026-03-20' },
+  { id: 'wrk-4', name: 'Sunita Devi', aadhaarHash: 'XXXX-XXXX-9382', phone: '9112233445', contractorId: 'con-1', skillType: 'Unskilled', dailyWageRate: 480, status: 'Available', onboardingVerified: true, onboardingDate: '2026-03-01' },
+  { id: 'wrk-5', name: 'Ramesh Sawant', aadhaarHash: 'XXXX-XXXX-7721', phone: '9552103948', contractorId: 'con-1', skillType: 'Unskilled', dailyWageRate: 480, status: 'Available', onboardingVerified: true, onboardingDate: '2026-03-20' },
   
   { id: 'wrk-6', name: 'Pappu Yadav', aadhaarHash: 'XXXX-XXXX-3829', phone: '9890210293', contractorId: 'con-2', skillType: 'Unskilled', dailyWageRate: 480, status: 'Deployed', onboardingVerified: true, onboardingDate: '2026-02-10' },
-  { id: 'wrk-7', name: 'Sandeep Gite', aadhaarHash: 'XXXX-XXXX-4491', phone: '9158302192', contractorId: 'con-2', skillType: 'Semi-Skilled', dailyWageRate: 550, status: 'Deployed', onboardingVerified: true, onboardingDate: '2026-04-05' },
+  { id: 'wrk-7', name: 'Sandeep Gite', aadhaarHash: 'XXXX-XXXX-4491', phone: '9158302192', contractorId: 'con-2', skillType: 'Unskilled', dailyWageRate: 480, status: 'Deployed', onboardingVerified: true, onboardingDate: '2026-04-05' },
   { id: 'wrk-8', name: 'Laxmi Shinde', aadhaarHash: 'XXXX-XXXX-9012', phone: '9822453102', contractorId: 'con-2', skillType: 'Unskilled', dailyWageRate: 480, status: 'Available', onboardingVerified: true, onboardingDate: '2026-04-12' },
   
-  { id: 'wrk-9', name: 'Arjun Pujari', aadhaarHash: 'XXXX-XXXX-8822', phone: '9049281293', contractorId: 'con-3', skillType: 'Skilled', dailyWageRate: 650, status: 'Deployed', onboardingVerified: true, onboardingDate: '2026-05-01' },
-  { id: 'wrk-10', name: 'Shiva Ramanna', aadhaarHash: 'XXXX-XXXX-1144', phone: '9130491029', contractorId: 'con-3', skillType: 'Highly-Skilled', dailyWageRate: 850, status: 'Available', onboardingVerified: false, onboardingDate: '2026-09-01' }
+  { id: 'wrk-9', name: 'Arjun Pujari', aadhaarHash: 'XXXX-XXXX-8822', phone: '9049281293', contractorId: 'con-3', skillType: 'Unskilled', dailyWageRate: 480, status: 'Deployed', onboardingVerified: true, onboardingDate: '2026-05-01' },
+  { id: 'wrk-10', name: 'Shiva Ramanna', aadhaarHash: 'XXXX-XXXX-1144', phone: '9130491029', contractorId: 'con-3', skillType: 'Unskilled', dailyWageRate: 480, status: 'Available', onboardingVerified: false, onboardingDate: '2026-09-01' }
 ];
 
 export const initialAssignments: MultiIndustryAssignment[] = [
@@ -103,10 +103,10 @@ export const initialAssignments: MultiIndustryAssignment[] = [
 ];
 
 export const initialRequirements: DailyRequirement[] = [
-  { id: 'req-1', industryId: 'ind-1', industryName: 'Tata Motors Pune Plant', contractorId: 'con-1', date: '2026-09-03', skillType: 'Skilled', workersNeeded: 5, workersFulfilled: 2, shiftTiming: 'Shift A (06:00 - 14:00)', status: 'Open' },
+  { id: 'req-1', industryId: 'ind-1', industryName: 'Tata Motors Pune Plant', contractorId: 'con-1', date: '2026-09-03', skillType: 'Unskilled', workersNeeded: 5, workersFulfilled: 2, shiftTiming: 'Shift A (06:00 - 14:00)', status: 'Open' },
   { id: 'req-2', industryId: 'ind-1', industryName: 'Tata Motors Pune Plant', contractorId: 'con-1', date: '2026-09-03', skillType: 'Unskilled', workersNeeded: 10, workersFulfilled: 0, shiftTiming: 'Shift B (14:00 - 22:00)', status: 'Open' },
-  { id: 'req-3', industryId: 'ind-2', industryName: 'JSW Steel Bellary', contractorId: 'con-2', date: '2026-09-03', skillType: 'Semi-Skilled', workersNeeded: 3, workersFulfilled: 1, shiftTiming: 'General (09:00 - 17:00)', status: 'Open' },
-  { id: 'req-4', industryId: 'ind-3', industryName: 'Serum Institute of India', contractorId: 'con-3', date: '2026-09-03', skillType: 'Skilled', workersNeeded: 4, workersFulfilled: 0, shiftTiming: 'Shift B (14:00 - 22:00)', status: 'Open' }
+  { id: 'req-3', industryId: 'ind-2', industryName: 'JSW Steel Bellary', contractorId: 'con-2', date: '2026-09-03', skillType: 'Unskilled', workersNeeded: 3, workersFulfilled: 1, shiftTiming: 'General (09:00 - 17:00)', status: 'Open' },
+  { id: 'req-4', industryId: 'ind-3', industryName: 'Serum Institute of India', contractorId: 'con-3', date: '2026-09-03', skillType: 'Unskilled', workersNeeded: 4, workersFulfilled: 0, shiftTiming: 'Shift B (14:00 - 22:00)', status: 'Open' }
 ];
 
 export const initialAttendance: Attendance[] = [
@@ -152,7 +152,7 @@ export const initialComplianceDocs: ComplianceDocument[] = [
   { id: 'doc-5', contractorId: 'con-2', industryId: 'ind-2', month: 'July 2026', docType: 'ESI-Challan', fileUrl: 'ESI-CH-JUL-4322.pdf', fileName: 'ESIC_Paid_Challan_July_2026.pdf', referenceNo: 'ESIC-4322901', uploadedAt: '2026-08-14', status: 'Verified', verifiedBy: 'System Audit', remarks: 'ESI verified.' },
   { id: 'doc-6', contractorId: 'con-2', industryId: 'ind-2', month: 'July 2026', docType: 'GST-Return', fileUrl: 'GST-JUL-7712.pdf', fileName: 'GSTR3B_Receipt_Jul2026.pdf', referenceNo: 'GST-7712390', uploadedAt: '2026-08-14', status: 'Verified', verifiedBy: 'System Audit', remarks: 'GST verified.' },
   { id: 'doc-4a', contractorId: 'con-2', industryId: 'ind-2', month: 'August 2026', docType: 'Form-IV-License', fileUrl: 'CLRA_FORM_IV_JAIHIND_JSW.pdf', fileName: 'CLRA_Form_IV_License_JSW_Steel.pdf', referenceNo: 'KA-BEL-CLRA-2025-412', uploadedAt: '2026-08-02', status: 'Verified', verifiedBy: 'Labour Enforcement Officer', remarks: 'Licensed for max 35 contract workmen at JSW Steel Bellary.' },
-  { id: 'doc-4b', contractorId: 'con-2', industryId: 'ind-2', month: 'August 2026', docType: 'Form-VI-A-Notice', fileUrl: 'FORM_VI_A_JAIHIND_JSW.pdf', fileName: 'Form_VI_A_Commencement_JSW.pdf', referenceNo: 'NOT-VIA-BEL-2026-118', uploadedAt: '2026-08-04', status: 'Verified', verifiedBy: 'Labour Enforcement Officer', remarks: 'Form VI-A filed electronically on ShramikLink portal.' },
+  { id: 'doc-4b', contractorId: 'con-2', industryId: 'ind-2', month: 'August 2026', docType: 'Form-VI-A-Notice', fileUrl: 'FORM_VI_A_JAIHIND_JSW.pdf', fileName: 'Form_VI_A_Commencement_JSW.pdf', referenceNo: 'NOT-VIA-BEL-2026-118', uploadedAt: '2026-08-04', status: 'Verified', verifiedBy: 'Labour Enforcement Officer', remarks: 'Form VI-A filed electronically on ICWL portal.' },
   { id: 'doc-4c', contractorId: 'con-2', industryId: 'ind-2', month: 'August 2026', docType: 'Bank-Disbursement-Proof', fileUrl: 'NEFT_SALARY_JSW_AUG.pdf', fileName: 'HDFC_Bank_Salary_Statement_Aug2026.pdf', referenceNo: 'HDFC-NEFT-8812903', uploadedAt: '2026-09-01', status: 'Verified', verifiedBy: 'JSW Steel HR', remarks: 'Wages disbursed via direct bank transfer.' },
 
   // Sahyadri (con-3) has NOT uploaded previous month's GST-Return, only EPF/ESI. This will trigger the compliance billing lock for them!
@@ -239,7 +239,7 @@ export const initialInspectors: GovernmentLaborInspector[] = [
     badgeId: 'GOV-AS-ALC-2026-081',
     designation: 'Assistant Labour Commissioner & Statutory Inspector',
     department: 'Office of the Labour Commissioner, Govt of Assam',
-    email: 'inspector@shramiklink.com',
+    email: 'inspector@icwl.in',
     phone: '9876543213',
     state: 'Assam',
     district: 'Kamrup Metropolitan',

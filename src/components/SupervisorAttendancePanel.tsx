@@ -762,7 +762,7 @@ export const SupervisorAttendancePanel: React.FC<SupervisorAttendancePanelProps>
                 <th className="p-3 w-12 text-center">নং</th>
                 <th className="p-3">শ্ৰমিকৰ নাম আৰু মোবাইল (Worker & Phone)</th>
                 <th className="p-3">ঠিকাদাৰ এজেন্সী (Contractor)</th>
-                <th className="p-3">দক্ষতা (Skill)</th>
+                <th className="p-3">শ্ৰেণী (Category)</th>
                 <th className="p-3 text-center">দৈনিক হাৰ (Rate)</th>
                 <th className="p-3 text-center w-40">হাজিৰা স্থিতি (Status)</th>
                 <th className="p-3 text-center w-28">অভাৰটাইম (OT)</th>
@@ -835,8 +835,8 @@ export const SupervisorAttendancePanel: React.FC<SupervisorAttendancePanelProps>
                         {contractor?.name || 'Assigned Agency'}
                       </td>
                       <td className="p-3">
-                        <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded">
-                          {wrk.skillType}
+                        <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded">
+                          অদক্ষ শ্ৰমিক
                         </span>
                       </td>
                       <td className="p-3 text-center font-bold text-slate-800 font-mono">

@@ -84,7 +84,7 @@ export default function GovernmentSeparationModal({
         <div className="bg-indigo-500/10 border-b border-indigo-500/20 px-4 sm:px-6 py-3 flex items-start gap-3">
           <CheckCircle2 className="h-5 w-5 text-indigo-400 shrink-0 mt-0.5" />
           <div className="text-xs text-indigo-200/90 leading-relaxed">
-            <span className="font-bold text-indigo-300">চৰকাৰী পৰিদৰ্শন আৰু অডিট নীতি:</span> ShramikLink প্লেটফৰ্মে উদ্যোগিক প্ৰতিষ্ঠানসমূহৰ বাবে CLRA Section 21 ৰ অধীনত Compliance-Locked Billing কাৰ্যকৰী কৰে—য’ত প্ৰধান নিয়োগকৰ্তা (Principal Employer) আৰু অনুজ্ঞাপ্ৰাপ্ত ঠিকাদাৰৰ প্ৰতিটো চালান EPFO/ESIC ডিজিটেল ভেলিডেচনৰ পাছতহে প্ৰস্তুত হয়।
+            <span className="font-bold text-indigo-300">চৰকাৰী পৰিদৰ্শন আৰু অডিট নীতি:</span> IndustrialContractorWorkerLink (ICWL) প্লেটফৰ্মে উদ্যোগিক প্ৰতিষ্ঠানসমূহৰ বাবে CLRA Section 21 ৰ অধীনত Compliance-Locked Billing কাৰ্যকৰী কৰে—য’ত প্ৰধান নিয়োগকৰ্তা (Principal Employer) আৰু অনুজ্ঞাপ্ৰাপ্ত ঠিকাদাৰৰ প্ৰতিটো চালান EPFO/ESIC ডিজিটেল ভেলিডেচনৰ পাছতহে প্ৰস্তুত হয়।
           </div>
         </div>
 

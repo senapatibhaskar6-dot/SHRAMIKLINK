@@ -30,8 +30,8 @@ export interface Worker {
   aadhaarHash: string; // Masked Aadhaar
   phone: string;
   contractorId: string; // Current assigned Contractor or 'direct' for independent
-  skillType: 'Unskilled' | 'Semi-Skilled' | 'Skilled' | 'Highly-Skilled';
-  workerType?: 'Unskilled-Laborer' | 'Semi-Skilled-Laborer' | 'Skilled-Technician' | 'Field-Supervisor';
+  skillType: 'Unskilled';
+  workerType?: 'Unskilled-Laborer';
   sectionOrTrade?: string;
   dailyWageRate: number; // in INR
   status: 'Available' | 'Deployed' | 'On-Leave';
@@ -56,7 +56,7 @@ export interface DailyRequirement {
   industryName: string; // Hidden from Worker, visible to Contractor
   contractorId: string; // Target Contractor (or open to all: 'OPEN_POOL' or 'ALL')
   date: string;
-  skillType: 'Unskilled' | 'Semi-Skilled' | 'Skilled' | 'Highly-Skilled';
+  skillType: 'Unskilled';
   workersNeeded: number;
   minWorkersNeeded?: number; // Minimum workers required per contractor application
   workersFulfilled: number;
@@ -89,7 +89,7 @@ export interface DirectJobOpening {
   industryName: string;
   location: string;
   roleTitle: string;
-  skillType: 'Unskilled' | 'Semi-Skilled' | 'Skilled' | 'Highly-Skilled';
+  skillType: 'Unskilled';
   openingsCount: number;
   dailyWageRate: number;
   shiftTiming: string;

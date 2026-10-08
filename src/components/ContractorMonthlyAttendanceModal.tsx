@@ -172,7 +172,7 @@ export const ContractorMonthlyAttendanceModal: React.FC<ContractorMonthlyAttenda
                 <tr className="bg-slate-100 text-slate-700 font-bold border-b border-slate-300">
                   <th className="p-2 border-r border-slate-200 w-8 text-center">নং</th>
                   <th className="p-2 border-r border-slate-200 min-w-[150px]">শ্ৰমিকৰ নাম আৰু আধাৰ (Worker Name)</th>
-                  <th className="p-2 border-r border-slate-200 text-center w-16">দক্ষতা (Skill)</th>
+                  <th className="p-2 border-r border-slate-200 text-center w-16">শ্ৰেণী (Category)</th>
                   <th className="p-2 border-r border-slate-200 text-center w-16">দৈনিক হাৰ (Rate)</th>
                   
                   {/* Days 1 to 30/31 columns */}
@@ -261,8 +261,8 @@ export const ContractorMonthlyAttendanceModal: React.FC<ContractorMonthlyAttenda
                           </span>
                         </td>
                         <td className="p-2 border-r border-slate-200 text-center">
-                          <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-[9px] font-bold">
-                            {worker.skillType.slice(0, 4)}
+                          <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 px-1.5 py-0.5 rounded text-[9px] font-bold">
+                            অদক্ষ
                           </span>
                         </td>
                         <td className="p-2 border-r border-slate-200 text-center font-mono font-bold text-slate-800">

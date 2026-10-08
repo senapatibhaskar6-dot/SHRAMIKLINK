@@ -27,18 +27,20 @@ export default function App() {
 
   const [currentLang, setCurrentLangState] = useState<AppLanguage>(() => getStoredLanguage());
   const [isMobileView, setIsMobileView] = useState<boolean>(() => {
-    const saved = localStorage.getItem('shramiklink_mobile_mode');
+    const saved = localStorage.getItem('icwl_mobile_mode') || localStorage.getItem('shramiklink_mobile_mode');
     if (saved !== null) return saved === 'true';
     return typeof window !== 'undefined' && window.innerWidth < 768;
   });
 
   const toggleMobileMode = (val: boolean) => {
     setIsMobileView(val);
+    localStorage.setItem('icwl_mobile_mode', val ? 'true' : 'false');
     localStorage.setItem('shramiklink_mobile_mode', val ? 'true' : 'false');
   };
 
   const handleTabChange = (tab: 'app' | 'architecture' | 'roadmap') => {
     setActiveTab(tab);
+    localStorage.setItem('icwl_industry_tab', tab);
     localStorage.setItem('shramiklink_industry_tab', tab);
   };
 
@@ -110,12 +112,12 @@ export default function App() {
         <nav className="bg-slate-950 text-white flex justify-between items-center h-14 shrink-0 z-40 border-b border-indigo-900/60 shadow-md px-3 md:px-5">
           {/* Brand & Logo */}
           <div className="flex items-center gap-2.5 mr-2 sm:mr-4 shrink-0">
-            <div className="w-8 h-8 rounded-xl bg-indigo-950 border border-indigo-500/50 flex items-center justify-center shadow-xs text-indigo-300">
-              <Factory className="h-5 w-5 text-indigo-400" />
+            <div className="w-9 h-9 rounded-xl bg-slate-900 border border-indigo-500/50 flex items-center justify-center shadow-xs overflow-hidden p-0.5">
+              <img src="/ICWL.png" alt="ICWL Logo" className="w-full h-full object-contain rounded-lg" onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-black tracking-tight text-white flex items-center gap-1.5">
-                শ্ৰমিক<span className="text-indigo-400">লিংক</span> <span className="text-indigo-400 font-medium text-xs font-mono">(ShramikLink Industry)</span>
+                IndustrialContractorWorkerLink <span className="text-indigo-400 font-bold text-xs font-mono">(ICWL)</span>
               </span>
               <span className="text-[9px] text-indigo-300/90 font-bold tracking-wider uppercase hidden sm:inline">
                 Factories Act, 1948 & CLRA 1970 • ঔদ্যোগিক শ্ৰম অনুপালন
@@ -178,6 +180,7 @@ export default function App() {
           <div className="shrink-0 flex items-center gap-2">
             <button
               onClick={() => {
+                window.dispatchEvent(new CustomEvent('icwl-logout'));
                 window.dispatchEvent(new CustomEvent('shramiklink-logout'));
               }}
               title="লগইন পেজ / নতুন প্ৰৱেশদ্বাৰ"
@@ -254,7 +257,7 @@ export default function App() {
           {/* Micro Footer */}
           <footer className="border-t border-slate-800 pt-6 text-[11px] text-slate-400 flex flex-col md:flex-row justify-between items-center gap-4">
             <span>
-              © 2026 শ্ৰমিকলিংক (ShramikLink Industry) • Factories Act, 1948 আৰু CLRA Act, 1970 ৰ নিৰ্দেশনা অনুযায়ী নিৰ্মিত ঔদ্যোগিক শ্ৰম ব্যৱস্থাপনা প্ৰণালী।
+              © 2026 IndustrialContractorWorkerLink (ICWL) • Factories Act, 1948 আৰু CLRA Act, 1970 ৰ নিৰ্দেশনা অনুযায়ী নিৰ্মিত ঔদ্যোগিক শ্ৰম ব্যৱস্থাপনা প্ৰণালী।
             </span>
             <div className="flex gap-4">
               <span className="text-slate-400">EPFO & ESIC Compliance-Locked</span>

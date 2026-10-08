@@ -400,7 +400,7 @@ export default function IndustrySupervisorManager({
 
                     <a
                       href={`https://wa.me/91${sup.phone.replace(/\D/g, '')}?text=${encodeURIComponent(
-                        `নমস্কাৰ ${sup.name} ডাঙৰীয়া, ShramikLink কাৰখানা HR ৰ তৰফৰ পৰা যোগাযোগ কৰা হৈছে। যোগানকৰ্তা আৰু শ্ৰমিক হাজিৰা সন্দৰ্ভত অনুগ্ৰহ কৰি আপডেট দিয়ক।`
+                        `নমস্কাৰ ${sup.name} ডাঙৰীয়া, ICWL (IndustrialContractorWorkerLink) কাৰখানা HR ৰ তৰফৰ পৰা যোগাযোগ কৰা হৈছে। যোগানকৰ্তা আৰু শ্ৰমিক হাজিৰা সন্দৰ্ভত অনুগ্ৰহ কৰি আপডেট দিয়ক।`
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -460,7 +460,7 @@ export default function IndustrySupervisorManager({
                               </a>
                               <a
                                 href={`https://wa.me/91${c.contactNo.replace(/\D/g, '')}?text=${encodeURIComponent(
-                                  `নমস্কাৰ ${c.name}, কাৰখানা ছুপাৰভাইজাৰ ${sup.name}-ৰ সৈতে সমন্বয় ৰক্ষাৰ বাবে ShramikLink যোগে যোগাযোগ কৰা হৈছে।`
+                                  `নমস্কাৰ ${c.name}, কাৰখানা ছুপাৰভাইজাৰ ${sup.name}-ৰ সৈতে সমন্বয় ৰক্ষাৰ বাবে ICWL যোগে যোগাযোগ কৰা হৈছে।`
                                 )}`}
                                 target="_blank"
                                 rel="noopener noreferrer"

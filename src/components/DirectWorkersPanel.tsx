@@ -142,16 +142,9 @@ export default function DirectWorkersPanel({
                 className="pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-emerald-600"
               />
             </div>
-            <select
-              value={skillFilter}
-              onChange={(e) => setSkillFilter(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold outline-none"
-            >
-              <option value="ALL">সকলো শ্ৰেণী (All)</option>
-              <option value="Unskilled">Unskilled</option>
-              <option value="Semi-Skilled">Semi-Skilled</option>
-              <option value="Skilled">Skilled</option>
-            </select>
+            <span className="bg-slate-100 text-slate-700 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold">
+              কেৱল অদক্ষ শ্ৰমিক পদ (Unskilled Openings)
+            </span>
           </div>
         )}
       </div>
@@ -177,7 +170,7 @@ export default function DirectWorkersPanel({
                         <div>
                           <div className="flex items-center gap-1.5">
                             <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded">
-                              {job.skillType}
+                              অদক্ষ শ্ৰমিক (Unskilled)
                             </span>
                             <span className="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-1.5 py-0.5 rounded">
                               {job.openingsCount} টা পদ খালী
@@ -301,7 +294,7 @@ export default function DirectWorkersPanel({
                           <div className="text-[10px] text-slate-400 font-mono">+91 {app.phone}</div>
                         </td>
                         <td className="py-3 px-4">
-                          <span className="font-semibold text-slate-700">{app.skillType}</span>
+                          <span className="font-semibold text-slate-700">অদক্ষ শ্ৰমিক (Unskilled)</span>
                           <span className="text-[10px] text-slate-400 block">{app.experienceYears} বছৰৰ অভিজ্ঞতা</span>
                         </td>
                         <td className="py-3 px-4 font-mono text-slate-600">
@@ -399,16 +392,10 @@ export default function DirectWorkersPanel({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">দক্ষতাৰ শ্ৰেণী (Skill Category)</label>
-                  <select
-                    value={applicantSkill}
-                    onChange={(e) => setApplicantSkill(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:bg-white focus:border-emerald-600 font-semibold"
-                  >
-                    <option value="Unskilled">অদক্ষ শ্ৰমিক (Unskilled)</option>
-                    <option value="Semi-Skilled">অৰ্ধ-দক্ষ শ্ৰমিক (Semi-Skilled)</option>
-                    <option value="Skilled">দক্ষ টেকনিচিয়ান (Skilled)</option>
-                  </select>
+                  <label className="block font-bold text-slate-700 mb-1">শ্ৰমিকৰ শ্ৰেণী (Category)</label>
+                  <div className="w-full bg-slate-100 border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800">
+                    অদক্ষ শ্ৰমিক (Unskilled Manual Labourer)
+                  </div>
                 </div>
 
                 <div>

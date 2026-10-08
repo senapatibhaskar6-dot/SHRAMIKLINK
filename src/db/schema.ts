@@ -9,7 +9,7 @@ export const users = pgTable('users', {
   createdAt: timestamp('created_at').defaultNow(),
 });
 
-// Define ShramikLinks compliance tables
+// Define IndustrialContractorWorkerLink (ICWL) compliance tables
 export const industries = pgTable('industries', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),

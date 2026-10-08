@@ -16,7 +16,7 @@ import {
   Smartphone,
   Check
 } from 'lucide-react';
-import logoUrl from '../assets/images/shramiklink_logo_1788402038953.jpg';
+import logoUrl from '../assets/images/icwl_logo.png';
 
 interface DualAppHubProps {
   onLaunchBaganLink: () => void;
@@ -208,7 +208,7 @@ export default function DualAppHub({
                     </>
                   )}
                 </button>
-                <span className="text-emerald-400 font-bold">Package: com.shramiklink.baganlink</span>
+                <span className="text-emerald-400 font-bold">Package: com.icwl.baganlink</span>
               </div>
             </div>
           </div>
@@ -324,7 +324,7 @@ export default function DualAppHub({
                     </>
                   )}
                 </button>
-                <span className="text-indigo-400 font-bold">Package: com.shramiklink.udyoglink</span>
+                <span className="text-indigo-400 font-bold">Package: com.icwl.udyoglink</span>
               </div>
             </div>
           </div>
@@ -345,7 +345,7 @@ export default function DualAppHub({
         </div>
 
         <p className="leading-relaxed">
-          "মই <strong>ভাস্কৰ সেনাপতি</strong> (প্ৰতিষ্ঠাপক, ShramikLink), ইয়াৰ দ্বাৰা স্পষ্ট কৰিছোঁ যে আমাৰ প্লেটফৰ্মত <strong>বাগান-লিংক (BaganLink)</strong> আৰু <strong>উদ্যোগ-লিংক (UdyogLink)</strong> দুটা সম্পূর্ণ স্বতন্ত্ৰ প্ৰণালী। চাহ বাগিচাৰ শ্ৰমিক সুসংগঠিত হোৱাৰ বাবে তেওঁলোকৰ হিচাপ অসম চৰকাৰৰ <em>Plantations Labour Act, 1951</em> আৰু <em>ATPO গুৱাহাটী</em>ৰ অধীনত ৰখা হৈছে। আনহাতে কাৰখানাৰ ঠিকা শ্ৰমিকৰ হিচাপ <em>Factories Act, 1948</em> আৰু <em>CLRA Act, 1970</em> ৰ অধীনত কেন্দ্ৰীয় <em>EPFO/ESIC</em> ত ৰখা হৈছে। কোনো কাৰণতে এই দুয়োটা ডাটাবেচৰ মাজত খেলিমেলি বা ডাটা সংমিশ্ৰণ নহয়।"
+          "মই <strong>ভাস্কৰ সেনাপতি</strong> (প্ৰতিষ্ঠাপক, IndustrialContractorWorkerLink / ICWL), ইয়াৰ দ্বাৰা স্পষ্ট কৰিছোঁ যে আমাৰ প্লেটফৰ্মত <strong>বাগান-লিংক (BaganLink)</strong> আৰু <strong>উদ্যোগ-লিংক (UdyogLink)</strong> দুটা সম্পূর্ণ স্বতন্ত্ৰ প্ৰণালী। চাহ বাগিচাৰ শ্ৰমিক সুসংগঠিত হোৱাৰ বাবে তেওঁলোকৰ হিচাপ অসম চৰকাৰৰ <em>Plantations Labour Act, 1951</em> আৰু <em>ATPO গুৱাহাটী</em>ৰ অধীনত ৰখা হৈছে। আনহাতে কাৰখানাৰ ঠিকা শ্ৰমিকৰ হিচাপ <em>Factories Act, 1948</em> আৰু <em>CLRA Act, 1970</em> ৰ অধীনত কেন্দ্ৰীয় <em>EPFO/ESIC</em> ত ৰখা হৈছে। কোনো কাৰণতে এই দুয়োটা ডাটাবেচৰ মাজত খেলিমেলি বা ডাটা সংমিশ্ৰণ নহয়।"
         </p>
 
         <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-[11px] text-slate-400">

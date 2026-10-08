@@ -385,9 +385,6 @@ export default function IndustryRequirementManager({
                 // Dynamically gauge this contractor's workforce capacity
                 const mappedWorkers = workers.filter(w => w.contractorId === c.id);
                 const totalCount = mappedWorkers.length;
-                const unskilledCount = mappedWorkers.filter(w => w.skillType === 'Unskilled').length;
-                const semiCount = mappedWorkers.filter(w => w.skillType === 'Semi-Skilled').length;
-                const skilledCount = mappedWorkers.filter(w => w.skillType === 'Skilled' || w.skillType === 'Highly-Skilled').length;
                 const availableCount = mappedWorkers.filter(w => w.status === 'Available').length;
                 const cleanPhone = (c.contactNo || '').replace(/\D/g, '');
 
@@ -419,20 +416,9 @@ export default function IndustryRequirementManager({
                           </span>
                         </div>
 
-                        {/* Breakdown pills */}
-                        <div className="grid grid-cols-3 gap-1 text-[10px] text-center font-bold">
-                          <div className="bg-white p-1 rounded border border-indigo-100">
-                            <span className="text-slate-400 block text-[9px] font-normal">অদক্ষ</span>
-                            <span className="text-slate-800">{unskilledCount}</span>
-                          </div>
-                          <div className="bg-white p-1 rounded border border-indigo-100">
-                            <span className="text-slate-400 block text-[9px] font-normal">অৰ্ধ-দক্ষ</span>
-                            <span className="text-slate-800">{semiCount}</span>
-                          </div>
-                          <div className="bg-white p-1 rounded border border-indigo-100">
-                            <span className="text-slate-400 block text-[9px] font-normal">দক্ষ</span>
-                            <span className="text-slate-800">{skilledCount}</span>
-                          </div>
+                        <div className="bg-white p-2 rounded border border-indigo-100 flex items-center justify-between text-[11px] font-bold">
+                          <span className="text-slate-500 font-normal">শ্ৰেণী: অদক্ষ শ্ৰমিক (Unskilled Manual Labour)</span>
+                          <span className="text-indigo-900 font-mono font-black">{totalCount} জন</span>
                         </div>
 
                         <div className="text-[10px] text-emerald-700 font-semibold flex items-center gap-1 pt-0.5">
@@ -521,17 +507,11 @@ export default function IndustryRequirementManager({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">দক্ষতাৰ স্তৰ (Skill Category)</label>
-                  <select
-                    value={formSkill}
-                    onChange={(e) => setFormSkill(e.target.value as DailyRequirement['skillType'])}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:bg-white focus:border-indigo-600 font-semibold"
-                  >
-                    <option value="Unskilled">অদক্ষ শ্ৰমিক (Unskilled)</option>
-                    <option value="Semi-Skilled">অৰ্ধ-দক্ষ শ্ৰমিক (Semi-Skilled)</option>
-                    <option value="Skilled">দক্ষ টেকনিচিয়ান (Skilled)</option>
-                    <option value="Highly-Skilled">উচ্চ-দক্ষ (Highly-Skilled)</option>
-                  </select>
+                  <label className="block font-bold text-slate-700 mb-1">শ্ৰমিকৰ শ্ৰেণী (Labour Category)</label>
+                  <div className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800 font-semibold text-xs flex items-center justify-between">
+                    <span>অদক্ষ শ্ৰমিক (Unskilled Manual Labour)</span>
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">Standard</span>
+                  </div>
                 </div>
 
                 <div>

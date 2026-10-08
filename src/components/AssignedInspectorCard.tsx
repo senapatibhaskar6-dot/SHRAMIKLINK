@@ -48,7 +48,7 @@ export const AssignedInspectorCard: React.FC<AssignedInspectorCardProps> = ({
   const cleanPhone = activeInspector.phone.replace(/\D/g, '');
   const waPhone = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
   const waText = encodeURIComponent(
-    `নমস্কাৰ ${activeInspector.name}, ShramikLink পৰ্টেলৰ পৰা যোগাযোগ কৰা হৈছে।\nপ্ৰতিষ্ঠান: ${entityName} (${entityType === 'industry' ? 'কাৰখানা এইচ.আৰ' : 'লেবাৰ কন্ট্ৰেক্টৰ'})\nস্থান/এলেকা: ${entityLocationOrZone}\nবিষয়: বিধিসন্মত শ্ৰম অনুপালন আৰু তদাৰকী (Statutory Compliance Transparency)`
+    `নমস্কাৰ ${activeInspector.name}, ICWL (IndustrialContractorWorkerLink) পৰ্টেলৰ পৰা যোগাযোগ কৰা হৈছে।\nপ্ৰতিষ্ঠান: ${entityName} (${entityType === 'industry' ? 'কাৰখানা এইচ.আৰ' : 'লেবাৰ কন্ট্ৰেক্টৰ'})\nস্থান/এলেকা: ${entityLocationOrZone}\nবিষয়: বিধিসন্মত শ্ৰম অনুপালন আৰু তদাৰকী (Statutory Compliance Transparency)`
   );
 
   return (
