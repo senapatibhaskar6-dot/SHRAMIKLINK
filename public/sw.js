@@ -1,8 +1,11 @@
-const CACHE_NAME = 'icwl-v1';
+const CACHE_NAME = 'icwl-v2';
 const ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/favicon.png',
+  '/apple-touch-icon.png',
+  '/pwa-192x192.png',
   '/ICWL.png'
 ];
 
