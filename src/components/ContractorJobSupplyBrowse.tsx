@@ -54,6 +54,16 @@ export default function ContractorJobSupplyBrowse({
   // Contractor's own applications
   const myApplications = contractorApplications.filter(a => a.contractorId === contractor.id);
 
+  // Role filter for establishments
+  const [establishmentRoleFilter, setEstablishmentRoleFilter] = useState<'All' | 'Industry HR' | 'Apartment Owner' | 'Shop Owner' | 'Office'>('All');
+
+  // Filtered requirements based on establishment role
+  const displayedReqs = openReqs.filter(r => {
+    if (establishmentRoleFilter === 'All') return true;
+    const ind = industries.find(i => i.id === r.industryId);
+    return ind?.category === establishmentRoleFilter;
+  });
+
   const handleOpenApplyModal = (req: DailyRequirement) => {
     setSelectedReq(req);
     const defaultCommit = Math.min(
@@ -143,13 +153,42 @@ export default function ContractorJobSupplyBrowse({
       {/* 2. BROWSE TAB CONTENT */}
       {activeTab === 'browse' && (
         <div className="space-y-4">
-          {openReqs.length === 0 ? (
+          
+          {/* Specific Roles Navigation Filter */}
+          <div className="bg-slate-50 border border-slate-200/80 p-3 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+            <span className="font-bold text-slate-600 flex items-center gap-1.5 text-[11px] uppercase tracking-wider">
+              নিয়োগকাৰী প্ৰতিষ্ঠানৰ ভূমিকা ফিল্টাৰ:
+            </span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {[
+                { id: 'All', label: 'সকলো (All)' },
+                { id: 'Industry HR', label: '🏭 Industry HR' },
+                { id: 'Apartment Owner', label: '🏢 Apartment' },
+                { id: 'Shop Owner', label: '🛍️ Shop' },
+                { id: 'Office', label: '🏛️ Office' },
+              ].map(f => (
+                <button
+                  key={f.id}
+                  onClick={() => setEstablishmentRoleFilter(f.id as any)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    establishmentRoleFilter === f.id
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {displayedReqs.length === 0 ? (
             <div className="bg-white border border-slate-200 rounded-xl p-12 text-center text-slate-400 text-xs">
-              বৰ্তমান কোনো নতুন শ্ৰমিক চাহিদা উপলব্ধ নাই। নতুন পোষ্টিং আহিলে ইয়াত প্ৰদৰ্শিত হ'ব।
+              বৰ্তমান এই শ্ৰেণীৰ কোনো নতুন শ্ৰমিক চাহিদা উপলব্ধ নাই। নতুন পোষ্টিং আহিলে ইয়াত প্ৰদৰ্শিত হ'ব।
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {openReqs.map((req) => {
+              {displayedReqs.map((req) => {
                 const targetIndustry = industries.find(ind => ind.id === req.industryId);
                 const hasApplied = myApplications.some(a => a.requirementId === req.id);
                 const isTargetedToMe = req.contractorId === contractor.id || req.contractorId === 'OPEN_POOL' || req.contractorId === 'ALL';
@@ -159,10 +198,18 @@ export default function ContractorJobSupplyBrowse({
                     <div className="space-y-2">
                       <div className="flex justify-between items-start gap-2">
                         <div>
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded">
                               {req.skillType}
                             </span>
+                            {targetIndustry?.category && (
+                              <span className="bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                                {targetIndustry.category === 'Industry HR' ? '🏭 Industry HR' :
+                                 targetIndustry.category === 'Apartment Owner' ? '🏢 Apartment Owner' :
+                                 targetIndustry.category === 'Shop Owner' ? '🛍️ Shop Owner' :
+                                 '🏛️ Office'}
+                              </span>
+                            )}
                             {req.contractorId === contractor.id && (
                               <span className="bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold px-1.5 py-0.5 rounded">
                                 Direct Request for You

@@ -488,7 +488,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
   const [registerName, setRegisterName] = useState<string>('');
   const [registerEmailOrPhone, setRegisterEmailOrPhone] = useState<string>('');
   const [registerPassword, setRegisterPassword] = useState<string>('');
-  const [registerRole, setRegisterRole] = useState<'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector'>('contractor');
+  const [registerRole, setRegisterRole] = useState<'industry_admin' | 'apartment_owner' | 'shop_owner' | 'office' | 'supervisor' | 'contractor' | 'security_agency' | 'worker' | 'government_inspector'>('contractor');
   
   // Legal/Compliance Registration Fields for Contractors & Industry HR
   const [regAgencyName, setRegAgencyName] = useState<string>('');
@@ -550,18 +550,26 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
     }
 
     const defaults: CredentialUser[] = [
-      { name: 'Tata Motors HR (Industry)', emailOrPhone: 'admin@icwl.in', passwordHash: 'admin', role: 'industry_admin' },
-      { name: 'Tata Motors HR (Industry)', emailOrPhone: 'admin@shramiklink.com', passwordHash: 'admin', role: 'industry_admin' },
+      { name: 'Tata Motors HR (Industry HR)', emailOrPhone: 'admin@icwl.in', passwordHash: 'admin', role: 'industry_admin' },
+      { name: 'Tata Motors HR (Industry HR)', emailOrPhone: 'admin@shramiklink.com', passwordHash: 'admin', role: 'industry_admin' },
+      { name: 'Greenwood Heights (Apartment Owner)', emailOrPhone: 'apartment@icwl.in', passwordHash: 'admin', role: 'industry_admin' },
+      { name: 'Mega Mart (Shop Owner)', emailOrPhone: 'shop@icwl.in', passwordHash: 'admin', role: 'industry_admin' },
+      { name: 'Zenith Tech (Office HR)', emailOrPhone: 'office@icwl.in', passwordHash: 'admin', role: 'industry_admin' },
       { name: 'Ramesh Kalita (Supervisor)', emailOrPhone: 'ramesh.kalita@industry.com', passwordHash: 'admin', role: 'supervisor' },
-      { name: 'Apex Solutions (Contractor)', emailOrPhone: 'contractor@icwl.in', passwordHash: 'admin', role: 'contractor' },
-      { name: 'Apex Solutions (Contractor)', emailOrPhone: 'contractor@shramiklink.com', passwordHash: 'admin', role: 'contractor' },
+      { name: 'Apex Solutions (Labour Contractor)', emailOrPhone: 'contractor@icwl.in', passwordHash: 'admin', role: 'contractor' },
+      { name: 'Apex Solutions (Labour Contractor)', emailOrPhone: 'contractor@shramiklink.com', passwordHash: 'admin', role: 'contractor' },
+      { name: 'Jai Hind (Security Agency)', emailOrPhone: 'security@icwl.in', passwordHash: 'admin', role: 'contractor' },
       { name: 'Gopal Kumar (Worker)', emailOrPhone: 'worker@icwl.in', passwordHash: 'admin', role: 'worker' },
       { name: 'Gopal Kumar (Worker)', emailOrPhone: 'worker@shramiklink.com', passwordHash: 'admin', role: 'worker' },
       { name: 'Bhaskar Senapati (Government)', emailOrPhone: 'inspector@icwl.in', passwordHash: 'admin', role: 'government_inspector' },
       { name: 'Bhaskar Senapati (Government)', emailOrPhone: 'inspector@shramiklink.com', passwordHash: 'admin', role: 'government_inspector' },
-      { name: 'Demo Admin Phone', emailOrPhone: '9876543210', passwordHash: 'admin', role: 'industry_admin' },
+      { name: 'Demo Industry HR Phone', emailOrPhone: '9876543210', passwordHash: 'admin', role: 'industry_admin' },
+      { name: 'Demo Apartment Owner Phone', emailOrPhone: '9876543214', passwordHash: 'admin', role: 'industry_admin' },
+      { name: 'Demo Shop Owner Phone', emailOrPhone: '9876543215', passwordHash: 'admin', role: 'industry_admin' },
+      { name: 'Demo Office Phone', emailOrPhone: '9876543216', passwordHash: 'admin', role: 'industry_admin' },
       { name: 'Demo Supervisor Phone', emailOrPhone: '9876543220', passwordHash: 'admin', role: 'supervisor' },
-      { name: 'Demo Contractor Phone', emailOrPhone: '9876543211', passwordHash: 'admin', role: 'contractor' },
+      { name: 'Demo Labour Contractor Phone', emailOrPhone: '9876543211', passwordHash: 'admin', role: 'contractor' },
+      { name: 'Demo Security Agency Phone', emailOrPhone: '9876543217', passwordHash: 'admin', role: 'contractor' },
       { name: 'Demo Worker Phone', emailOrPhone: '9876543212', passwordHash: 'admin', role: 'worker' },
       { name: 'Demo Inspector Phone', emailOrPhone: '9876543213', passwordHash: 'admin', role: 'government_inspector' },
     ];
@@ -574,9 +582,10 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
     }
 
     const standardEmailsOrPhones = [
-      'admin@icwl.in', 'contractor@icwl.in', 'worker@icwl.in', 'inspector@icwl.in',
+      'admin@icwl.in', 'apartment@icwl.in', 'shop@icwl.in', 'office@icwl.in',
+      'contractor@icwl.in', 'security@icwl.in', 'worker@icwl.in', 'inspector@icwl.in',
       'admin@shramiklink.com', 'ramesh.kalita@industry.com', 'contractor@shramiklink.com', 'worker@shramiklink.com', 'inspector@shramiklink.com',
-      '9876543210', '9876543220', '9876543211', '9876543212', '9876543213'
+      '9876543210', '9876543214', '9876543215', '9876543216', '9876543220', '9876543211', '9876543217', '9876543212', '9876543213'
     ];
 
     finalUsers = finalUsers.map(user => {
@@ -624,7 +633,10 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
       return;
     }
 
-    const finalRole: 'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector' = registerRole;
+    const finalRole: 'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector' = 
+      (registerRole === 'apartment_owner' || registerRole === 'shop_owner' || registerRole === 'office') ? 'industry_admin' :
+      (registerRole === 'security_agency') ? 'contractor' :
+      registerRole as any;
 
     const newUser: CredentialUser = {
       name: registerName,
@@ -639,36 +651,47 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
 
     // If Contractor registered, create Contractor Profile with compliance fields
     if (finalRole === 'contractor') {
+      const isSec = registerRole === 'security_agency';
       const newContractor: Contractor = {
         id: `con-${Date.now()}`,
         name: regAgencyName.trim() || registerName,
-        licenseNo: regLicenseNo.trim() || `CLRA-AS-2026-${Math.floor(100 + Math.random() * 900)}`,
+        licenseNo: regLicenseNo.trim() || (isSec ? `PSARA-AS-2026-${Math.floor(100 + Math.random() * 900)}` : `CLRA-AS-2026-${Math.floor(100 + Math.random() * 900)}`),
         lin: regLin.trim() || `LIN-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
         epfCode: regEpfCode.trim() || `EPF/AS/2026/${Math.floor(1000 + Math.random() * 9000)}`,
         esiCode: regEsiCode.trim() || `ESIC-78-${Math.floor(100000 + Math.random() * 900000)}`,
         pan: regPan.trim() || 'ABCDE1234F',
         gstin: regGstin.trim() || undefined,
         contactNo: registerEmailOrPhone.replace(/\D/g, '') || '9864011223',
-        rating: 5.0
+        rating: 5.0,
+        contractorType: isSec ? 'Security Agency' : 'Labour Contractor'
       };
       const updatedContractors = [newContractor, ...contractors];
       setContractors(updatedContractors);
       setSelectedContractorId(newContractor.id);
+      setContractorRoleFilter(newContractor.contractorType || 'All');
       try {
         localStorage.setItem('s_contractors_list', JSON.stringify(updatedContractors));
       } catch (e) {}
     } else if (finalRole === 'industry_admin') {
+      const category: IndustryCategory = 
+        registerRole === 'apartment_owner' ? 'Apartment Owner' :
+        registerRole === 'shop_owner' ? 'Shop Owner' :
+        registerRole === 'office' ? 'Office' :
+        'Industry HR';
+
       const newInd: Industry = {
         id: `ind-${Date.now()}`,
-        name: regFactoryName.trim() || `${registerName} Industrial Works`,
+        name: regFactoryName.trim() || `${registerName} (${category})`,
         location: regLocation.trim() || 'Guwahati Industrial Zone',
-        regNo: regLicenseNo.trim() || `FACT-AS-2026-${Math.floor(100 + Math.random() * 900)}`,
+        regNo: regLicenseNo.trim() || `ESTAB-AS-2026-${Math.floor(100 + Math.random() * 900)}`,
         lin: regLin.trim() || `LIN-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
-        contactEmail: registerEmailOrPhone.includes('@') ? registerEmailOrPhone : 'hr@industry.com'
+        contactEmail: registerEmailOrPhone.includes('@') ? registerEmailOrPhone : 'hr@establishment.in',
+        category
       };
       const updatedIndustries = [newInd, ...industries];
       setIndustries(updatedIndustries);
       setSelectedIndustryId(newInd.id);
+      setIndustryRoleFilter(category);
       try {
         localStorage.setItem('s_industries_list', JSON.stringify(updatedIndustries));
       } catch (e) {}
@@ -968,6 +991,49 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
   const [selectedContractorId, setSelectedContractorId] = useState<string>('con-1'); // Apex solutions
   const [selectedWorkerId, setSelectedWorkerId] = useState<string>('wrk-4'); // Idle worker
 
+  // Specific Role Filters for Industry HR and Contractor Panels
+  const [industryRoleFilter, setIndustryRoleFilter] = useState<'All' | 'Industry HR' | 'Apartment Owner' | 'Shop Owner' | 'Office'>('All');
+  const [contractorRoleFilter, setContractorRoleFilter] = useState<'All' | 'Labour Contractor' | 'Security Agency'>('All');
+
+  // Modals for adding New Establishment and Contractor
+  const [isAddEstablishmentModalOpen, setIsAddEstablishmentModalOpen] = useState<boolean>(false);
+  const [newEstablishmentForm, setNewEstablishmentForm] = useState<{
+    name: string;
+    location: string;
+    regNo: string;
+    lin: string;
+    contactEmail: string;
+    category: 'Industry HR' | 'Apartment Owner' | 'Shop Owner' | 'Office';
+  }>({
+    name: '',
+    location: 'Guwahati, Assam',
+    regNo: '',
+    lin: '',
+    contactEmail: '',
+    category: 'Industry HR'
+  });
+
+  const [isAddContractorModalOpen, setIsAddContractorModalOpen] = useState<boolean>(false);
+  const [newContractorForm, setNewContractorForm] = useState<{
+    name: string;
+    licenseNo: string;
+    lin: string;
+    pan: string;
+    epfCode: string;
+    esiCode: string;
+    contactNo: string;
+    contractorType: 'Labour Contractor' | 'Security Agency';
+  }>({
+    name: '',
+    licenseNo: '',
+    lin: '',
+    pan: '',
+    epfCode: '',
+    esiCode: '',
+    contactNo: '',
+    contractorType: 'Labour Contractor'
+  });
+
   // Dashboard navigation tabs
   const [contractorTab, setContractorTab] = useState<'project_compliance' | 'work' | 'deployment' | 'billing' | 'requisitions' | 'supervisors_attendance' | 'workforce'>('project_compliance');
   const [isHrComplianceDossierOpen, setIsHrComplianceDossierOpen] = useState<boolean>(false);
@@ -1063,10 +1129,113 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
     onboardingDate: '2026-08-10'
   };
 
-  // Helper selectors
+  // Helper selectors & filtered lists
+  const filteredIndustries = industries.filter(ind => {
+    if (industryRoleFilter === 'All') return true;
+    return ind.category === industryRoleFilter;
+  });
+
+  const filteredContractors = contractors.filter(c => {
+    if (contractorRoleFilter === 'All') return true;
+    return c.contractorType === contractorRoleFilter;
+  });
+
   const activeIndustry = industries.find(i => i.id === selectedIndustryId) || industries[0] || defaultFallbackIndustry;
   const activeContractor = contractors.find(c => c.id === selectedContractorId) || contractors[0] || defaultFallbackContractor;
   const activeWorker = workers.find(w => w.id === selectedWorkerId) || workers[0] || defaultFallbackWorker;
+
+  const handleIndustryRoleFilterChange = (filter: 'All' | 'Industry HR' | 'Apartment Owner' | 'Shop Owner' | 'Office') => {
+    setIndustryRoleFilter(filter);
+    if (filter !== 'All') {
+      const matched = industries.find(ind => ind.category === filter);
+      if (matched) {
+        setSelectedIndustryId(matched.id);
+        showNotice(`প্ৰতিষ্ঠান ফিল্টাৰ সক্ৰিয়: ${filter} (${matched.name})`, 'info');
+      }
+    } else {
+      showNotice('সকলো প্ৰতিষ্ঠান প্ৰদৰ্শিত কৰা হৈছে।', 'info');
+    }
+  };
+
+  const handleContractorRoleFilterChange = (filter: 'All' | 'Labour Contractor' | 'Security Agency') => {
+    setContractorRoleFilter(filter);
+    if (filter !== 'All') {
+      const matched = contractors.find(c => c.contractorType === filter);
+      if (matched) {
+        setSelectedContractorId(matched.id);
+        showNotice(`সং সংস্থা ফিল্টাৰ সক্ৰিয়: ${filter} (${matched.name})`, 'info');
+      }
+    } else {
+      showNotice('সকলো সংস্থা প্ৰদৰ্শিত কৰা হৈছে।', 'info');
+    }
+  };
+
+  const handleCreateEstablishment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEstablishmentForm.name.trim()) {
+      showNotice('অনুগ্ৰহ কৰি প্ৰতিষ্ঠানৰ নাম প্ৰবিষ্ট কৰক।', 'error');
+      return;
+    }
+    const newId = `ind-${Date.now()}`;
+    const created: Industry = {
+      id: newId,
+      name: newEstablishmentForm.name.trim(),
+      location: newEstablishmentForm.location.trim() || 'Guwahati, Assam',
+      regNo: newEstablishmentForm.regNo.trim() || `ESTAB-${Date.now().toString().slice(-6)}`,
+      lin: newEstablishmentForm.lin.trim() || `LIN-${Date.now().toString().slice(-8)}`,
+      contactEmail: newEstablishmentForm.contactEmail.trim() || 'admin@icwl.in',
+      category: newEstablishmentForm.category
+    };
+    setIndustries(prev => [created, ...prev]);
+    setSelectedIndustryId(newId);
+    setIndustryRoleFilter(newEstablishmentForm.category);
+    setIsAddEstablishmentModalOpen(false);
+    setNewEstablishmentForm({
+      name: '',
+      location: 'Guwahati, Assam',
+      regNo: '',
+      lin: '',
+      contactEmail: '',
+      category: 'Industry HR'
+    });
+    showNotice(`নতুন ${created.category} (${created.name}) সফলতাৰে পঞ্জীয়ন হ'ল!`, 'success');
+  };
+
+  const handleCreateContractor = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newContractorForm.name.trim()) {
+      showNotice('অনুগ্ৰহ কৰি সংস্থাৰ নাম প্ৰবিষ্ট কৰক।', 'error');
+      return;
+    }
+    const newId = `con-${Date.now()}`;
+    const created: Contractor = {
+      id: newId,
+      name: newContractorForm.name.trim(),
+      licenseNo: newContractorForm.licenseNo.trim() || (newContractorForm.contractorType === 'Security Agency' ? `PSARA-AS-${Date.now().toString().slice(-4)}` : `CLRA-AS-${Date.now().toString().slice(-4)}`),
+      lin: newContractorForm.lin.trim() || `L-${Date.now().toString().slice(-8)}`,
+      pan: newContractorForm.pan.trim() || 'AAAAA0000A',
+      epfCode: newContractorForm.epfCode.trim() || 'AS/GHY/1000A/001',
+      esiCode: newContractorForm.esiCode.trim() || '43-0000-000-0000',
+      contactNo: newContractorForm.contactNo.trim() || '+91 98000 00000',
+      rating: 5.0,
+      contractorType: newContractorForm.contractorType
+    };
+    setContractors(prev => [created, ...prev]);
+    setSelectedContractorId(newId);
+    setContractorRoleFilter(newContractorForm.contractorType);
+    setIsAddContractorModalOpen(false);
+    setNewContractorForm({
+      name: '',
+      licenseNo: '',
+      lin: '',
+      pan: '',
+      epfCode: '',
+      esiCode: '',
+      contactNo: '',
+      contractorType: 'Labour Contractor'
+    });
+    showNotice(`নতুন ${created.contractorType} (${created.name}) সফলতাৰে পঞ্জীয়ন হ'ল!`, 'success');
+  };
 
   // Helper to find the assigned Government Labor Inspector for an Industry
   const getAssignedInspectorForIndustry = (industry: Industry): GovernmentLaborInspector => {
@@ -3239,16 +3408,26 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                         onChange={(e: any) => setRegisterRole(e.target.value)}
                         className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-500"
                       >
-                        <option value="industry_admin">🏭 Industry HR (ইণ্ডাষ্ট্ৰী এইচ.আৰ. - Principal Employer)</option>
-                        <option value="contractor">🏢 Labor Contractor (লেবাৰ কন্ট্ৰেক্টৰ - Manpower Agency)</option>
-                        <option value="supervisor">👷 Factory Supervisor (কাৰখানা ছুপাৰভাইজাৰ - Gate Attendance)</option>
-                        <option value="worker">👷 Direct / Contract Worker (শ্ৰমিক - স্বাধীন বা চুক্তিভিত্তিক)</option>
-                        <option value="government_inspector">⚖️ Government Inspector (চৰকাৰী পৰিদৰ্শক)</option>
+                        <optgroup label="🏭 Principal Employer / Establishments">
+                          <option value="industry_admin">🏭 Industry HR (কাৰখানা / Factory HR)</option>
+                          <option value="apartment_owner">🏢 Apartment Owner (আৱাসিক সমিতি / Housing Society)</option>
+                          <option value="shop_owner">🛍️ Shop Owner (দোকান / বাণিজ্যিক প্ৰতিষ্ঠান / Retail)</option>
+                          <option value="office">🏛️ Office (কৰ্পোৰেট কাৰ্যালয় / Corporate Office)</option>
+                        </optgroup>
+                        <optgroup label="🏢 Manpower & Security Agencies">
+                          <option value="contractor">👷 Labour Contractor (শ্ৰমিক ঠিকাদাৰ - Manpower Agency)</option>
+                          <option value="security_agency">🛡️ Security Agency (নিৰাপত্তা সংস্থা - PSARA Security)</option>
+                        </optgroup>
+                        <optgroup label="👷 Field Operations & Workers">
+                          <option value="supervisor">👷 Factory / Facility Supervisor (ছুপাৰভাইজাৰ)</option>
+                          <option value="worker">👤 অদক্ষ শ্ৰমিক (Unskilled Manual Labourer)</option>
+                          <option value="government_inspector">⚖️ Government Inspector (চৰকাৰী শ্ৰম পৰিদৰ্শক)</option>
+                        </optgroup>
                       </select>
                     </div>
 
-                    {/* DEDICATED COMPLIANCE & LEGAL DOCUMENT ENTRY FOR CONTRACTOR */}
-                    {registerRole === 'contractor' && (
+                    {/* DEDICATED COMPLIANCE & LEGAL DOCUMENT ENTRY FOR CONTRACTOR / SECURITY AGENCY */}
+                    {(registerRole === 'contractor' || registerRole === 'security_agency') && (
                       <div className="bg-slate-50 border border-indigo-200 rounded-xl p-3 space-y-2.5 text-xs">
                         <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-indigo-900 border-b border-indigo-100 pb-1.5">
                           <ShieldCheck className="h-4 w-4 text-indigo-600" />
@@ -3344,12 +3523,12 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                       </div>
                     )}
 
-                    {/* DEDICATED COMPLIANCE & FACTORY DETAILS FOR INDUSTRY HR */}
-                    {registerRole === 'industry_admin' && (
+                    {/* DEDICATED COMPLIANCE & ESTABLISHMENT DETAILS FOR PRINCIPAL EMPLOYER */}
+                    {(registerRole === 'industry_admin' || registerRole === 'apartment_owner' || registerRole === 'shop_owner' || registerRole === 'office') && (
                       <div className="bg-slate-50 border border-indigo-200 rounded-xl p-3 space-y-2.5 text-xs">
                         <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-indigo-900 border-b border-indigo-100 pb-1.5">
                           <Building2 className="h-4 w-4 text-indigo-600" />
-                          কাৰখানা তথ্য আৰু পঞ্জীয়ন (Factory Establishment Details)
+                          প্ৰতিষ্ঠানৰ তথ্য আৰু পঞ্জীয়ন (Establishment Details)
                         </div>
 
                         <div>
@@ -3518,11 +3697,15 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
 
               <div className="space-y-2.5">
                 {[
-                  { label: '🏭 Industry HR', email: 'admin@icwl.in', pass: 'admin', phone: '9876543210' },
+                  { label: '🏭 Industry HR (Principal Employer)', email: 'admin@icwl.in', pass: 'admin', phone: '9876543210' },
+                  { label: '🏢 Apartment Owner (Residential Society)', email: 'apartment@icwl.in', pass: 'admin', phone: '9876543214' },
+                  { label: '🛍️ Shop Owner (Commercial Retail)', email: 'shop@icwl.in', pass: 'admin', phone: '9876543215' },
+                  { label: '🏛️ Office (Corporate Workplace)', email: 'office@icwl.in', pass: 'admin', phone: '9876543216' },
+                  { label: '👷 Labour Contractor (Manpower Supply)', email: 'contractor@icwl.in', pass: 'admin', phone: '9876543211' },
+                  { label: '🛡️ Security Agency (PSARA Vigilance)', email: 'security@icwl.in', pass: 'admin', phone: '9876543217' },
                   { label: '👷 Factory Supervisor (Gate Attendance)', email: 'ramesh.kalita@industry.com', pass: 'admin', phone: '9876543220' },
-                  { label: '🏢 Licensed Contractor', email: 'contractor@icwl.in', pass: 'admin', phone: '9876543211' },
-                  { label: '👷 Contract Worker', email: 'worker@icwl.in', pass: 'admin', phone: '9876543212' },
-                  { label: '⚖️ Government Inspector', email: 'inspector@icwl.in', pass: 'admin', phone: '9876543213' }
+                  { label: '👤 Unskilled Worker (Manual Labour)', email: 'worker@icwl.in', pass: 'admin', phone: '9876543212' },
+                  { label: '⚖️ Government Inspector (CLRA Audit)', email: 'inspector@icwl.in', pass: 'admin', phone: '9876543213' }
                 ].map((cred, idx) => (
                   <button
                     key={idx}
@@ -3686,10 +3869,10 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
         </div>
       </div>
       
-      {/* Role Gate Bar (Bento-style Header Card) */}
-      <div className="bg-slate-900 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl shadow-sm border border-slate-800">
+      {/* Role Gate Bar (Clean White Card Design #FFFFFF) */}
+      <div className="bg-white px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl shadow-sm border border-slate-200 text-slate-900">
         <div className="flex items-center gap-3">
-          <div className="relative group w-11 h-11 bg-white p-0.5 rounded-xl text-slate-950 flex items-center justify-center shrink-0 border border-slate-700 shadow-sm">
+          <div className="relative group w-11 h-11 bg-slate-50 p-1 rounded-xl text-slate-950 flex items-center justify-center shrink-0 border border-slate-200 shadow-xs">
             <TransparentImage 
               src={logoUrl} 
               alt="IndustrialContractorWorkerLink Logo" 
@@ -3700,7 +3883,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
               <a 
                 href={logoUrl} 
                 download="ICWL_logo.png" 
-                className="absolute -bottom-1 -right-1 bg-slate-900 text-emerald-400 hover:text-emerald-300 p-0.5 rounded-md border border-slate-800 shadow-md cursor-pointer hover:scale-105 transition-all flex items-center justify-center"
+                className="absolute -bottom-1 -right-1 bg-white text-emerald-600 hover:text-emerald-700 p-0.5 rounded-md border border-slate-300 shadow-md cursor-pointer hover:scale-105 transition-all flex items-center justify-center"
                 title="Download ICWL Logo"
               >
                 <Download className="w-2.5 h-2.5" />
@@ -3709,25 +3892,25 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
           </div>
           <div>
             <div className="flex items-center gap-2 mb-0.5">
-              <span className="text-xs font-black tracking-tight text-white flex items-center">
-                ICWL <span className="text-indigo-400 ml-1 font-mono text-[10px]">(IndustrialContractorWorkerLink)</span>
+              <span className="text-xs font-black tracking-tight text-slate-900 flex items-center">
+                ICWL <span className="text-indigo-600 ml-1 font-mono text-[10px]">(IndustrialContractorWorkerLink)</span>
               </span>
-              <span className="text-[10px] text-slate-400 font-mono">B2B Compliance</span>
+              <span className="text-[10px] text-slate-500 font-mono bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">B2B Compliance</span>
             </div>
-            <h3 className="font-bold text-white text-sm tracking-tight flex items-center gap-2">
+            <h3 className="font-bold text-slate-900 text-sm tracking-tight flex items-center gap-2">
               🔒 SECURE CLRA SESSION: ACTIVE 
-              <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-mono font-bold uppercase tracking-wide">
-                {currentRole === 'industry_admin' ? t.industryAdmin :
+              <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded font-mono font-bold uppercase tracking-wide">
+                {currentRole === 'industry_admin' ? 'Industry HR (Principal Employer)' :
                  currentRole === 'supervisor' ? t_supervisor :
-                 currentRole === 'contractor' ? t.contractor :
+                 currentRole === 'contractor' ? 'Contractor (Labour & Security)' :
                  currentRole === 'worker' ? t.worker :
                  t.inspector}
               </span>
             </h3>
-            <p className="text-[11px] text-slate-400">
-              {currentRole === 'industry_admin' && t.industryAdminDesc}
+            <p className="text-[11px] text-slate-500">
+              {currentRole === 'industry_admin' && 'প্ৰধান নিয়োগকাৰী ডেশ্ববৰ্ড: Industry HR, Apartment Owner, Shop Owner, আৰু Office প্ৰতিষ্ঠান ব্যৱস্থাপনা।'}
               {currentRole === 'supervisor' && t_supervisorDesc}
-              {currentRole === 'contractor' && t.contractorDesc}
+              {currentRole === 'contractor' && 'ঠিকাদাৰ ও নিৰাপত্তা সংস্থা ডেস্ক: Labour Contractor আৰু Security Agency অনুপালন।'}
               {currentRole === 'worker' && t.workerDesc}
               {currentRole === 'government_inspector' && t.inspectorDesc}
             </p>
@@ -3748,16 +3931,16 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
           <button 
             onClick={() => setIsFeedbackModalOpen(true)}
             title="App Review & Feedback"
-            className="text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold px-2.5 py-1.5 border border-amber-500/40 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+            className="text-xs bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold px-2.5 py-1.5 border border-amber-300 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
           >
-            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+            <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
             <span>ৰিভিউ আৰু ফীডবেক (Reviews)</span>
           </button>
 
           <button 
             onClick={handleResetState}
             title="Restore original data"
-            className="text-xs text-slate-400 hover:text-rose-400 font-bold px-2.5 py-1.5 border border-slate-800 hover:border-rose-900 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+            className="text-xs text-slate-600 hover:text-rose-600 font-bold px-2.5 py-1.5 border border-slate-200 hover:border-rose-300 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer bg-white"
           >
             <RefreshCw className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">{t.restoreData}</span>
@@ -3773,58 +3956,114 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
         </div>
       </div>
 
-      {/* Role Navigation & Fast Switcher Bar (Direct Switcher) */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-2.5 flex flex-col lg:flex-row items-center justify-between gap-3 shadow-md">
-        <div className="flex items-center gap-1.5 flex-wrap w-full lg:w-auto">
-          <span className="text-[11px] font-black uppercase text-slate-400 px-2 tracking-wider shrink-0 flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            পেনেল বাছক (Active Desk):
-          </span>
-          {[
-            { role: 'industry_admin', label: '🏭 ইণ্ডাষ্ট্ৰী এডমিন (Admin)', desc: 'ফেক্টৰী প্ৰশাসন' },
-            { role: 'supervisor', label: '👷 ছুপাৰভাইজাৰ পেনেল (Supervisor)', desc: 'গেট হাজিৰা আৰু মন্তব্য', isPrimary: true },
-            { role: 'contractor', label: '🏢 ঠিকাদাৰ ডেস্ক (Contractor)', desc: 'লেবাৰ বিল আৰু খতিয়ান' },
-            { role: 'worker', label: '👤 শ্ৰমিক ডেস্ক (Worker)', desc: 'প্ৰফাইল আৰু পাছবুক' },
-            { role: 'government_inspector', label: '⚖️ চৰকাৰী পৰিদৰ্শক (Inspector)', desc: 'CLRA নিৰীক্ষণ' },
-          ].map((item) => {
-            const isActive = currentRole === item.role;
-            return (
-              <button
-                key={item.role}
-                onClick={() => {
-                  setCurrentRole(item.role as any);
-                  localStorage.setItem('s_current_role', item.role);
-                  showNotice(`সক্ৰিয় পেনেল সলনি কৰা হ'ল: ${item.label}`, 'info');
-                }}
-                className={`px-3 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
-                  isActive
-                    ? 'bg-emerald-500 text-slate-950 shadow-md ring-2 ring-emerald-300'
-                    : item.isPrimary
-                    ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs border border-indigo-400/40'
-                    : 'bg-slate-800 hover:bg-slate-700 text-slate-200'
-                }`}
-              >
-                <span>{item.label}</span>
-                {item.isPrimary && !isActive && (
-                  <span className="text-[9px] bg-emerald-400 text-slate-950 px-1.5 py-0.2 rounded-full font-black">
-                    হাজিৰা & মন্তব্য
-                  </span>
-                )}
-              </button>
-            );
-          })}
+      {/* Role Navigation & Fast Switcher Bar (Clean White Design with Sub-role Navigation Filters) */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-3.5 flex flex-col gap-3 shadow-sm text-slate-900">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-1.5 flex-wrap w-full lg:w-auto">
+            <span className="text-[11px] font-black uppercase text-slate-500 px-2 tracking-wider shrink-0 flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              পেনেল বাছক (Active Desk):
+            </span>
+            {[
+              { role: 'industry_admin', label: '🏭 প্ৰধান নিয়োগকাৰী (Industry HR, Apartment, Shop, Office)', short: '🏭 Industry HR / Client', isPrimary: true },
+              { role: 'supervisor', label: '👷 ছুপাৰভাইজাৰ পেনেল (Supervisor Desk)', short: '👷 ছুপাৰভাইজাৰ' },
+              { role: 'contractor', label: '🏢 ঠিকাদাৰ ডেস্ক (Labour Contractor & Security Agency)', short: '🏢 Contractor & Agency' },
+              { role: 'worker', label: '👤 শ্ৰমিক ডেস্ক (Worker)', short: '👤 শ্ৰমিক' },
+              { role: 'government_inspector', label: '⚖️ চৰকাৰী পৰিদৰ্শক (Inspector)', short: '⚖️ পৰিদৰ্শক' },
+            ].map((item) => {
+              const isActive = currentRole === item.role;
+              return (
+                <button
+                  key={item.role}
+                  onClick={() => {
+                    setCurrentRole(item.role as any);
+                    localStorage.setItem('s_current_role', item.role);
+                    showNotice(`সক্ৰিয় পেনেল সলনি কৰা হ'ল: ${item.short}`, 'info');
+                  }}
+                  className={`px-3 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                    isActive
+                      ? 'bg-indigo-600 text-white shadow-xs ring-2 ring-indigo-300'
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
+                  }`}
+                >
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center gap-2 w-full lg:w-auto justify-end shrink-0 flex-wrap sm:flex-nowrap">
+            <button
+              onClick={handleLogout}
+              className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-black px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+              title="লগ আউট কৰক (Log Out)"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>লগ আউট (Log Out)</span>
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 w-full lg:w-auto justify-end shrink-0 flex-wrap sm:flex-nowrap">
-          <button
-            onClick={handleLogout}
-            className="bg-rose-600 hover:bg-rose-700 text-white font-black text-xs px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
-            title="লগ আউট কৰক (Log Out)"
-          >
-            <LogOut className="h-4 w-4" />
-            <span>লগ আউট কৰক (Log Out)</span>
-          </button>
-        </div>
+        {/* Quick Role Navigation Sub-Filters */}
+        {currentRole === 'industry_admin' && (
+          <div className="pt-2 border-t border-slate-100 flex items-center gap-2 flex-wrap text-xs">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
+              <Filter className="h-3 w-3 text-indigo-600" />
+              নিয়োগকাৰী ভূমিকা ফিল্টাৰ:
+            </span>
+            {[
+              { id: 'All', label: '🌐 সকলো প্ৰতিষ্ঠান (All)', count: industries.length },
+              { id: 'Industry HR', label: '🏭 Industry HR', count: industries.filter(i => i.category === 'Industry HR').length },
+              { id: 'Apartment Owner', label: '🏢 Apartment Owner', count: industries.filter(i => i.category === 'Apartment Owner').length },
+              { id: 'Shop Owner', label: '🛍️ Shop Owner', count: industries.filter(i => i.category === 'Shop Owner').length },
+              { id: 'Office', label: '🏛️ Office', count: industries.filter(i => i.category === 'Office').length },
+            ].map((sub) => (
+              <button
+                key={sub.id}
+                onClick={() => handleIndustryRoleFilterChange(sub.id as any)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  industryRoleFilter === sub.id
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'
+                }`}
+              >
+                <span>{sub.label}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${industryRoleFilter === sub.id ? 'bg-white/25 text-white' : 'bg-slate-200 text-slate-700'}`}>
+                  {sub.count}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {currentRole === 'contractor' && (
+          <div className="pt-2 border-t border-slate-100 flex items-center gap-2 flex-wrap text-xs">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
+              <Filter className="h-3 w-3 text-indigo-600" />
+              ঠিকাদাৰ ভূমিকা ফিল্টাৰ:
+            </span>
+            {[
+              { id: 'All', label: '🌐 সকলো সংস্থা (All)', count: contractors.length },
+              { id: 'Labour Contractor', label: '👷 Labour Contractor', count: contractors.filter(c => c.contractorType === 'Labour Contractor').length },
+              { id: 'Security Agency', label: '🛡️ Security Agency', count: contractors.filter(c => c.contractorType === 'Security Agency').length },
+            ].map((sub) => (
+              <button
+                key={sub.id}
+                onClick={() => handleContractorRoleFilterChange(sub.id as any)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  contractorRoleFilter === sub.id
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'
+                }`}
+              >
+                <span>{sub.label}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${contractorRoleFilter === sub.id ? 'bg-white/25 text-white' : 'bg-slate-200 text-slate-700'}`}>
+                  {sub.count}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Toast Notification Container */}
@@ -3901,39 +4140,166 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
         {currentRole === 'industry_admin' && (
           <div className="space-y-8 animate-fadeIn">
             
-            {/* Top Selector & Meta */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white border border-slate-200 p-6 rounded-2xl shadow-xs">
-              <div className="flex-1">
-                <label className="block text-xs font-bold text-slate-400 tracking-wider uppercase mb-1">Inspecting Industry Tenant</label>
-                <select 
-                  value={selectedIndustryId} 
-                  onChange={(e) => setSelectedIndustryId(e.target.value)}
-                  className="font-bold text-slate-800 text-base bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-emerald-500 transition-colors w-full md:w-auto"
-                >
-                  {industries.map(ind => (
-                    <option key={ind.id} value={ind.id}>{ind.name} ({ind.location})</option>
-                  ))}
-                </select>
+            {/* Top Selector & Meta (Industry HR, Apartment Owner, Shop Owner, Office) */}
+            <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-xs space-y-5">
+              
+              {/* Header Title & Add Action */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="bg-indigo-100 text-indigo-800 text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border border-indigo-200">
+                      Principal Employer Desk
+                    </span>
+                    <span className="text-xs text-slate-500 font-semibold">
+                      আইনী শ্ৰম অনুপালন ও প্ৰতিষ্ঠান পৰিচালনা
+                    </span>
+                  </div>
+                  <h2 className="text-xl font-black text-slate-900 mt-1 flex items-center gap-2">
+                    <span>🏭 প্ৰধান নিয়োগকাৰী পেনেল (Industry HR Hub)</span>
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    নিৰ্দিষ্ট ভূমিকা অনুসৰি প্ৰতিষ্ঠান পৰিচালনা: <strong>Industry HR</strong>, <strong>Apartment Owner</strong>, <strong>Shop Owner</strong>, আৰু <strong>Office</strong>
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                  <button
+                    onClick={() => setIsAddEstablishmentModalOpen(true)}
+                    className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>+ নতুন প্ৰতিষ্ঠান যোগ কৰক (Add Establishment)</span>
+                  </button>
+
+                  <button 
+                    onClick={handleLogout}
+                    className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/40 px-3.5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+                  >
+                    <LogOut className="h-4 w-4 shrink-0" />
+                    <span>লগ আউট</span>
+                  </button>
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 text-xs w-full md:w-auto">
-                <div className="bg-slate-50 p-3 border border-slate-100 rounded-xl">
-                  <span className="text-slate-400 block mb-0.5 font-semibold text-[10px] uppercase">Factory License No</span>
-                  <span className="font-mono font-bold text-slate-700">{activeIndustry.regNo}</span>
+              {/* SPECIFIC ROLES FILTER BAR (Industry HR, Apartment Owner, Shop Owner, Office) */}
+              <div className="bg-slate-50 border border-slate-200/80 p-3.5 rounded-xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                    <Filter className="h-3.5 w-3.5 text-indigo-600" />
+                    প্ৰতিষ্ঠানৰ ভূমিকা নিৰ্বাচন ও ফিল্টাৰ (Specific Roles):
+                  </span>
+                  <span className="text-[11px] font-mono text-slate-500">
+                    ফিল্টাৰ ফলাফল: {filteredIndustries.length} / {industries.length} প্ৰতিষ্ঠান
+                  </span>
                 </div>
-                <div className="bg-slate-50 p-3 border border-slate-100 rounded-xl">
-                  <span className="text-slate-400 block mb-0.5 font-semibold text-[10px] uppercase">Labour ID (LIN)</span>
-                  <span className="font-mono font-bold text-slate-700">{activeIndustry.lin}</span>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  {[
+                    { id: 'All', label: 'সকলো প্ৰতিষ্ঠান (All)', icon: '🌐', count: industries.length, desc: 'All Tenants' },
+                    { id: 'Industry HR', label: 'Industry HR (কাৰখানা / প্লাণ্ট)', icon: '🏭', count: industries.filter(i => i.category === 'Industry HR').length, desc: 'Factories & Manufacturing' },
+                    { id: 'Apartment Owner', label: 'Apartment Owner (আৱাসিক সমিতি)', icon: '🏢', count: industries.filter(i => i.category === 'Apartment Owner').length, desc: 'Housing Societies & RWAs' },
+                    { id: 'Shop Owner', label: 'Shop Owner (দোকান / বাণিজ্যিক)', icon: '🛍️', count: industries.filter(i => i.category === 'Shop Owner').length, desc: 'Retail & Supermarkets' },
+                    { id: 'Office', label: 'Office (কৰ্পোৰেট কাৰ্যালয়)', icon: '🏛️', count: industries.filter(i => i.category === 'Office').length, desc: 'Corporate & Tech Parks' },
+                  ].map(item => {
+                    const isSelected = industryRoleFilter === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => handleIndustryRoleFilterChange(item.id as any)}
+                        className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                          isSelected
+                            ? 'bg-indigo-600 text-white shadow-xs ring-2 ring-indigo-300'
+                            : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-xs'
+                        }`}
+                      >
+                        <span className="text-sm">{item.icon}</span>
+                        <div className="text-left">
+                          <span className="block leading-tight font-black">{item.label}</span>
+                        </div>
+                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+                          isSelected ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-700'
+                        }`}>
+                          {item.count}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              <button 
-                onClick={handleLogout}
-                className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/40 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all flex items-center gap-1.5 self-stretch md:self-auto justify-center shrink-0"
-              >
-                <LogOut className="h-4 w-4 shrink-0" />
-                লগ আউট কৰক (Log Out)
-              </button>
+              {/* Establishment Selection & Live Metadata Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+                
+                {/* Establishment Dropdown */}
+                <div className="lg:col-span-5">
+                  <label className="block text-xs font-bold text-slate-500 tracking-wider uppercase mb-1.5 flex items-center justify-between">
+                    <span>সক্ৰিয় প্ৰতিষ্ঠান বাছক (Active Establishment Tenant)</span>
+                    <span className="text-[10px] text-indigo-600 font-bold lowercase">
+                      {industryRoleFilter !== 'All' ? `filter: ${industryRoleFilter}` : 'all categories'}
+                    </span>
+                  </label>
+                  <select 
+                    value={selectedIndustryId} 
+                    onChange={(e) => setSelectedIndustryId(e.target.value)}
+                    className="font-bold text-slate-800 text-sm bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-indigo-500 focus:bg-white transition-colors w-full shadow-xs"
+                  >
+                    {filteredIndustries.map(ind => (
+                      <option key={ind.id} value={ind.id}>
+                        {ind.category === 'Industry HR' ? '🏭 [Industry HR]' :
+                         ind.category === 'Apartment Owner' ? '🏢 [Apartment Owner]' :
+                         ind.category === 'Shop Owner' ? '🛍️ [Shop Owner]' :
+                         ind.category === 'Office' ? '🏛️ [Office]' : '🏢'} {ind.name} — {ind.location}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Role Badge and Metadata */}
+                <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  
+                  {/* Specific Role Badge */}
+                  <div className="bg-indigo-50/70 border border-indigo-100 p-3 rounded-xl flex flex-col justify-between">
+                    <span className="text-slate-500 block mb-0.5 font-bold text-[10px] uppercase">প্ৰতিষ্ঠানৰ শ্ৰেণী (Role Category)</span>
+                    <span className="font-extrabold text-indigo-900 text-xs flex items-center gap-1.5">
+                      {activeIndustry.category === 'Apartment Owner' ? '🏢 Apartment Owner' :
+                       activeIndustry.category === 'Shop Owner' ? '🛍️ Shop Owner' :
+                       activeIndustry.category === 'Office' ? '🏛️ Office' :
+                       '🏭 Industry HR'}
+                    </span>
+                    <span className="text-[10px] text-indigo-700/80 mt-0.5">
+                      {activeIndustry.category === 'Apartment Owner' ? 'আৱাসিক গৃহ নিৰ্মাণ ও সুৰক্ষা' :
+                       activeIndustry.category === 'Shop Owner' ? 'খুচুৰা বিপণী ও শ্ৰমিক সহায়ক' :
+                       activeIndustry.category === 'Office' ? 'কৰ্পোৰেট হাউচকিপিং ও সহায়ক' :
+                       'কাৰখানা শ্ৰম আইন, ১৯৪৮'}
+                    </span>
+                  </div>
+
+                  {/* License / Reg No */}
+                  <div className="bg-slate-50 p-3 border border-slate-200 rounded-xl">
+                    <span className="text-slate-400 block mb-0.5 font-semibold text-[10px] uppercase">
+                      {activeIndustry.category === 'Apartment Owner' ? 'Society Reg No' :
+                       activeIndustry.category === 'Shop Owner' ? 'Trade / Shop Lic' :
+                       activeIndustry.category === 'Office' ? 'Estab Reg No' :
+                       'Factory License No'}
+                    </span>
+                    <span className="font-mono font-bold text-slate-800 truncate block" title={activeIndustry.regNo}>
+                      {activeIndustry.regNo}
+                    </span>
+                    <span className="text-[10px] text-emerald-600 font-semibold block mt-1">Verified Legal Tenant</span>
+                  </div>
+
+                  {/* Labour Identification Number */}
+                  <div className="bg-slate-50 p-3 border border-slate-200 rounded-xl">
+                    <span className="text-slate-400 block mb-0.5 font-semibold text-[10px] uppercase">Labour ID (LIN)</span>
+                    <span className="font-mono font-bold text-slate-800 truncate block" title={activeIndustry.lin}>
+                      {activeIndustry.lin}
+                    </span>
+                    <span className="text-[10px] text-indigo-600 font-semibold block mt-1">Shram Suvidha Synced</span>
+                  </div>
+
+                </div>
+
+              </div>
             </div>
 
             {/* ==================== ASSIGNED GOVERNMENT LABOR INSPECTOR (JURISDICTION COMPLIANCE) ==================== */}
@@ -4709,53 +5075,157 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
         {currentRole === 'contractor' && (
           <div className="space-y-8 animate-fadeIn">
             
-            {/* Top Selector & Meta */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-50 border border-slate-200/60 p-5 rounded-lg">
-              <div className="flex-1">
-                <label className="block text-xs font-bold text-slate-400 tracking-wider uppercase mb-1">Contractor Business Account</label>
-                <select 
-                  value={selectedContractorId} 
-                  onChange={(e) => setSelectedContractorId(e.target.value)}
-                  className="font-bold text-slate-800 text-lg bg-white border border-slate-200 rounded px-3 py-1.5 outline-none focus:border-indigo-500 w-full md:w-auto"
-                >
-                  {contractors.map(con => (
-                    <option key={con.id} value={con.id}>{con.name}</option>
-                  ))}
-                </select>
+            {/* Top Selector & Meta (Labour Contractor & Security Agency) */}
+            <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-xs space-y-5">
+              
+              {/* Header Title & Add Action */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="bg-indigo-100 text-indigo-800 text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border border-indigo-200">
+                      Licensed Agency Operations
+                    </span>
+                    <span className="text-xs text-slate-500 font-semibold">
+                      CLRA & PSARA শ্ৰমিক ও নিৰাপত্তা যোগান ব্যৱস্থাপনা
+                    </span>
+                  </div>
+                  <h2 className="text-xl font-black text-slate-900 mt-1 flex items-center gap-2">
+                    <span>🏢 ঠিকাদাৰ ও নিৰাপত্তা সংস্থা ডেস্ক (Contractor & Agency Desk)</span>
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    নিৰ্দিষ্ট ভূমিকা অনুসৰি সংস্থা পৰিচালনা: <strong>Labour Contractor</strong> (শ্ৰমিক যোগান) আৰু <strong>Security Agency</strong> (নিৰাপত্তা সুৰক্ষা)
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                  <button
+                    onClick={() => setIsAddContractorModalOpen(true)}
+                    className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>+ নতুন সংস্থা যোগ কৰক (Add Agency)</span>
+                  </button>
+
+                  <button 
+                    onClick={handleLogout}
+                    className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/40 px-3.5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+                  >
+                    <LogOut className="h-4 w-4 shrink-0" />
+                    <span>লগ আউট</span>
+                  </button>
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
-                <div className="bg-indigo-50 border border-indigo-200 p-3 rounded">
-                  <span className="text-indigo-600 block mb-0.5 text-[10px] font-extrabold uppercase">শ্ৰমিক ক্ষমতা (Workforce)</span>
-                  <span className="font-mono font-black text-indigo-950 text-sm">
-                    {workers.filter(w => w.contractorId === activeContractor.id).length} জন শ্ৰমিক (Workers)
+              {/* SPECIFIC ROLES FILTER BAR (Labour Contractor, Security Agency) */}
+              <div className="bg-slate-50 border border-slate-200/80 p-3.5 rounded-xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                    <Filter className="h-3.5 w-3.5 text-indigo-600" />
+                    সংস্থাৰ ভূমিকা নিৰ্বাচন ও ফিল্টাৰ (Specific Contractor Roles):
+                  </span>
+                  <span className="text-[11px] font-mono text-slate-500">
+                    ফিল্টাৰ ফলাফল: {filteredContractors.length} / {contractors.length} সংস্থা
                   </span>
                 </div>
-                <div className="bg-white p-3 border border-slate-100 rounded">
-                  <span className="text-slate-400 block mb-0.5">CLRA License No</span>
-                  <span className="font-mono font-bold text-slate-700">{activeContractor.licenseNo}</span>
-                </div>
-                <div className="bg-white p-3 border border-slate-100 rounded">
-                  <span className="text-slate-400 block mb-0.5">EPF Code</span>
-                  <span className="font-mono font-bold text-slate-700">{activeContractor.epfCode}</span>
-                </div>
-                <div className="bg-white p-3 border border-slate-100 rounded">
-                  <span className="text-slate-400 block mb-0.5">ESI Registration</span>
-                  <span className="font-mono font-bold text-slate-700">{activeContractor.esiCode}</span>
-                </div>
-                <div className="bg-white p-3 border border-slate-100 rounded">
-                  <span className="text-slate-400 block mb-0.5">Agency Rating</span>
-                  <span className="font-semibold text-amber-600 flex items-center gap-1"><Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" /> {activeContractor.rating}</span>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  {[
+                    { id: 'All', label: 'সকলো সংস্থা (All Agencies)', icon: '🌐', count: contractors.length, desc: 'All Service Providers' },
+                    { id: 'Labour Contractor', label: 'Labour Contractor (শ্ৰমিক ঠিকাদাৰ)', icon: '👷', count: contractors.filter(c => c.contractorType === 'Labour Contractor').length, desc: 'Manpower Supply & General Labor' },
+                    { id: 'Security Agency', label: 'Security Agency (নিৰাপত্তা সংস্থা)', icon: '🛡️', count: contractors.filter(c => c.contractorType === 'Security Agency').length, desc: 'PSARA Security Guards & Vigilance' },
+                  ].map(item => {
+                    const isSelected = contractorRoleFilter === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => handleContractorRoleFilterChange(item.id as any)}
+                        className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                          isSelected
+                            ? 'bg-indigo-600 text-white shadow-xs ring-2 ring-indigo-300'
+                            : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-xs'
+                        }`}
+                      >
+                        <span className="text-sm">{item.icon}</span>
+                        <div className="text-left">
+                          <span className="block leading-tight font-black">{item.label}</span>
+                        </div>
+                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+                          isSelected ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-700'
+                        }`}>
+                          {item.count}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              <button 
-                onClick={handleLogout}
-                className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/40 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all flex items-center gap-1.5 self-stretch md:self-auto justify-center shrink-0"
-              >
-                <LogOut className="h-4 w-4 shrink-0" />
-                লগ আউট কৰক (Log Out)
-              </button>
+              {/* Contractor Selection & Live Metadata Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+                
+                {/* Contractor Dropdown */}
+                <div className="lg:col-span-5">
+                  <label className="block text-xs font-bold text-slate-500 tracking-wider uppercase mb-1.5 flex items-center justify-between">
+                    <span>সক্ৰিয় সংস্থা বাছক (Active Agency Account)</span>
+                    <span className="text-[10px] text-indigo-600 font-bold lowercase">
+                      {contractorRoleFilter !== 'All' ? `filter: ${contractorRoleFilter}` : 'all agencies'}
+                    </span>
+                  </label>
+                  <select 
+                    value={selectedContractorId} 
+                    onChange={(e) => setSelectedContractorId(e.target.value)}
+                    className="font-bold text-slate-800 text-sm bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-indigo-500 focus:bg-white transition-colors w-full shadow-xs"
+                  >
+                    {filteredContractors.map(con => (
+                      <option key={con.id} value={con.id}>
+                        {con.contractorType === 'Security Agency' ? '🛡️ [Security Agency]' : '👷 [Labour Contractor]'} {con.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Role Badge and Metadata */}
+                <div className="lg:col-span-7 grid grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
+                  
+                  {/* Workforce / Guard Capacity */}
+                  <div className="bg-indigo-50 border border-indigo-200 p-2.5 rounded-xl">
+                    <span className="text-indigo-700 block mb-0.5 text-[10px] font-extrabold uppercase">
+                      {activeContractor.contractorType === 'Security Agency' ? 'নিৰাপত্তা ৰক্ষী (Guards)' : 'শ্ৰমিক ক্ষমতা (Workers)'}
+                    </span>
+                    <span className="font-mono font-black text-indigo-950 text-sm">
+                      {workers.filter(w => w.contractorId === activeContractor.id).length} জন {activeContractor.contractorType === 'Security Agency' ? 'Guards' : 'Labourers'}
+                    </span>
+                  </div>
+
+                  {/* License No (CLRA / PSARA) */}
+                  <div className="bg-slate-50 p-2.5 border border-slate-200 rounded-xl">
+                    <span className="text-slate-400 block mb-0.5 font-semibold text-[10px] uppercase">
+                      {activeContractor.contractorType === 'Security Agency' ? 'PSARA Lic No' : 'CLRA Lic No'}
+                    </span>
+                    <span className="font-mono font-bold text-slate-800 truncate block" title={activeContractor.licenseNo}>
+                      {activeContractor.licenseNo}
+                    </span>
+                  </div>
+
+                  {/* EPF & ESI Codes */}
+                  <div className="bg-slate-50 p-2.5 border border-slate-200 rounded-xl">
+                    <span className="text-slate-400 block mb-0.5 font-semibold text-[10px] uppercase">EPF / ESI</span>
+                    <span className="font-mono font-bold text-slate-800 text-[11px] truncate block" title={`${activeContractor.epfCode} • ${activeContractor.esiCode}`}>
+                      {activeContractor.epfCode}
+                    </span>
+                  </div>
+
+                  {/* Rating & Category */}
+                  <div className="bg-slate-50 p-2.5 border border-slate-200 rounded-xl flex flex-col justify-between">
+                    <span className="text-slate-400 block mb-0.5 font-semibold text-[10px] uppercase">Agency Rating</span>
+                    <span className="font-semibold text-amber-600 flex items-center gap-1 text-xs">
+                      <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" /> {activeContractor.rating || 4.8}
+                    </span>
+                  </div>
+
+                </div>
+
+              </div>
             </div>
 
             {/* ==================== ASSIGNED GOVERNMENT LABOR INSPECTOR (JURISDICTION COMPLIANCE) ==================== */}
@@ -9255,6 +9725,309 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
         onSubmitFeedback={handleAddFeedback}
         showNotice={showNotice}
       />
+
+      {/* Add New Establishment Modal (Industry HR, Apartment Owner, Shop Owner, Office) */}
+      {isAddEstablishmentModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 animate-fadeIn my-8">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+              <div className="flex items-center gap-2">
+                <span className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+                  <Building2 className="h-5 w-5" />
+                </span>
+                <div>
+                  <h3 className="font-black text-slate-900 text-base">
+                    নতুন প্ৰতিষ্ঠান পঞ্জীয়ন (Add New Establishment)
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Industry HR, Apartment Owner, Shop Owner বা Office প্ৰতিষ্ঠান যোগ কৰক
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddEstablishmentModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateEstablishment} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  প্ৰতিষ্ঠানৰ ভূমিকা / শ্ৰেণী (Establishment Role) <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={newEstablishmentForm.category}
+                  onChange={(e) => setNewEstablishmentForm(prev => ({ ...prev, category: e.target.value as any }))}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:bg-white focus:border-indigo-500"
+                >
+                  <option value="Industry HR">🏭 Industry HR (কাৰখানা / Manufacturing Plant)</option>
+                  <option value="Apartment Owner">🏢 Apartment Owner (আৱাসিক সমিতি / Housing Society)</option>
+                  <option value="Shop Owner">🛍️ Shop Owner (দোকান / বাণিজ্যিক প্ৰতিষ্ঠান / Retail)</option>
+                  <option value="Office">🏛️ Office (কৰ্পোৰেট কাৰ্যালয় / Corporate Office)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  প্ৰতিষ্ঠানৰ নাম (Establishment Name) <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder={
+                    newEstablishmentForm.category === 'Apartment Owner' ? 'E.g., Royal Palms Residency RWA' :
+                    newEstablishmentForm.category === 'Shop Owner' ? 'E.g., City Supermarket & Departmental Store' :
+                    newEstablishmentForm.category === 'Office' ? 'E.g., Global Infotech Regional Office' :
+                    'E.g., Brahmaputra Steel & Casting Plant'
+                  }
+                  value={newEstablishmentForm.name}
+                  onChange={(e) => setNewEstablishmentForm(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:bg-white focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    অৱস্থান / ঠিকনা (Location)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="E.g., Guwahati, Assam"
+                    value={newEstablishmentForm.location}
+                    onChange={(e) => setNewEstablishmentForm(prev => ({ ...prev, location: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:bg-white focus:border-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    পঞ্জীয়ন নম্বৰ (License / Reg No)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="E.g., AS/GHY/ESTAB/2026/101"
+                    value={newEstablishmentForm.regNo}
+                    onChange={(e) => setNewEstablishmentForm(prev => ({ ...prev, regNo: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:bg-white focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    শ্ৰম পৰিচয় নম্বৰ (Labour ID / LIN)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="E.g., 1982738920"
+                    value={newEstablishmentForm.lin}
+                    onChange={(e) => setNewEstablishmentForm(prev => ({ ...prev, lin: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:bg-white focus:border-indigo-500 font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    যোগাযোগ ইমেইল (Contact Email)
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="admin@establishment.in"
+                    value={newEstablishmentForm.contactEmail}
+                    onChange={(e) => setNewEstablishmentForm(prev => ({ ...prev, contactEmail: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:bg-white focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAddEstablishmentModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  বাতিল কৰক (Cancel)
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>প্ৰতিষ্ঠান যোগ কৰক (Create)</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add New Contractor / Security Agency Modal */}
+      {isAddContractorModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 animate-fadeIn my-8">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+              <div className="flex items-center gap-2">
+                <span className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+                  <ShieldCheck className="h-5 w-5" />
+                </span>
+                <div>
+                  <h3 className="font-black text-slate-900 text-base">
+                    নতুন সংস্থা পঞ্জীয়ন (Add Contractor / Agency)
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Labour Contractor বা Security Agency সংস্থা যোগ কৰক
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddContractorModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateContractor} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  সংস্থাৰ ভূমিকা / শ্ৰেণী (Contractor Role) <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={newContractorForm.contractorType}
+                  onChange={(e) => setNewContractorForm(prev => ({ ...prev, contractorType: e.target.value as any }))}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:bg-white focus:border-indigo-500"
+                >
+                  <option value="Labour Contractor">👷 Labour Contractor (শ্ৰমিক ঠিকাদাৰ / Manpower Supply)</option>
+                  <option value="Security Agency">🛡️ Security Agency (নিৰাপত্তা সংস্থা / PSARA Security)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  সংস্থা / এজেন্সীৰ নাম (Agency Name) <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder={
+                    newContractorForm.contractorType === 'Security Agency' 
+                      ? 'E.g., Sentinel Industrial Security & Vigilance Services' 
+                      : 'E.g., Pragjyotish Allied Manpower Solutions'
+                  }
+                  value={newContractorForm.name}
+                  onChange={(e) => setNewContractorForm(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:bg-white focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    {newContractorForm.contractorType === 'Security Agency' ? 'PSARA License No' : 'CLRA License No'}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={newContractorForm.contractorType === 'Security Agency' ? 'PSARA/AS/2026/789' : 'AS-CLRA-2026-456'}
+                    value={newContractorForm.licenseNo}
+                    onChange={(e) => setNewContractorForm(prev => ({ ...prev, licenseNo: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:bg-white focus:border-indigo-500 font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    শ্ৰম পৰিচয় নম্বৰ (Labour ID / LIN)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="L-1928374829"
+                    value={newContractorForm.lin}
+                    onChange={(e) => setNewContractorForm(prev => ({ ...prev, lin: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:bg-white focus:border-indigo-500 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    PAN Card
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="AAACA1029K"
+                    value={newContractorForm.pan}
+                    onChange={(e) => setNewContractorForm(prev => ({ ...prev, pan: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:bg-white focus:border-indigo-500 uppercase font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    EPF Code
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="AS/GHY/1928A/001"
+                    value={newContractorForm.epfCode}
+                    onChange={(e) => setNewContractorForm(prev => ({ ...prev, epfCode: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:bg-white focus:border-indigo-500 font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    ESI Code
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="43-8921-201-1002"
+                    value={newContractorForm.esiCode}
+                    onChange={(e) => setNewContractorForm(prev => ({ ...prev, esiCode: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:bg-white focus:border-indigo-500 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  যোগাযোগ ফোন নম্বৰ (Contact Phone)
+                </label>
+                <input
+                  type="text"
+                  placeholder="+91 98640 12345"
+                  value={newContractorForm.contactNo}
+                  onChange={(e) => setNewContractorForm(prev => ({ ...prev, contactNo: e.target.value }))}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:bg-white focus:border-indigo-500 font-mono"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAddContractorModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  বাতিল কৰক (Cancel)
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>সংস্থা যোগ কৰক (Register)</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Contractor Monthly Attendance Sheet Modal (Independent Internal Ledger) */}
       {isContractorMonthlySheetOpen && (

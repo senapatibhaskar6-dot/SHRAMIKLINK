@@ -101,10 +101,10 @@ export default function App() {
   }
 
   return (
-    <div className="h-screen w-full bg-slate-900 text-slate-100 flex flex-col font-sans overflow-hidden relative">
+    <div className="h-screen w-full bg-white text-slate-900 flex flex-col font-sans overflow-hidden relative">
       
       {/* Main Container */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden">
+      <main className="flex-1 flex flex-col h-full overflow-hidden bg-white">
         
         {/* ========================================================================= */}
         {/* STANDALONE INDUSTRY & FACTORY SAAS TOP NAVIGATION (উদ্যোগিক শ্ৰম ব্যৱস্থাপনা) */}
@@ -230,8 +230,8 @@ export default function App() {
           </div>
         </div>
 
-        {/* Viewport Content */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-5 pb-8 space-y-6">
+        {/* Viewport Content with Clean White Dashboard Background */}
+        <div className="flex-1 overflow-y-auto p-3 sm:p-5 pb-8 space-y-6 bg-white text-slate-900">
           
           {activeTab === 'app' && (
             <div className="space-y-6">
@@ -243,28 +243,28 @@ export default function App() {
           )}
 
           {activeTab === 'architecture' && (
-            <div className="bg-slate-950 rounded-2xl border border-indigo-900/60 p-4 sm:p-6 shadow-xs">
+            <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm text-slate-900">
               <ArchitectureDocs />
             </div>
           )}
 
           {activeTab === 'roadmap' && (
-            <div className="bg-slate-950 rounded-2xl border border-indigo-900/60 p-4 sm:p-6 shadow-xs">
+            <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm text-slate-900">
               <RoadmapView />
             </div>
           )}
 
           {/* Micro Footer */}
-          <footer className="border-t border-slate-800 pt-6 text-[11px] text-slate-400 flex flex-col md:flex-row justify-between items-center gap-4">
+          <footer className="border-t border-slate-200 pt-6 text-[11px] text-slate-500 flex flex-col md:flex-row justify-between items-center gap-4">
             <span>
               © 2026 IndustrialContractorWorkerLink (ICWL) • Factories Act, 1948 আৰু CLRA Act, 1970 ৰ নিৰ্দেশনা অনুযায়ী নিৰ্মিত ঔদ্যোগিক শ্ৰম ব্যৱস্থাপনা প্ৰণালী।
             </span>
             <div className="flex gap-4">
-              <span className="text-slate-400">EPFO & ESIC Compliance-Locked</span>
+              <span className="text-slate-600 font-medium">EPFO & ESIC Compliance-Locked</span>
               <span>&bull;</span>
-              <span className="text-slate-400">CLRA Form XVI & XVII</span>
+              <span className="text-slate-600 font-medium">CLRA Form XVI & XVII</span>
               <span>&bull;</span>
-              <span className="text-indigo-400">Founder: Bhaskar Senapati, Assam</span>
+              <span className="text-indigo-600 font-bold">Founder: Bhaskar Senapati, Assam</span>
             </div>
           </footer>
         </div>

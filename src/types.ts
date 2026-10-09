@@ -1,18 +1,22 @@
 export type UserRole = 'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector';
 
+export type IndustryCategory = 'Industry HR' | 'Apartment Owner' | 'Shop Owner' | 'Office';
+export type ContractorCategory = 'Labour Contractor' | 'Security Agency';
+
 export interface Industry {
   id: string;
   name: string;
   location: string;
-  regNo: string; // Factory License No
+  regNo: string; // Factory / Establishment License No
   lin: string; // Labour Identification Number
   contactEmail: string;
+  category?: IndustryCategory;
 }
 
 export interface Contractor {
   id: string;
   name: string;
-  licenseNo: string; // CLRA License Number
+  licenseNo: string; // CLRA / PSARA License Number
   lin: string; // Labour Identification Number
   pan: string;
   gstin?: string;
@@ -22,6 +26,7 @@ export interface Contractor {
   email?: string;
   address?: string;
   rating: number;
+  contractorType?: ContractorCategory;
 }
 
 export interface Worker {

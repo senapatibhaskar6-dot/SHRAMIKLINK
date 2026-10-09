@@ -20,7 +20,8 @@ export const initialIndustries: Industry[] = [
     location: 'Pimpri-Chinchwad, Maharashtra',
     regNo: 'MH/PUN/892/F-LIC',
     lin: '1982738920',
-    contactEmail: 'admin.pune@tatamotors.com'
+    contactEmail: 'admin.pune@tatamotors.com',
+    category: 'Industry HR'
   },
   {
     id: 'ind-2',
@@ -28,7 +29,8 @@ export const initialIndustries: Industry[] = [
     location: 'Bellary, Karnataka',
     regNo: 'KA/BEL/734/F-LIC',
     lin: '1029384758',
-    contactEmail: 'compliance@jswsteel.in'
+    contactEmail: 'compliance@jswsteel.in',
+    category: 'Industry HR'
   },
   {
     id: 'ind-3',
@@ -36,7 +38,62 @@ export const initialIndustries: Industry[] = [
     location: 'Hadapsar, Pune',
     regNo: 'MH/PUN/219/F-LIC',
     lin: '1847293849',
-    contactEmail: 'hr@seruminstitute.com'
+    contactEmail: 'hr@seruminstitute.com',
+    category: 'Industry HR'
+  },
+  {
+    id: 'ind-apt-1',
+    name: 'Greenwood Heights Residential Society',
+    location: 'Guwahati, Assam',
+    regNo: 'AS/GH-APT/412/SOC',
+    lin: '1948201948',
+    contactEmail: 'society.president@greenwoodheights.org',
+    category: 'Apartment Owner'
+  },
+  {
+    id: 'ind-apt-2',
+    name: 'Royal Palms Luxury Towers RWA',
+    location: 'Khanapara, Guwahati',
+    regNo: 'AS/KAM-APT/884/RWA',
+    lin: '1849204918',
+    contactEmail: 'management@royalpalmstowers.in',
+    category: 'Apartment Owner'
+  },
+  {
+    id: 'ind-shop-1',
+    name: 'Mega Mart Supermarket & Retail Hub',
+    location: 'GS Road, Guwahati, Assam',
+    regNo: 'AS/GHY/SHOP/2024/918',
+    lin: '1628394819',
+    contactEmail: 'operations@megamartassam.com',
+    category: 'Shop Owner'
+  },
+  {
+    id: 'ind-shop-2',
+    name: 'Assam Silk & Handicrafts Emporium',
+    location: 'Panbazar, Guwahati',
+    regNo: 'AS/KAM/SHOP/2023/455',
+    lin: '1538294710',
+    contactEmail: 'contact@assamsilkemporium.in',
+    category: 'Shop Owner'
+  },
+  {
+    id: 'ind-off-1',
+    name: 'Zenith Infotech Corporate Office',
+    location: 'VIP Road, Guwahati, Assam',
+    regNo: 'AS/ESTAB/2024/OFF-31',
+    lin: '1948205930',
+    contactEmail: 'admin.northeast@zenithtech.in',
+    category: 'Office'
+  },
+  {
+    id: 'ind-off-2',
+    name: 'Axis Commercial Center & Admin Complex',
+    location: 'Dispur, Guwahati',
+    regNo: 'AS/ESTAB/2023/OFF-88',
+    lin: '1839204812',
+    contactEmail: 'facilities@axiscenter.co.in',
+    category: 'Office'
   }
 ];
 
@@ -50,18 +107,20 @@ export const initialContractors: Contractor[] = [
     epfCode: 'MH/PUN/4567A/002',
     esiCode: '31-8973-102-1001',
     contactNo: '+91 98223 11045',
-    rating: 4.8
+    rating: 4.8,
+    contractorType: 'Labour Contractor'
   },
   {
     id: 'con-2',
-    name: 'Jai Hind Security & Labour Supply',
-    licenseNo: 'MH-MUM-CLRA-2023-771',
+    name: 'Jai Hind Security & Protection Agency',
+    licenseNo: 'PSARA/AS/2023/SEC-412',
     lin: 'L-1029384812',
     pan: 'AAACJ7732L',
     epfCode: 'MH/MUM/8821B/005',
     esiCode: '12-4432-801-2002',
     contactNo: '+91 99304 55321',
-    rating: 4.5
+    rating: 4.6,
+    contractorType: 'Security Agency'
   },
   {
     id: 'con-3',
@@ -72,7 +131,32 @@ export const initialContractors: Contractor[] = [
     epfCode: 'MH/PUN/9012C/001',
     esiCode: '31-4029-202-3003',
     contactNo: '+91 91580 88219',
-    rating: 4.2
+    rating: 4.2,
+    contractorType: 'Labour Contractor'
+  },
+  {
+    id: 'con-4',
+    name: 'Brahmaputra Manpower & Labour Supply',
+    licenseNo: 'AS-GHY-CLRA-2024-819',
+    lin: 'L-1928374829',
+    pan: 'AAACB9921D',
+    epfCode: 'AS/GHY/1928A/001',
+    esiCode: '43-8921-201-1002',
+    contactNo: '+91 94350 22345',
+    rating: 4.7,
+    contractorType: 'Labour Contractor'
+  },
+  {
+    id: 'con-5',
+    name: 'Garuda Vigilance & Security Services',
+    licenseNo: 'PSARA/AS/2024/SEC-998',
+    lin: 'L-1849201948',
+    pan: 'AAACG4419E',
+    epfCode: 'AS/GHY/5541C/002',
+    esiCode: '43-5591-402-3001',
+    contactNo: '+91 98640 77123',
+    rating: 4.9,
+    contractorType: 'Security Agency'
   }
 ];
 
