@@ -491,7 +491,8 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
   const [registerName, setRegisterName] = useState<string>('');
   const [registerEmailOrPhone, setRegisterEmailOrPhone] = useState<string>('');
   const [registerPassword, setRegisterPassword] = useState<string>('');
-  const [registerRole, setRegisterRole] = useState<'industry_admin' | 'apartment_owner' | 'shop_owner' | 'office' | 'supervisor' | 'contractor' | 'security_agency' | 'worker' | 'government_inspector' | 'security_guard'>('industry_admin');
+  const [registerRole, setRegisterRole] = useState<string>('unskilled_worker');
+  const [showEmployerRegisterOptions, setShowEmployerRegisterOptions] = useState<boolean>(false);
   
   // Legal/Compliance Registration Fields for Contractors & Industry HR
   const [regAgencyName, setRegAgencyName] = useState<string>('');
@@ -649,7 +650,8 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
     const finalRole: 'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector' | 'security_guard' = 
       (registerRole === 'apartment_owner' || registerRole === 'shop_owner' || registerRole === 'office') ? 'industry_admin' :
       (registerRole === 'security_agency') ? 'contractor' :
-      (registerRole === 'security_guard') ? 'security_guard' :
+      (registerRole === 'security_guard' || registerRole === 'security_guard_unarmed' || registerRole === 'security_supervisor') ? 'security_guard' :
+      (registerRole === 'unskilled_worker' || registerRole === 'worker') ? 'worker' :
       registerRole as any;
 
     let subCategory: string | undefined = undefined;
@@ -660,6 +662,9 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
     else if (registerRole === 'security_agency') subCategory = 'Security Agency';
     else if (registerRole === 'contractor') subCategory = 'Labour Contractor';
     else if (registerRole === 'security_guard') subCategory = 'Security Guard';
+    else if (registerRole === 'security_guard_unarmed') subCategory = 'Security Guard (Unarmed)';
+    else if (registerRole === 'security_supervisor') subCategory = 'Security Supervisor';
+    else if (registerRole === 'unskilled_worker' || registerRole === 'worker') subCategory = 'Unskilled Worker';
 
     const newUser: CredentialUser = {
       name: registerName,
@@ -2899,7 +2904,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
 
   if (!isLoggedIn) {
     return (
-      <div className="space-y-8 animate-fadeIn max-w-5xl mx-auto py-4">
+      <div className="space-y-8 animate-fadeIn max-w-5xl mx-auto py-4 px-3 sm:px-4">
         {/* Toast Notification Container */}
         {notification && (
           <div className={`p-4 rounded-xl text-xs font-bold flex items-center justify-between border shadow-xs animate-fadeIn ${
@@ -3496,30 +3501,50 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                       />
                     </div>
 
-                    {/* INDUSTRY SPECIFIC ROLE SELECTOR */}
+                    {/* WORKER / SECURITY GUARD & ROLE SELECTOR */}
                     <div className="space-y-1">
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase">প্ৰৱেশাধিকাৰ পদবী (Select Industry Role)</label>
+                      <div className="flex items-center justify-between">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase">প্ৰৱেশাধিকাৰ পদবী (Select Role / Designation)</label>
+                        <button
+                          type="button"
+                          onClick={() => setShowEmployerRegisterOptions(!showEmployerRegisterOptions)}
+                          className="text-[9px] text-indigo-600 font-bold hover:underline cursor-pointer"
+                        >
+                          {showEmployerRegisterOptions ? '← কেৱল শ্ৰমিক ও সুৰক্ষা কৰ্মী' : '+ প্ৰতিষ্ঠান / ঠিকাদাৰ পঞ্জীয়ন'}
+                        </button>
+                      </div>
                       <select
                         value={registerRole}
                         onChange={(e: any) => setRegisterRole(e.target.value)}
                         className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-500"
                       >
-                        <optgroup label="🏭 Principal Employer / Owner Dashboard">
-                          <option value="industry_admin">🏭 Industry HR (কাৰখানা / Factory HR)</option>
-                          <option value="apartment_owner">🏢 Apartment Owner (আৱাসিক সমিতি / Housing Society)</option>
-                          <option value="shop_owner">🛍️ Shop Owner (দোকান / বাণিজ্যিক প্ৰতিষ্ঠান / Retail)</option>
-                          <option value="office">🏛️ Office (কৰ্পোৰেট কাৰ্যালয় / Corporate Office)</option>
-                        </optgroup>
-                        <optgroup label="🏢 Manpower & Security Agency Dashboard">
-                          <option value="contractor">👷 Labour Contractor (শ্ৰমিক ঠিকাদাৰ - Manpower Agency)</option>
-                          <option value="security_agency">🛡️ Security Agency (নিৰাপত্তা সংস্থা - PSARA Security)</option>
-                        </optgroup>
-                        <optgroup label="👤 Labour & Security Guard Dashboards">
-                          <option value="worker">👤 শ্ৰমিক (Labour / Shramik)</option>
-                          <option value="security_guard">👮 নিৰাপত্তাৰক্ষী (Security Guard - Gate Duty)</option>
-                          <option value="supervisor">👷 Factory / Facility Supervisor (ছুপাৰভাইজাৰ)</option>
-                          <option value="government_inspector">⚖️ Government Inspector (চৰকাৰী শ্ৰম পৰিদৰ্শক)</option>
-                        </optgroup>
+                        {!showEmployerRegisterOptions ? (
+                          <>
+                            <option value="unskilled_worker">unskilled worker</option>
+                            <option value="security_guard_unarmed">security guard ( unurmed)</option>
+                            <option value="security_guard">security guard</option>
+                            <option value="security_supervisor">security supervisor</option>
+                          </>
+                        ) : (
+                          <>
+                            <optgroup label="🏭 Principal Employer / Owner Dashboard">
+                              <option value="industry_admin">🏭 Industry HR (কাৰখানা / Factory HR)</option>
+                              <option value="apartment_owner">🏢 Apartment Owner (আৱাসিক সমিতি / Housing Society)</option>
+                              <option value="shop_owner">🛍️ Shop Owner (দোকান / বাণিজ্যিক প্ৰতিষ্ঠান / Retail)</option>
+                              <option value="office">🏛️ Office (কৰ্পোৰেট কাৰ্যালয় / Corporate Office)</option>
+                            </optgroup>
+                            <optgroup label="🏢 Manpower & Security Agency Dashboard">
+                              <option value="contractor">👷 Labour Contractor (শ্ৰমিক ঠিকাদাৰ - Manpower Agency)</option>
+                              <option value="security_agency">🛡️ Security Agency (নিৰাপত্তা সংস্থা - PSARA Security)</option>
+                            </optgroup>
+                            <optgroup label="👤 Labour & Security Guard Dashboards">
+                              <option value="unskilled_worker">unskilled worker</option>
+                              <option value="security_guard_unarmed">security guard ( unurmed)</option>
+                              <option value="security_guard">security guard</option>
+                              <option value="security_supervisor">security supervisor</option>
+                            </optgroup>
+                          </>
+                        )}
                       </select>
                     </div>
 
@@ -3762,12 +3787,18 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                       {registerRole === 'government_inspector'
                         ? '⚖️ চৰকাৰী শ্ৰম পৰিদৰ্শক পঞ্জীয়ন সম্পন্ন কৰক (Complete Inspector Registration)'
                         : registerRole === 'contractor'
-                        ? '🏢 ঠিকাদাৰ পঞ্জীয়ন সম্পন্ন কৰক (Complete Contractor Registration)'
+                        ? '🏢 লেবাৰ ঠিকাদাৰ পঞ্জীয়ন সম্পন্ন কৰক (Complete Contractor Registration)'
+                        : registerRole === 'security_agency'
+                        ? '🛡️ ছিকিউৰিটি এজেন্সি পঞ্জীয়ন সম্পন্ন কৰক (Complete Security Agency Registration)'
                         : registerRole === 'supervisor'
                         ? '👷 ছুপাৰভাইজাৰ পঞ্জীয়ন সম্পন্ন কৰক (Complete Supervisor Registration)'
-                        : registerRole === 'worker'
-                        ? '👷 শ্ৰমিক পঞ্জীয়ন সম্পন্ন কৰক (Complete Worker Registration)'
-                        : '🏭 ইণ্ডাষ্ট্ৰী পঞ্জীয়ন সম্পন্ন কৰক (Complete Industry Registration)'}
+                        : registerRole === 'security_guard' || registerRole === 'security_guard_unarmed'
+                        ? '👮 ছিকিউৰিটি গাৰ্ড পঞ্জীয়ন সম্পন্ন কৰক (Complete Security Guard Registration)'
+                        : registerRole === 'security_supervisor'
+                        ? '👮 ছিকিউৰিটি ছুপাৰভাইজাৰ পঞ্জীয়ন সম্পন্ন কৰক (Complete Security Supervisor Registration)'
+                        : registerRole === 'unskilled_worker' || registerRole === 'worker'
+                        ? '👤 অদক্ষ শ্ৰমিক পঞ্জীয়ন সম্পন্ন কৰক (Complete Unskilled Worker Registration)'
+                        : '🏭 ইণ্ডাষ্ট্ৰী / প্ৰতিষ্ঠান পঞ্জীয়ন সম্পন্ন কৰক (Complete Owner Registration)'}
                     </button>
                   </form>
                 )}

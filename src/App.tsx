@@ -29,7 +29,7 @@ export default function App() {
   const [isMobileView, setIsMobileView] = useState<boolean>(() => {
     const saved = localStorage.getItem('icwl_mobile_mode') || localStorage.getItem('shramiklink_mobile_mode');
     if (saved !== null) return saved === 'true';
-    return typeof window !== 'undefined' && window.innerWidth < 768;
+    return false;
   });
 
   const toggleMobileMode = (val: boolean) => {
@@ -70,10 +70,7 @@ export default function App() {
     window.addEventListener('open-app-tab', handleOpenAppTab);
 
     const handleResize = () => {
-      const saved = localStorage.getItem('shramiklink_mobile_mode');
-      if (saved === null && window.innerWidth < 768) {
-        setIsMobileView(true);
-      }
+      // Fluid responsive design works seamlessly across all viewport widths
     };
     window.addEventListener('resize', handleResize);
 
