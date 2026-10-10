@@ -1,0 +1,174 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  uid       String   @unique
+  email     String
+  role      String   // industry_admin | contractor | worker | government_inspector | security_guard
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("users")
+}
+
+model Industry {
+  id           String @id
+  name         String
+  location     String
+  regNo        String @map("reg_no")
+  lin          String
+  contactEmail String @map("contact_email")
+
+  @@map("industries")
+}
+
+model Contractor {
+  id         String  @id
+  name       String
+  licenseNo  String  @map("license_no")
+  lin        String
+  pan        String
+  epfCode    String  @map("epf_code")
+  esiCode    String  @map("esi_code")
+  contactNo  String  @map("contact_no")
+  rating     Float   @default(5.0)
+
+  @@map("contractors")
+}
+
+model Worker {
+  id                 String  @id
+  name               String
+  aadhaarHash        String  @map("aadhaar_hash")
+  phone              String
+  contractorId       String  @map("contractor_id")
+  skillType          String  @map("skill_type")
+  dailyWageRate      Int     @map("daily_wage_rate")
+  status             String
+  onboardingVerified Boolean @default(false) @map("onboarding_verified")
+  onboardingDate     String  @map("onboarding_date")
+
+  @@map("workers")
+}
+
+model Assignment {
+  id           String @id
+  workerId     String @map("worker_id")
+  contractorId String @map("contractor_id")
+  industryId   String @map("industry_id")
+  assignedAt   String @map("assigned_at")
+  status       String
+  shiftTiming  String @map("shift_timing")
+
+  @@map("assignments")
+}
+
+model Requirement {
+  id               String @id
+  industryId       String @map("industry_id")
+  industryName     String @map("industry_name")
+  contractorId     String @map("contractor_id")
+  date             String
+  skillType        String @map("skill_type")
+  workersNeeded    Int    @map("workers_needed")
+  workersFulfilled Int    @default(0) @map("workers_fulfilled")
+  shiftTiming      String @map("shift_timing")
+  status           String
+
+  @@map("requirements")
+}
+
+model Attendance {
+  id                 String  @id
+  date               String
+  workerId           String  @map("worker_id")
+  workerName         String  @map("worker_name")
+  contractorId       String  @map("contractor_id")
+  industryId         String  @map("industry_id")
+  checkIn            String  @map("check_in")
+  checkOut           String? @map("check_out")
+  aadhaarVerified    Boolean @default(false) @map("aadhaar_verified")
+  verificationMethod String  @map("verification_method")
+  hoursWorked        Int     @map("hours_worked")
+  overtimeHours      Int     @map("overtime_hours")
+  status             String
+
+  @@map("attendance")
+}
+
+model ComplianceDoc {
+  id              String  @id
+  contractorId    String  @map("contractor_id")
+  docType         String  @map("doc_type")
+  docNumber       String  @map("doc_number")
+  validUntil      String  @map("valid_until")
+  isVerified      Boolean @default(false) @map("is_verified")
+  verifiedAt      String? @map("verified_at")
+  verifiedBy      String? @map("verified_by")
+  documentUrl     String? @map("document_url")
+
+  @@map("compliance_docs")
+}
+
+model Bill {
+  id                      String  @id
+  billNumber              String  @map("bill_number")
+  industryId              String  @map("industry_id")
+  contractorId            String  @map("contractor_id")
+  monthYear               String  @map("month_year")
+  totalWorkersDeployed    Int     @map("total_workers_deployed")
+  totalMandays            Int     @map("total_mandays")
+  baseAmount              Int     @map("base_amount")
+  epfAmount               Int     @map("epf_amount")
+  esiAmount               Int     @map("esi_amount")
+  platformFee             Int     @map("platform_fee")
+  totalAmount             Int     @map("total_amount")
+  isComplianceVerified    Boolean @default(false) @map("is_compliance_verified")
+  status                  String
+  generatedAt             String  @map("generated_at")
+
+  @@map("bills")
+}
+
+model VerificationLog {
+  id          String @id
+  workerId    String @map("worker_id")
+  workerName  String @map("worker_name")
+  method      String
+  timestamp   String
+  status      String
+  gateId      String @map("gate_id")
+  industryId  String @map("industry_id")
+
+  @@map("verification_logs")
+}
+
+model AuditLog {
+  id         String @id
+  action     String
+  entityId   String @map("entity_id")
+  entityType String @map("entity_type")
+  timestamp  String
+  performer  String
+  details    String
+
+  @@map("audit_logs")
+}
+
+model RevenueLog {
+  id             String @id
+  mandaysCount   Int    @map("mandays_count")
+  ratePerWorker  Int    @default(1) @map("rate_per_worker")
+  amount         Int
+  date           String
+  industryId     String @map("industry_id")
+  status         String
+
+  @@map("revenue_logs")
+}

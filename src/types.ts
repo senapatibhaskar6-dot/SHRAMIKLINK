@@ -1,4 +1,4 @@
-export type UserRole = 'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector';
+export type UserRole = 'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector' | 'security_guard';
 
 export type IndustryCategory = 'Industry HR' | 'Apartment Owner' | 'Shop Owner' | 'Office';
 export type ContractorCategory = 'Labour Contractor' | 'Security Agency';

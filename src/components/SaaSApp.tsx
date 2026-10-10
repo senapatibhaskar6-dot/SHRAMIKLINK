@@ -48,7 +48,9 @@ import {
 } from 'lucide-react';
 import { 
   Industry, 
+  IndustryCategory,
   Contractor, 
+  ContractorCategory,
   Worker, 
   MultiIndustryAssignment, 
   DailyRequirement, 
@@ -98,6 +100,7 @@ import DirectWorkersPanel from './DirectWorkersPanel';
 import AssignedInspectorCard from './AssignedInspectorCard';
 import GovernmentInspectorJurisdictionPanel from './GovernmentInspectorJurisdictionPanel';
 import IndustryProjectComplianceSystem from './IndustryProjectComplianceSystem';
+import { SecurityGuardDashboard } from './SecurityGuardDashboard';
 import { 
   ContractorApplication, 
   DirectJobOpening, 
@@ -466,10 +469,10 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
   const [loading, setLoading] = useState<boolean>(true);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
     const saved = localStorage.getItem('s_is_logged_in');
-    // Default to true for seamless sandbox preview access without getting blocked
-    return saved !== 'false';
+    // First screen of the website is the Registration / Login page unless logged in
+    return saved === 'true';
   });
-  const [currentRole, setCurrentRole] = useState<'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector'>(() => {
+  const [currentRole, setCurrentRole] = useState<'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector' | 'security_guard'>(() => {
     const saved = localStorage.getItem('s_current_role');
     if (saved === 'tea_garden' || !saved) {
       localStorage.setItem('s_current_role', 'industry_admin');
@@ -488,7 +491,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
   const [registerName, setRegisterName] = useState<string>('');
   const [registerEmailOrPhone, setRegisterEmailOrPhone] = useState<string>('');
   const [registerPassword, setRegisterPassword] = useState<string>('');
-  const [registerRole, setRegisterRole] = useState<'industry_admin' | 'apartment_owner' | 'shop_owner' | 'office' | 'supervisor' | 'contractor' | 'security_agency' | 'worker' | 'government_inspector'>('contractor');
+  const [registerRole, setRegisterRole] = useState<'industry_admin' | 'apartment_owner' | 'shop_owner' | 'office' | 'supervisor' | 'contractor' | 'security_agency' | 'worker' | 'government_inspector' | 'security_guard'>('industry_admin');
   
   // Legal/Compliance Registration Fields for Contractors & Industry HR
   const [regAgencyName, setRegAgencyName] = useState<string>('');
@@ -535,7 +538,8 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
     name: string;
     emailOrPhone: string;
     passwordHash: string;
-    role: 'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector';
+    role: 'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector' | 'security_guard';
+    subCategory?: string;
   }
 
   const [credentialUsers, setCredentialUsers] = useState<CredentialUser[]>(() => {
@@ -550,27 +554,29 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
     }
 
     const defaults: CredentialUser[] = [
-      { name: 'Tata Motors HR (Industry HR)', emailOrPhone: 'admin@icwl.in', passwordHash: 'admin', role: 'industry_admin' },
-      { name: 'Tata Motors HR (Industry HR)', emailOrPhone: 'admin@shramiklink.com', passwordHash: 'admin', role: 'industry_admin' },
-      { name: 'Greenwood Heights (Apartment Owner)', emailOrPhone: 'apartment@icwl.in', passwordHash: 'admin', role: 'industry_admin' },
-      { name: 'Mega Mart (Shop Owner)', emailOrPhone: 'shop@icwl.in', passwordHash: 'admin', role: 'industry_admin' },
-      { name: 'Zenith Tech (Office HR)', emailOrPhone: 'office@icwl.in', passwordHash: 'admin', role: 'industry_admin' },
+      { name: 'Tata Motors HR (Industry HR)', emailOrPhone: 'admin@icwl.in', passwordHash: 'admin', role: 'industry_admin', subCategory: 'Industry HR' },
+      { name: 'Tata Motors HR (Industry HR)', emailOrPhone: 'admin@shramiklink.com', passwordHash: 'admin', role: 'industry_admin', subCategory: 'Industry HR' },
+      { name: 'Greenwood Heights (Apartment Owner)', emailOrPhone: 'apartment@icwl.in', passwordHash: 'admin', role: 'industry_admin', subCategory: 'Apartment Owner' },
+      { name: 'Mega Mart (Shop Owner)', emailOrPhone: 'shop@icwl.in', passwordHash: 'admin', role: 'industry_admin', subCategory: 'Shop Owner' },
+      { name: 'Zenith Tech (Office HR)', emailOrPhone: 'office@icwl.in', passwordHash: 'admin', role: 'industry_admin', subCategory: 'Office' },
+      { name: 'Apex Solutions (Labour Contractor)', emailOrPhone: 'contractor@icwl.in', passwordHash: 'admin', role: 'contractor', subCategory: 'Labour Contractor' },
+      { name: 'Apex Solutions (Labour Contractor)', emailOrPhone: 'contractor@shramiklink.com', passwordHash: 'admin', role: 'contractor', subCategory: 'Labour Contractor' },
+      { name: 'Jai Hind (Security Agency)', emailOrPhone: 'security@icwl.in', passwordHash: 'admin', role: 'contractor', subCategory: 'Security Agency' },
+      { name: 'Gopal Kumar (Worker)', emailOrPhone: 'worker@icwl.in', passwordHash: 'admin', role: 'worker', subCategory: 'Labour' },
+      { name: 'Gopal Kumar (Worker)', emailOrPhone: 'worker@shramiklink.com', passwordHash: 'admin', role: 'worker', subCategory: 'Labour' },
+      { name: 'Rupen Das (Security Guard)', emailOrPhone: 'guard@icwl.in', passwordHash: 'admin', role: 'security_guard', subCategory: 'Security Guard' },
       { name: 'Ramesh Kalita (Supervisor)', emailOrPhone: 'ramesh.kalita@industry.com', passwordHash: 'admin', role: 'supervisor' },
-      { name: 'Apex Solutions (Labour Contractor)', emailOrPhone: 'contractor@icwl.in', passwordHash: 'admin', role: 'contractor' },
-      { name: 'Apex Solutions (Labour Contractor)', emailOrPhone: 'contractor@shramiklink.com', passwordHash: 'admin', role: 'contractor' },
-      { name: 'Jai Hind (Security Agency)', emailOrPhone: 'security@icwl.in', passwordHash: 'admin', role: 'contractor' },
-      { name: 'Gopal Kumar (Worker)', emailOrPhone: 'worker@icwl.in', passwordHash: 'admin', role: 'worker' },
-      { name: 'Gopal Kumar (Worker)', emailOrPhone: 'worker@shramiklink.com', passwordHash: 'admin', role: 'worker' },
       { name: 'Bhaskar Senapati (Government)', emailOrPhone: 'inspector@icwl.in', passwordHash: 'admin', role: 'government_inspector' },
       { name: 'Bhaskar Senapati (Government)', emailOrPhone: 'inspector@shramiklink.com', passwordHash: 'admin', role: 'government_inspector' },
-      { name: 'Demo Industry HR Phone', emailOrPhone: '9876543210', passwordHash: 'admin', role: 'industry_admin' },
-      { name: 'Demo Apartment Owner Phone', emailOrPhone: '9876543214', passwordHash: 'admin', role: 'industry_admin' },
-      { name: 'Demo Shop Owner Phone', emailOrPhone: '9876543215', passwordHash: 'admin', role: 'industry_admin' },
-      { name: 'Demo Office Phone', emailOrPhone: '9876543216', passwordHash: 'admin', role: 'industry_admin' },
+      { name: 'Demo Industry HR Phone', emailOrPhone: '9876543210', passwordHash: 'admin', role: 'industry_admin', subCategory: 'Industry HR' },
+      { name: 'Demo Apartment Owner Phone', emailOrPhone: '9876543214', passwordHash: 'admin', role: 'industry_admin', subCategory: 'Apartment Owner' },
+      { name: 'Demo Shop Owner Phone', emailOrPhone: '9876543215', passwordHash: 'admin', role: 'industry_admin', subCategory: 'Shop Owner' },
+      { name: 'Demo Office Phone', emailOrPhone: '9876543216', passwordHash: 'admin', role: 'industry_admin', subCategory: 'Office' },
+      { name: 'Demo Labour Contractor Phone', emailOrPhone: '9876543211', passwordHash: 'admin', role: 'contractor', subCategory: 'Labour Contractor' },
+      { name: 'Demo Security Agency Phone', emailOrPhone: '9876543217', passwordHash: 'admin', role: 'contractor', subCategory: 'Security Agency' },
+      { name: 'Demo Worker Phone', emailOrPhone: '9876543212', passwordHash: 'admin', role: 'worker', subCategory: 'Labour' },
+      { name: 'Demo Security Guard Phone', emailOrPhone: '9876543218', passwordHash: 'admin', role: 'security_guard', subCategory: 'Security Guard' },
       { name: 'Demo Supervisor Phone', emailOrPhone: '9876543220', passwordHash: 'admin', role: 'supervisor' },
-      { name: 'Demo Labour Contractor Phone', emailOrPhone: '9876543211', passwordHash: 'admin', role: 'contractor' },
-      { name: 'Demo Security Agency Phone', emailOrPhone: '9876543217', passwordHash: 'admin', role: 'contractor' },
-      { name: 'Demo Worker Phone', emailOrPhone: '9876543212', passwordHash: 'admin', role: 'worker' },
       { name: 'Demo Inspector Phone', emailOrPhone: '9876543213', passwordHash: 'admin', role: 'government_inspector' },
     ];
 
@@ -583,9 +589,9 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
 
     const standardEmailsOrPhones = [
       'admin@icwl.in', 'apartment@icwl.in', 'shop@icwl.in', 'office@icwl.in',
-      'contractor@icwl.in', 'security@icwl.in', 'worker@icwl.in', 'inspector@icwl.in',
+      'contractor@icwl.in', 'security@icwl.in', 'worker@icwl.in', 'guard@icwl.in', 'inspector@icwl.in',
       'admin@shramiklink.com', 'ramesh.kalita@industry.com', 'contractor@shramiklink.com', 'worker@shramiklink.com', 'inspector@shramiklink.com',
-      '9876543210', '9876543214', '9876543215', '9876543216', '9876543220', '9876543211', '9876543217', '9876543212', '9876543213'
+      '9876543210', '9876543214', '9876543215', '9876543216', '9876543220', '9876543211', '9876543217', '9876543212', '9876543218', '9876543213'
     ];
 
     finalUsers = finalUsers.map(user => {
@@ -612,6 +618,13 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
     if (matched) {
       setCurrentRole(matched.role);
       localStorage.setItem('s_current_role', matched.role);
+      if (matched.subCategory) {
+        if (matched.role === 'industry_admin') {
+          setIndustryRoleFilter(matched.subCategory as any);
+        } else if (matched.role === 'contractor') {
+          setContractorRoleFilter(matched.subCategory as any);
+        }
+      }
       setIsLoggedIn(true);
       localStorage.setItem('s_is_logged_in', 'true');
       showNotice(`লগইন সফল হৈছে! স্বাগতম, ${matched.name}!`, 'success');
@@ -633,16 +646,27 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
       return;
     }
 
-    const finalRole: 'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector' = 
+    const finalRole: 'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector' | 'security_guard' = 
       (registerRole === 'apartment_owner' || registerRole === 'shop_owner' || registerRole === 'office') ? 'industry_admin' :
       (registerRole === 'security_agency') ? 'contractor' :
+      (registerRole === 'security_guard') ? 'security_guard' :
       registerRole as any;
+
+    let subCategory: string | undefined = undefined;
+    if (registerRole === 'apartment_owner') subCategory = 'Apartment Owner';
+    else if (registerRole === 'shop_owner') subCategory = 'Shop Owner';
+    else if (registerRole === 'office') subCategory = 'Office';
+    else if (registerRole === 'industry_admin') subCategory = 'Industry HR';
+    else if (registerRole === 'security_agency') subCategory = 'Security Agency';
+    else if (registerRole === 'contractor') subCategory = 'Labour Contractor';
+    else if (registerRole === 'security_guard') subCategory = 'Security Guard';
 
     const newUser: CredentialUser = {
       name: registerName,
       emailOrPhone: registerEmailOrPhone.trim().toLowerCase(),
       passwordHash: registerPassword,
-      role: finalRole
+      role: finalRole,
+      subCategory
     };
     
     const updated = [...credentialUsers, newUser];
@@ -729,6 +753,13 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
 
     setCurrentRole(finalRole);
     localStorage.setItem('s_current_role', finalRole);
+    if (subCategory) {
+      if (finalRole === 'industry_admin') {
+        setIndustryRoleFilter(subCategory as any);
+      } else if (finalRole === 'contractor') {
+        setContractorRoleFilter(subCategory as any);
+      }
+    }
     setIsLoggedIn(true);
     localStorage.setItem('s_is_logged_in', 'true');
     
@@ -951,12 +982,22 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
   };
 
   // Instant sandbox / demo login without requiring external popup window
-  const handleDemoLogin = (role: 'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector') => {
+  const handleDemoLogin = (
+    role: 'industry_admin' | 'supervisor' | 'contractor' | 'worker' | 'government_inspector' | 'security_guard',
+    subCategory?: string
+  ) => {
     setCurrentRole(role);
     localStorage.setItem('s_current_role', role);
+    if (subCategory) {
+      if (role === 'industry_admin') {
+        setIndustryRoleFilter(subCategory as any);
+      } else if (role === 'contractor') {
+        setContractorRoleFilter(subCategory as any);
+      }
+    }
     setIsLoggedIn(true);
     localStorage.setItem('s_is_logged_in', 'true');
-    showNotice(`Sandbox Demo: Entered as ${role.replace('_', ' ').toUpperCase()}`, 'success');
+    showNotice(`Sandbox Demo: Entered as ${role.replace('_', ' ').toUpperCase()}${subCategory ? ` (${subCategory})` : ''}`, 'success');
     refreshData(token || undefined);
   };
 
@@ -2934,59 +2975,114 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
           </div>
         </div>
 
-        {/* Clean Public Mobile Number & OTP Portal (Active by default for ordinary users) */}
-        {!adminModeUnlocked ? (
-          <PublicMobileLogin
-            mobileLoginPhone={mobileLoginPhone}
-            setMobileLoginPhone={setMobileLoginPhone}
-            mobileOtpSent={mobileOtpSent}
-            setMobileOtpSent={setMobileOtpSent}
-            mobileOtpCode={mobileOtpCode}
-            mobileOtpInput={mobileOtpInput}
-            setMobileOtpInput={setMobileOtpInput}
-            mobileDetectedName={mobileDetectedName}
-            mobileSelectedRole={mobileSelectedRole}
-            setMobileSelectedRole={setMobileSelectedRole}
-            mobileOtpSmsBanner={mobileOtpSmsBanner}
-            setMobileOtpSmsBanner={setMobileOtpSmsBanner}
-            handleSendMobileOtp={handleSendMobileOtp}
-            handleVerifyMobileOtp={handleVerifyMobileOtp}
-            onOpenMasterKey={() => {
-              setShowMasterKeyModal(true);
-              setMasterKeyError('');
-              setMasterKeyInput('');
-            }}
-            showNotice={showNotice}
-          />
-        ) : (
-          <div className="space-y-6 animate-fadeIn">
-            {/* Master Mode Golden Banner with Exit Button */}
-            <div className="bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-slate-900 border-2 border-amber-500/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">👑</span>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-black text-amber-400 uppercase tracking-wider block">
-                      এডমিন / ডেভলপাৰ মাষ্টাৰ মোড সক্ৰিয় (Admin Master Mode Unlocked)
-                    </span>
-                    <span className="px-2 py-0.5 bg-amber-500 text-slate-950 font-black text-[9px] rounded-full uppercase">
-                      Admin Access
-                    </span>
-                  </div>
-                  <span className="text-[11px] text-slate-300">
-                    সকলো ভূমিকাৰ বাবে ১-ক্লিক ডেমো বাইপাছ, টেষ্টাৰ চীট-শ্বীট আৰু ইমেইল/পাছৱৰ্ড লগইন সক্ৰিয় কৰা হৈছে।
-                  </span>
-                </div>
+        {/* 4 Dedicated Role Dashboard Redirection Cards */}
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-black uppercase text-slate-600 tracking-wider flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>
+              ডেশ্ববৰ্ডলৈ পোনপটীয়া প্ৰৱেশ (1-Click Direct Role Redirection)
+            </span>
+            <span className="text-[10px] font-bold text-slate-400">
+              নিৰ্দিষ্ট ভূমিকা বাছক আৰু ডেশ্ববৰ্ড খোলক
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* 1. Owner Dashboard */}
+            <button
+              type="button"
+              onClick={() => handleDemoLogin('industry_admin', 'Industry HR')}
+              className="bg-white hover:bg-indigo-50/70 border-2 border-indigo-200 hover:border-indigo-500 p-4 rounded-2xl text-left shadow-xs transition-all group cursor-pointer active:scale-98"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-2xl p-2 rounded-xl bg-indigo-50 border border-indigo-200">🏭</span>
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-100 px-2.5 py-0.5 rounded-full border border-indigo-300">
+                  Owner Dashboard
+                </span>
               </div>
-              <button
-                type="button"
-                onClick={handleLockAdminMode}
-                className="bg-slate-950 hover:bg-slate-900 text-amber-300 border border-amber-500/60 hover:border-amber-400 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap active:scale-95 transition-all"
-              >
-                <Lock className="h-3.5 w-3.5 text-amber-400" />
-                <span>গোপন মোড বন্ধ কৰক (Exit Admin Mode)</span>
-              </button>
-            </div>
+              <div className="font-black text-slate-900 text-sm group-hover:text-indigo-600 transition-colors">
+                Industry HR / Owner
+              </div>
+              <div className="text-[10px] text-slate-500 mt-1 leading-snug">
+                Industry HR • Apartment Owner • Shop Owner • Office
+              </div>
+              <div className="mt-3 pt-2 border-t border-slate-100 text-[10px] font-extrabold text-indigo-600 flex items-center gap-1">
+                <span>প্ৰৱেশ কৰক (Enter)</span> &rarr;
+              </div>
+            </button>
+
+            {/* 2. Agency Dashboard */}
+            <button
+              type="button"
+              onClick={() => handleDemoLogin('contractor', 'Labour Contractor')}
+              className="bg-white hover:bg-emerald-50/70 border-2 border-emerald-200 hover:border-emerald-500 p-4 rounded-2xl text-left shadow-xs transition-all group cursor-pointer active:scale-98"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-2xl p-2 rounded-xl bg-emerald-50 border border-emerald-200">🏢</span>
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-300">
+                  Agency Dashboard
+                </span>
+              </div>
+              <div className="font-black text-slate-900 text-sm group-hover:text-emerald-600 transition-colors">
+                Contractor & Agency
+              </div>
+              <div className="text-[10px] text-slate-500 mt-1 leading-snug">
+                Labour Contractor • Security Agency
+              </div>
+              <div className="mt-3 pt-2 border-t border-slate-100 text-[10px] font-extrabold text-emerald-600 flex items-center gap-1">
+                <span>প্ৰৱেশ কৰক (Enter)</span> &rarr;
+              </div>
+            </button>
+
+            {/* 3. Labour Dashboard */}
+            <button
+              type="button"
+              onClick={() => handleDemoLogin('worker')}
+              className="bg-white hover:bg-blue-50/70 border-2 border-blue-200 hover:border-blue-500 p-4 rounded-2xl text-left shadow-xs transition-all group cursor-pointer active:scale-98"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-2xl p-2 rounded-xl bg-blue-50 border border-blue-200">👤</span>
+                <span className="text-[10px] font-black uppercase tracking-wider text-blue-700 bg-blue-100 px-2.5 py-0.5 rounded-full border border-blue-300">
+                  Labour Dashboard
+                </span>
+              </div>
+              <div className="font-black text-slate-900 text-sm group-hover:text-blue-600 transition-colors">
+                Labour / Shramik
+              </div>
+              <div className="text-[10px] text-slate-500 mt-1 leading-snug">
+                Daily Hazira • Wage Slips • EPFO/ESIC Linkage
+              </div>
+              <div className="mt-3 pt-2 border-t border-slate-100 text-[10px] font-extrabold text-blue-600 flex items-center gap-1">
+                <span>প্ৰৱেশ কৰক (Enter)</span> &rarr;
+              </div>
+            </button>
+
+            {/* 4. Security Guard Dashboard */}
+            <button
+              type="button"
+              onClick={() => handleDemoLogin('security_guard')}
+              className="bg-white hover:bg-amber-50/70 border-2 border-amber-200 hover:border-amber-500 p-4 rounded-2xl text-left shadow-xs transition-all group cursor-pointer active:scale-98"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-2xl p-2 rounded-xl bg-amber-50 border border-amber-200">👮</span>
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300">
+                  Guard Dashboard
+                </span>
+              </div>
+              <div className="font-black text-slate-900 text-sm group-hover:text-amber-600 transition-colors">
+                Security Guard Gate
+              </div>
+              <div className="text-[10px] text-slate-500 mt-1 leading-snug">
+                Gate Duty • Gate Pass In/Out • Material Pass
+              </div>
+              <div className="mt-3 pt-2 border-t border-slate-100 text-[10px] font-extrabold text-amber-600 flex items-center gap-1">
+                <span>প্ৰৱেশ কৰক (Enter)</span> &rarr;
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-6 animate-fadeIn">
 
             {/* SMS / Email Simulated Banner */}
         {showSimulatedSms && (
@@ -3408,19 +3504,20 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                         onChange={(e: any) => setRegisterRole(e.target.value)}
                         className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-500"
                       >
-                        <optgroup label="🏭 Principal Employer / Establishments">
+                        <optgroup label="🏭 Principal Employer / Owner Dashboard">
                           <option value="industry_admin">🏭 Industry HR (কাৰখানা / Factory HR)</option>
                           <option value="apartment_owner">🏢 Apartment Owner (আৱাসিক সমিতি / Housing Society)</option>
                           <option value="shop_owner">🛍️ Shop Owner (দোকান / বাণিজ্যিক প্ৰতিষ্ঠান / Retail)</option>
                           <option value="office">🏛️ Office (কৰ্পোৰেট কাৰ্যালয় / Corporate Office)</option>
                         </optgroup>
-                        <optgroup label="🏢 Manpower & Security Agencies">
+                        <optgroup label="🏢 Manpower & Security Agency Dashboard">
                           <option value="contractor">👷 Labour Contractor (শ্ৰমিক ঠিকাদাৰ - Manpower Agency)</option>
                           <option value="security_agency">🛡️ Security Agency (নিৰাপত্তা সংস্থা - PSARA Security)</option>
                         </optgroup>
-                        <optgroup label="👷 Field Operations & Workers">
+                        <optgroup label="👤 Labour & Security Guard Dashboards">
+                          <option value="worker">👤 শ্ৰমিক (Labour / Shramik)</option>
+                          <option value="security_guard">👮 নিৰাপত্তাৰক্ষী (Security Guard - Gate Duty)</option>
                           <option value="supervisor">👷 Factory / Facility Supervisor (ছুপাৰভাইজাৰ)</option>
-                          <option value="worker">👤 অদক্ষ শ্ৰমিক (Unskilled Manual Labourer)</option>
                           <option value="government_inspector">⚖️ Government Inspector (চৰকাৰী শ্ৰম পৰিদৰ্শক)</option>
                         </optgroup>
                       </select>
@@ -3704,6 +3801,7 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
                   { label: '👷 Labour Contractor (Manpower Supply)', email: 'contractor@icwl.in', pass: 'admin', phone: '9876543211' },
                   { label: '🛡️ Security Agency (PSARA Vigilance)', email: 'security@icwl.in', pass: 'admin', phone: '9876543217' },
                   { label: '👷 Factory Supervisor (Gate Attendance)', email: 'ramesh.kalita@industry.com', pass: 'admin', phone: '9876543220' },
+                  { label: '👮 Security Guard (Gate Duty & Sentry)', email: 'guard@icwl.in', pass: 'admin', phone: '9876543218' },
                   { label: '👤 Unskilled Worker (Manual Labour)', email: 'worker@icwl.in', pass: 'admin', phone: '9876543212' },
                   { label: '⚖️ Government Inspector (CLRA Audit)', email: 'inspector@icwl.in', pass: 'admin', phone: '9876543213' }
                 ].map((cred, idx) => (
@@ -3803,7 +3901,6 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
         </div>
 
           </div>
-        )}
 
         {/* Admin Master Key Unlock Modal */}
         <AdminMasterKeyModal
@@ -3900,18 +3997,20 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
             <h3 className="font-bold text-slate-900 text-sm tracking-tight flex items-center gap-2">
               🔒 SECURE CLRA SESSION: ACTIVE 
               <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded font-mono font-bold uppercase tracking-wide">
-                {currentRole === 'industry_admin' ? 'Industry HR (Principal Employer)' :
+                {currentRole === 'industry_admin' ? 'Owner Dashboard (Industry HR, Apartment, Shop, Office)' :
+                 currentRole === 'contractor' ? 'Agency Dashboard (Labour Contractor & Security Agency)' :
+                 currentRole === 'worker' ? 'Labour Dashboard (Worker / Shramik)' :
+                 currentRole === 'security_guard' ? 'Security Guard Dashboard (Gate Duty & Sentry)' :
                  currentRole === 'supervisor' ? t_supervisor :
-                 currentRole === 'contractor' ? 'Contractor (Labour & Security)' :
-                 currentRole === 'worker' ? t.worker :
                  t.inspector}
               </span>
             </h3>
             <p className="text-[11px] text-slate-500">
               {currentRole === 'industry_admin' && 'প্ৰধান নিয়োগকাৰী ডেশ্ববৰ্ড: Industry HR, Apartment Owner, Shop Owner, আৰু Office প্ৰতিষ্ঠান ব্যৱস্থাপনা।'}
+              {currentRole === 'contractor' && 'এজেন্সী ডেশ্ববৰ্ড: Labour Contractor আৰু Security Agency অনুপালন।'}
+              {currentRole === 'worker' && 'শ্ৰমিক ডেশ্ববৰ্ড: হাজিৰা, মজুৰি স্লিপ, EPFO/ESIC লিংক আৰু পোনে-পোনে কাম পোৱাৰ ব্যৱস্থা।'}
+              {currentRole === 'security_guard' && 'নিৰাপত্তাৰক্ষী ডেশ্ববৰ্ড: গেট এন্ট্ৰি/এক্সিট, ভ্ৰমণকাৰী পাছ, সামগ্ৰী চালান আৰু জৰুৰীকালীন নিৰীক্ষণ।'}
               {currentRole === 'supervisor' && t_supervisorDesc}
-              {currentRole === 'contractor' && 'ঠিকাদাৰ ও নিৰাপত্তা সংস্থা ডেস্ক: Labour Contractor আৰু Security Agency অনুপালন।'}
-              {currentRole === 'worker' && t.workerDesc}
               {currentRole === 'government_inspector' && t.inspectorDesc}
             </p>
           </div>
@@ -3965,10 +4064,11 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
               পেনেল বাছক (Active Desk):
             </span>
             {[
-              { role: 'industry_admin', label: '🏭 প্ৰধান নিয়োগকাৰী (Industry HR, Apartment, Shop, Office)', short: '🏭 Industry HR / Client', isPrimary: true },
+              { role: 'industry_admin', label: '🏭 প্ৰধান নিয়োগকাৰী (Owner Dashboard: Industry HR, Apartment, Shop, Office)', short: '🏭 Owner Dashboard', isPrimary: true },
+              { role: 'contractor', label: '🏢 এজেন্সী ডেশ্ববৰ্ড (Agency Dashboard: Labour Contractor & Security Agency)', short: '🏢 Agency Dashboard' },
+              { role: 'worker', label: '👤 শ্ৰমিক ডেশ্ববৰ্ড (Labour Dashboard)', short: '👤 Labour' },
+              { role: 'security_guard', label: '👮 নিৰাপত্তাৰক্ষী গেট ডেশ্ববৰ্ড (Security Guard Dashboard)', short: '👮 Security Guard' },
               { role: 'supervisor', label: '👷 ছুপাৰভাইজাৰ পেনেল (Supervisor Desk)', short: '👷 ছুপাৰভাইজাৰ' },
-              { role: 'contractor', label: '🏢 ঠিকাদাৰ ডেস্ক (Labour Contractor & Security Agency)', short: '🏢 Contractor & Agency' },
-              { role: 'worker', label: '👤 শ্ৰমিক ডেস্ক (Worker)', short: '👤 শ্ৰমিক' },
               { role: 'government_inspector', label: '⚖️ চৰকাৰী পৰিদৰ্শক (Inspector)', short: '⚖️ পৰিদৰ্শক' },
             ].map((item) => {
               const isActive = currentRole === item.role;
@@ -8176,6 +8276,17 @@ export default function SaaSApp({ externalLang, onLanguageChange }: SaaSAppProps
             onFileAuditLog={handleFileAuditFromInspector}
             onLogout={handleLogout}
             onRefreshData={refreshData}
+          />
+        )}
+
+        {/* ==================== 5. SECURITY GUARD GATE & SENTRY DASHBOARD ==================== */}
+        {currentRole === 'security_guard' && (
+          <SecurityGuardDashboard
+            guardName={user?.displayName || (credentialUsers.find(u => u.emailOrPhone.toLowerCase() === (loginEmailOrPhone || '').toLowerCase())?.name) || "Rupen Das (Head Guard)"}
+            workers={workers}
+            industries={industries}
+            contractors={contractors}
+            showNotice={showNotice}
           />
         )}
       </div>
